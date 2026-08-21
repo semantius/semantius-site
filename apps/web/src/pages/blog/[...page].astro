@@ -25,7 +25,7 @@ export async function getStaticPaths({ paginate }: { paginate: GetStaticPathsOpt
 const { page } = Astro.props as { page: Page<CollectionEntry<'blog'>> };
 ---
 
-<Layout title="Blog - Astro Boilerplate" description="Read our latest articles">
+<Layout title="Blog - Astro Boilerplate" description="Read our latest articles" searchable={false}>
   <PageHeader
       title='Our <span class="text-primary">Blog</span>'
       description='Insights, tutorials, and updates from the team.'

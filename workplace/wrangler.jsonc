@@ -1,18 +1,15 @@
 {
+  // Assets-only Worker: the site has no on-demand (SSR) routes, so Astro emits
+  // no dist/server/entry.mjs and there is no script to point "main" at.
+  // Cloudflare serves dist/client directly (including _headers, _redirects and
+  // the Pagefind index under /pagefind/). Re-add "main" only if an SSR route
+  // comes back.
   "name": "semantius-site",
   "compatibility_date": "2026-03-17",
   "compatibility_flags": ["nodejs_compat"],
-  "main": "../apps/web/dist/server/entry.mjs",
   "assets": {
-    "binding": "ASSETS",
-    "directory": "../apps/web/dist/client"
-  },
-  "no_bundle": true,
-  "rules": [
-    { "type": "ESModule", "globs": ["**/*.js", "**/*.mjs"] }
-  ],
-  "images": {
-    "binding": "IMAGES"
+    "directory": "../apps/web/dist/client",
+    "not_found_handling": "404-page"
   },
   "observability": {
     "enabled": true

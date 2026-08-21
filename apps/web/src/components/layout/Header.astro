@@ -55,12 +55,11 @@ const signInLabel = 'Sign in';
         client:only="react" 
         placeholder='Search...' 
         devModalLabels={{
-            title: 'Search is a Production Superpower!',
-            description: 'To enable our lightning-fast search, Pagefind needs a static build index. Run the following command to see it in action:',
+            title: 'Search needs a build first',
+            description: 'Pagefind indexes the site at build time and the dev server serves the index from the last build. Run this once, then reload:',
             gotIt: 'Got it, thanks!',
             doc: 'Documentation'
         }}
-        lang='en'
       />}
       <a 
         href={signInHref}

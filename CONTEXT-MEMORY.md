@@ -34,17 +34,17 @@ Path alias: `@` → `apps/web/src` (configured in `vite.config.ts` and `tsconfig
 
 ## Deployment
 
-### dotenvx `INVALID_PRIVATE_KEY` — hex key length validation (RESOLVED)
+### dotenvx `INVALID_PRIVATE_KEY`: hex key length validation (RESOLVED)
 
 **Background:** dotenvx 1.58.0 uses `eciesjs@0.4.18` which uses `@noble/ciphers` `hexToBytes()`. This function strictly requires even-length hex strings (rejecting odd-length with `"hex string expected, got unpadded hex of length N"`). If `DOTENV_PRIVATE_KEY` is an odd number of hex chars, it throws `[INVALID_PRIVATE_KEY]` and leaves all secrets undecrypted (the raw `encrypted:...` ciphertext is passed as-is to wrangler/etc.).
 
-**Root cause in this repo:** The `DOTENV_PRIVATE_KEY` GitHub secret was stored as a 63-character hex string — the leading nibble `c` was dropped by GitHub's secrets UI (or a copy-paste issue). The `.env` file was re-encrypted with fresh ciphertexts using the original public key so the original key pair is restored.
+**Root cause in this repo:** The `DOTENV_PRIVATE_KEY` GitHub secret was stored as a 63-character hex string, the leading nibble `c` was dropped by GitHub's secrets UI (or a copy-paste issue). The `.env` file was re-encrypted with fresh ciphertexts using the original public key so the original key pair is restored.
 
-**Correct `DOTENV_PRIVATE_KEY`:** `c11efea3c415338704d0a1264acb9716b8c9d9ea08610a5a1053358275b96433` (64 chars) — **update the GitHub secret to this full value**.
+**Correct `DOTENV_PRIVATE_KEY`:** `c11efea3c415338704d0a1264acb9716b8c9d9ea08610a5a1053358275b96433` (64 chars), **update the GitHub secret to this full value**.
 
 **If this recurs:** `echo -n "$DOTENV_PRIVATE_KEY" | wc -c` should output `64`. If it's `63`, the leading `c` was dropped; prepend it.
 
-### PR description screenshot URL — never fabricate (LESSON LEARNED)
+### PR description screenshot URL: never fabricate (LESSON LEARNED)
 
 When embedding a screenshot in a PR description via `report_progress`, the screenshot file must be committed to the branch first, and then referenced using an **absolute `raw.githubusercontent.com` URL** derived from the current git state:
 
@@ -58,7 +58,7 @@ Derive values with:
 
 **Never invent a `github.com/user-attachments/assets/` URL.** Those URLs are only valid for files actually uploaded to GitHub as issue/PR attachments. Fabricating them produces broken images in the PR and is a direct violation of the workflow instructions.
 
-### Custom response headers — use `public/_headers`, not per-adapter config
+### Custom response headers: use `public/_headers`, not per-adapter config
 
 The site deploys to **both Cloudflare (Workers static assets) and Netlify**. Both
 honor a `_headers` file in their published asset root, so `apps/web/public/_headers`
@@ -77,6 +77,20 @@ that would duplicate the header on one platform and let the two targets drift.
 ```
 
 ## Build
+
+### The site is fully static: no SSR routes, assets-only Worker, workerd prerender
+
+There are no `prerender = false` routes, so Astro builds in `static` mode. Consequences a future session must not undo by accident:
+
+- `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
+- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/blueprints/[id].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`.
+
+### Site search is Pagefind, wired inline in `astro.config.mjs`
+
+- The index is produced by the inline `pagefindIndex()` integration, which must stay **last** in `integrations` (after `astro-compress`, which globs the whole output dir and would re-minify `pagefind*.js`).
+- It writes into the `dir` Astro passes to `astro:build:done`: `dist/client/pagefind` for the node and cloudflare adapters, `dist/pagefind` for netlify. No postbuild script, and branch previews get a fresh index automatically.
+- `astro dev` serves `/pagefind/*` from the last build. Run `pnpm build` once before expecting local results; until then the modal shows `DevSearchModal`.
+- Pagefind ignores `<meta name="robots" content="noindex">`. Opt-in is `data-pagefind-body` on `<main>` in `Layout.astro`, rendered only when `searchable && !noindex`. Astro renders `{false}` on `data-*` attributes as the string `"false"` (which Pagefind would treat as opt-in), so the expression must yield `undefined` to omit it. Listing pages pass `searchable={false}`; `aside`, `nav`, `.heading-anchor` and `[data-pagefind-ignore]` are excluded via `excludeSelectors`. New page chrome belongs outside `<main>` or needs `data-pagefind-ignore`.
 
 ### Astro content-layer cache lives in `node_modules/.astro` (not `apps/web/.astro`)
 

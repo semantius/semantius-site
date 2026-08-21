@@ -10,6 +10,8 @@ import rehypeSlug from 'rehype-slug';
 import rehypeAutolinkHeadings from 'rehype-autolink-headings';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import sirv from 'sirv';
 import matter from 'gray-matter';
 
 /**
@@ -163,6 +165,56 @@ document.addEventListener('astro:after-swap', () => initMermaidEnhanced());
             },
         },
     };
+}
+
+/**
+ * Site search: builds the Pagefind index at build time and serves it in dev.
+ *
+ * - astro:build:done receives the directory Astro actually publishes
+ *   (dist/client for the node and cloudflare adapters, dist for netlify), so
+ *   the index lands next to the HTML for every deploy target without any
+ *   postbuild script.
+ * - Must be registered LAST in `integrations`: astro-compress globs the whole
+ *   output dir in its own astro:build:done hook and would re-minify
+ *   pagefind*.js if the index existed before it ran.
+ * - `astro dev` has no build output of its own, so the dev middleware serves
+ *   /pagefind/* from the last build. Run `pnpm build` once to get local
+ *   results; until then Search.jsx shows the DevSearchModal fallback.
+ * - Pagefind does NOT honour <meta name="robots" content="noindex">. Pages
+ *   opt in via data-pagefind-body on <main> in Layout.astro, gated by
+ *   `searchable && !noindex`. Once any page carries that attribute, pages
+ *   without it are skipped entirely.
+ */
+function pagefindIndex() {
+  let clientDir;
+  return {
+    name: 'pagefind-index',
+    hooks: {
+      'astro:config:setup': ({ config }) => {
+        if (config.adapter) clientDir = fileURLToPath(config.build.client);
+      },
+      'astro:server:setup': ({ server }) => {
+        const root = clientDir ?? path.join(server.config.root, server.config.build.outDir);
+        const serve = sirv(root, { dev: true, etag: true });
+        server.middlewares.use((req, res, next) =>
+          req.url?.startsWith('/pagefind/') ? serve(req, res, next) : next());
+      },
+      'astro:build:done': async ({ dir, logger }) => {
+        const out = fileURLToPath(dir);
+        const pagefind = await import('pagefind');
+        const { index, errors } = await pagefind.createIndex({
+          // Sidebars, breadcrumbs, TOC, heading permalinks and anything marked
+          // data-pagefind-ignore never reach the index.
+          excludeSelectors: ['aside', 'nav', '.heading-anchor', '[data-pagefind-ignore]'],
+        });
+        if (!index) { logger.error(errors.join('\n')); return; }
+        const { page_count } = await index.addDirectory({ path: out });
+        await index.writeFiles({ outputPath: path.join(out, 'pagefind') });
+        await pagefind.close();
+        logger.info(`Pagefind indexed ${page_count} pages into ${path.join(out, 'pagefind')}`);
+      },
+    },
+  };
 }
 
 // Helper to find noindex URLs
@@ -390,7 +442,9 @@ export default defineConfig({
     // the range syntax reaches astro-compress unconverted, so enabling its CSS
     // pass strips every responsive (sm:/md:/lg:/...) utility and collapses the
     // whole site to its mobile layout (desktop nav and multi-column grids gone).
-    (await import("astro-compress")).default({ Image: false, JavaScript: true, HTML: false, CSS: false })
+    (await import("astro-compress")).default({ Image: false, JavaScript: true, HTML: false, CSS: false }),
+    // Keep last (see pagefindIndex docblock).
+    pagefindIndex(),
   ],
   vite: {
     plugins: [tailwindcss()],

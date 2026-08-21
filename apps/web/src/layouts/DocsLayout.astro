@@ -62,9 +62,9 @@ const serializedTree = serializeTree(tree);
         </aside>
 
         {/* Main Content */}
-        <main class="min-w-0 flex-1" data-pagefind-ignore>
+        <div class="min-w-0 flex-1">
              {/* Breadcrumbs & Mobile Menu */}
-             <div class="mb-6 flex items-center justify-between gap-4">
+             <div class="mb-6 flex items-center justify-between gap-4" data-pagefind-ignore>
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
                     <a href="/docs" class="hover:text-foreground transition-colors">Docs</a>
                     <span class="text-foreground/30" aria-hidden="true">›</span>
@@ -88,13 +88,13 @@ const serializedTree = serializeTree(tree);
              </div>
 
             <div class="prose prose-lg max-w-none prose-headings:font-bold prose-headings:scroll-mt-24 prose-a:text-primary hover:prose-a:text-primary/80 dark:prose-invert text-foreground prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-code:text-primary prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-white/10 prose-pre:bg-black/80">
-                <h1 class="text-4xl font-bold mb-8 text-foreground">{title}</h1>
+                <h1 class="text-4xl font-bold mb-8 text-foreground" data-pagefind-meta="title">{title}</h1>
                 <slot />
             </div>
 
             {/* Next/Prev Navigation */}
             <hr class="my-10 border-foreground/10" />
-            <div class="flex flex-col sm:flex-row gap-4 justify-between">
+            <div class="flex flex-col sm:flex-row gap-4 justify-between" data-pagefind-ignore>
                 {prevNode ? (
                     <a href={prevNode.path} class="group flex flex-col gap-1 p-4 rounded-xl border border-foreground/10 hover:border-primary/30 hover:bg-primary/5 transition-all text-left">
                         <span class="text-xs text-muted-foreground font-medium group-hover:text-primary/70">Previous</span>
@@ -109,7 +109,7 @@ const serializedTree = serializeTree(tree);
                     </a>
                 )}
             </div>
-        </main>
+        </div>
 
         {/* Right Sidebar: Table of Contents */}
         <aside class="hidden xl:block min-w-[240px]">

@@ -17,6 +17,8 @@ interface Props {
     article?: boolean;
     noindex?: boolean;
     nofollow?: boolean;
+    /** Set false on listing/index pages so Pagefind does not index their excerpts twice. */
+    searchable?: boolean;
     children?: any;
 }
 
@@ -31,6 +33,7 @@ const {
     article = false,
     noindex = false,
     nofollow = false,
+    searchable = true,
 } = Astro.props;
 ---
 
@@ -116,7 +119,10 @@ const {
             )}
             <Header />
         </div>
-		<main>
+		{/* Pagefind indexes only what is inside data-pagefind-body; header, banner and footer sit outside <main>.
+		    Astro renders {false} on data-* attributes as the string "false", which Pagefind would treat as opt-in,
+		    so the attribute must be undefined (omitted) rather than false. */}
+		<main data-pagefind-body={searchable && !noindex ? "" : undefined}>
 			<slot />
 		</main>
         <CookieConsent />
