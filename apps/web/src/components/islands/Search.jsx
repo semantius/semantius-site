@@ -47,9 +47,15 @@ function usePagefind(active) {
     return () => { cancelled = true; };
   }, [active]);
 
-  const search = useCallback(async (query) => {
+  const search = useCallback(async (rawQuery) => {
     const pf = pagefindRef.current;
     if (!pf) return null;
+    // Pagefind indexes only letters, digits, underscores and hyphens; symbols
+    // such as "$" are dropped from tokens at index time but NOT from the query,
+    // so "$today" matched nothing even though "today" did. Apply the same
+    // normalisation to the query. Excerpts still show the original "$today".
+    const query = rawQuery.replace(/[^\p{L}\p{N}_\-\s]/gu, " ").replace(/\s+/g, " ").trim();
+    if (!query) return [];
     // debouncedSearch resolves to null when a newer query supersedes this one.
     const res = await pf.debouncedSearch(query, {}, 150);
     if (!res) return null;
