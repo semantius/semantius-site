@@ -104,14 +104,14 @@ Clearing only `apps/web/.astro` is insufficient because the deleted entries surv
 
 ### Docs sub-collections are top-level folders under `src/content/docs`
 
-The `docs` collection is one Astro collection, but the nav treats each top-level folder (`guide/`, `reference/`) as a separate sub-collection, surfaced as the tab bar above the docs columns. The registry is `DOCS_COLLECTIONS` in `apps/web/src/lib/docs-tree.ts`; adding a collection means adding a folder plus one row there. Nothing else is parameterised: routes (`pages/docs/[...slug].astro`) and nav paths (`buildDocsTree`) both derive from the folder structure, so the URL and the tree stay in sync by construction.
+The `docs` collection is one Astro collection, but the nav treats each top-level folder (`guide/`, `reference/`) as a separate sub-collection, surfaced as the tab bar above the docs columns. The registry is `DOCS_COLLECTIONS` in `apps/web/src/lib/docs-tree.ts` (slug, label, description); adding a collection means adding a folder plus one row there, and the `/docs` hub grows a card for it automatically. Nothing else is parameterised: routes (`pages/docs/[...slug].astro`) and nav paths (`buildDocsTree`) both derive from the folder structure, so the URL and the tree stay in sync by construction.
 
 Consequences when adding docs:
 
 - A page placed directly under `src/content/docs/` sits outside every collection: it still gets a route, but no tab shows it and the sidebar falls back to `DEFAULT_DOCS_COLLECTION`. New pages belong inside a collection folder.
-- Sidebar, prev/next and the breadcrumb section all run off the active collection's subtree, so navigation never crosses collections. The breadcrumb deliberately omits the collection name because the active tab already shows it.
-- A collection folder without its own `index.mdx` generates no page for its root (`/docs/reference` 404s), so each one needs a redirect row in `docsLegacyRedirects` in `astro.config.mjs`.
-- Moving doc files changes their URLs. Old URLs get 301s from that same map, pointed at the final destination rather than chained through earlier schemes.
+- **Every collection needs its own `index.mdx` start page.** The tab and the breadcrumb both link to it, and the hierarchy is `/docs` (hub with collection cards) → `/docs/<collection>` (start page) → pages. Without one, `getDocsCollectionNavs` falls back to the collection's first page and the collection root 404s.
+- Sidebar, prev/next and the breadcrumb section all run off the active collection's subtree, so navigation never crosses collections. The breadcrumb mirrors the URL (`Docs › Reference › Models › Create a Model`) and drops any level that is the current page, so it never links to the page you are on.
+- Moving doc files changes their URLs. Old URLs get 301s from `docsLegacyRedirects` in `astro.config.mjs`, pointed at the final destination rather than chained through earlier schemes.
 
 ## Styling
 
