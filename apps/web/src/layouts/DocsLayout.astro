@@ -83,13 +83,19 @@ const serializedNodes = sidebarNodes.map(serializeTree);
     <div class="flex w-full lg:grid lg:grid-cols-[280px_1fr_240px] gap-10">
 
         {/* Sidebar Navigation */}
-        <aside class="hidden lg:block fixed inset-y-0 left-0 z-20 w-72 overflow-y-auto border-r border-foreground/5 bg-background px-6 pb-4 pt-32 lg:static lg:w-auto lg:border-r-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0">
-             <div class="sticky top-24 space-y-8">
-                 {/* The negative margins cancel the first nav link's own px-3
-                     py-1.5, so its text aligns with the breadcrumb and the
-                     "On this page" heading, which have no such padding. Hover
-                     pills keep their full padding and overhang into the gap. */}
-                 <nav class="space-y-1 -mx-3 -mt-1.5" aria-label="Documentation Sidebar">
+        {/* lg:overflow-visible matters: with overflow-y-auto the aside becomes
+            the scrollport for the sticky child below, which then sits a fixed
+            96px (top-24) below the column top and never actually sticks. The
+            page has to be the scrollport instead. */}
+        <aside class="hidden lg:block fixed inset-y-0 left-0 z-20 w-72 overflow-y-auto border-r border-foreground/5 bg-background px-6 pb-4 pt-32 lg:static lg:w-auto lg:overflow-visible lg:border-r-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0">
+             {/* -mt-1.5 cancels the first nav link's own py-1.5 and lg:-ml-3 its
+                 px-3, so the link text starts on the same line and edge as the
+                 breadcrumb and the "On this page" heading, which have no such
+                 padding. Shifting the box (rather than the nav inside it) keeps
+                 the hover pills inside the scroll area, so scrolling a long nav
+                 never produces a horizontal scrollbar. */}
+             <div class="sticky top-24 space-y-8 -mt-1.5 lg:-ml-3 lg:max-h-[calc(100vh-7rem)] lg:overflow-y-auto">
+                 <nav class="space-y-1" aria-label="Documentation Sidebar">
                     <NavTree nodes={sidebarNodes} currentPath={normalizedCurrentPath} />
                  </nav>
              </div>
