@@ -84,7 +84,7 @@ export const NAV_LINKS = [
     children: [
       { href: '/skills', label: 'Skills', description: 'Agent skill library', icon: 'Wand2' },
       { href: '/blueprints', label: 'Semantic Blueprints', description: 'Semantic blueprint library', icon: 'Database' },
-      { href: '/docs/overview', label: 'Docs', description: 'Start building today', icon: 'Book', localize: false },
+      { href: '/docs/reference/overview', label: 'Docs', description: 'Start building today', icon: 'Book', localize: false },
       { href: '/blog', label: 'Blog', description: 'Latest updates & guides', icon: 'Newspaper' },
       { href: '/changelog', label: 'Changelog', description: 'New features & fixes', icon: 'FileClock' },
     ]
@@ -101,7 +101,7 @@ export const NAV_LINKS = [
 ];
 
 export const ACTION_LINKS = {
-  primary: { label: 'Get Started', href: '/docs/overview' },
+  primary: { label: 'Get Started', href: '/docs/reference/overview' },
   signIn: { label: 'Sign in', href: 'https://app.semantius.com/' },
   social: {
     twitter: 'https://twitter.com/gladtek',

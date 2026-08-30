@@ -106,6 +106,50 @@ export function serializeTree(node: NavNode): SerializableNavNode {
   };
 }
 
+// A "collection" is a top-level folder under src/content/docs, surfaced as a
+// tab above the docs columns. Array order is the tab display order; adding a
+// future collection means adding a folder plus one row here.
+export interface DocsCollectionDef {
+  slug: string;
+  label: string;
+}
+
+export const DOCS_COLLECTIONS: DocsCollectionDef[] = [
+  { slug: 'guide', label: 'Guide' },
+  { slug: 'reference', label: 'Reference' },
+];
+
+// Where /docs lands, and the fallback sidebar for any docs page outside a
+// registered collection. Guide is a placeholder for now.
+export const DEFAULT_DOCS_COLLECTION = 'reference';
+
+export interface DocsCollectionNav {
+  slug: string;
+  label: string;
+  node: NavNode;
+  landingPath: string;
+}
+
+export function getDocsCollectionNavs(tree: NavNode): DocsCollectionNav[] {
+  return DOCS_COLLECTIONS.flatMap((def) => {
+    const node = tree.children.find((c) => c.segment === def.slug);
+    // A registry entry without a matching folder is skipped rather than
+    // rendering a tab that 404s.
+    if (!node) return [];
+    // A collection folder with its own index.mdx is its landing page;
+    // otherwise the first page in display order stands in for it.
+    const landingPath = node.doc ? node.path : (flattenTree(node)[0]?.path ?? node.path);
+    return [{ slug: def.slug, label: def.label, node, landingPath }];
+  });
+}
+
+export function findCollectionForPath(
+  navs: DocsCollectionNav[],
+  path: string,
+): DocsCollectionNav | null {
+  return navs.find((c) => path === c.node.path || path.startsWith(`${c.node.path}/`)) ?? null;
+}
+
 // Find the topmost ancestor (just under root) of the node matching a path.
 export function findTopAncestor(root: NavNode, path: string): NavNode | null {
   for (const child of root.children) {

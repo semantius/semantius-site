@@ -1,0 +1,32 @@
+---
+import { clsx } from 'clsx';
+
+interface Props {
+  tabs: { slug: string; label: string; href: string; active: boolean }[];
+}
+
+const { tabs } = Astro.props;
+---
+
+<nav
+  aria-label="Documentation sections"
+  data-pagefind-ignore
+  class="mb-8 border-b border-foreground/10"
+>
+  <ul class="-mb-px flex items-center gap-6 overflow-x-auto list-none p-0 m-0">
+    {tabs.map((t) => (
+      <li class="shrink-0">
+        <a
+          href={t.href}
+          aria-current={t.active ? 'page' : undefined}
+          class={clsx(
+            'inline-flex items-center border-b-2 px-1 pb-3 text-sm font-medium transition-colors',
+            t.active
+              ? 'border-primary text-primary'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:border-foreground/30'
+          )}
+        >{t.label}</a>
+      </li>
+    ))}
+  </ul>
+</nav>

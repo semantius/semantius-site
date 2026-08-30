@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import DevSearchModal from "./DevSearchModal";
 
 const POPULAR_LINKS = [
-  { label: "Overview", href: "/docs/overview/", icon: Book },
+  { label: "Overview", href: "/docs/reference/overview/", icon: Book },
   { label: "Features", href: "/features/", icon: Zap },
   { label: "Design System", href: "/design/", icon: LayoutGrid },
   { label: "Blog", href: "/blog/", icon: FileText },

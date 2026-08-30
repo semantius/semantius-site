@@ -1,15 +1,18 @@
 ---
 import Layout from '~/layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import { buildDocsTree, flattenTree } from '~/lib/docs-tree';
+import {
+    buildDocsTree,
+    getDocsCollectionNavs,
+    DEFAULT_DOCS_COLLECTION,
+} from '~/lib/docs-tree';
 
 const docs = await getCollection('docs');
-const tree = buildDocsTree(docs);
-const flat = flattenTree(tree);
-const first = flat[0];
+const navs = getDocsCollectionNavs(buildDocsTree(docs));
+const target = navs.find((c) => c.slug === DEFAULT_DOCS_COLLECTION) ?? navs[0];
 
-if (first) {
-    return Astro.redirect(first.path);
+if (target) {
+    return Astro.redirect(target.landingPath);
 }
 ---
 

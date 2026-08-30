@@ -94,7 +94,7 @@ function NavBranch({ node, currentPath, depth, onNavigate }) {
   );
 }
 
-export default function MobileDocsMenu({ tree, currentPath }) {
+export default function MobileDocsMenu({ nodes, collections = [], currentPath }) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -155,9 +155,27 @@ export default function MobileDocsMenu({ tree, currentPath }) {
                 </button>
               </div>
 
+              {collections.length > 1 && (
+                <div className="flex gap-2 px-6 py-4 border-b border-foreground/5">
+                  {collections.map((c) => (
+                    <a
+                      key={c.slug}
+                      href={c.href}
+                      className={`flex-1 text-center rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+                        c.active
+                          ? 'bg-primary/10 text-primary'
+                          : 'bg-foreground/5 text-foreground/60 hover:text-foreground'
+                      }`}
+                    >
+                      {c.label}
+                    </a>
+                  ))}
+                </div>
+              )}
+
               <nav className="flex-1 overflow-y-auto p-6">
                 <ul className="space-y-1 list-none p-0 m-0">
-                  {tree.children.map((node) => (
+                  {nodes.map((node) => (
                     <NavBranch
                       key={node.path}
                       node={node}
@@ -171,7 +189,7 @@ export default function MobileDocsMenu({ tree, currentPath }) {
 
               <div className="p-6 border-t border-foreground/5 bg-foreground/2">
                 <a
-                  href="/docs/overview"
+                  href="/docs/reference/overview"
                   className="flex items-center justify-center w-full px-4 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all text-sm"
                 >
                   Quick Start Guide

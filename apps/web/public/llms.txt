@@ -26,7 +26,8 @@ npx create-astro@latest --template GladTek/astro-gladtek-template-v0
 
 - [Home](/) - The landing page demonstrating the "Bento Grid" layout and features.
 - [Documentation](/docs) - Comprehensive guides on using the boilerplate.
-- [Components](/docs/components) - A catalog of available UI components.
+- [Reference](/docs/reference/overview) - Reference documentation for models, business logic, MCP connectors, agent skills and the CLI.
+- [Guide](/docs/guide) - Step-by-step guides.
 - [Changelog](/changelog) - Version history and updates.
 - [Blog](/blog) - Articles and tutorials.
 - [Pricing](/pricing) - Example pricing tier layout.

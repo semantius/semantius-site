@@ -5,7 +5,7 @@ description: 'A short tour of the standard JsonLogic expression language used to
 order: 1
 ---
 
-[JsonLogic](https://jsonlogic.com/) is a small, portable rule language that expresses boolean tests, arithmetic, and data lookups as plain JSON. Semantius uses it as the substrate for all four [business-logic extension points](/docs/business-logic), with a few [Semantius-specific additions](/docs/business-logic/extensions) layered on top.
+[JsonLogic](https://jsonlogic.com/) is a small, portable rule language that expresses boolean tests, arithmetic, and data lookups as plain JSON. Semantius uses it as the substrate for all four [business-logic extension points](/docs/reference/business-logic), with a few [Semantius-specific additions](/docs/reference/business-logic/extensions) layered on top.
 
 This page is a quick orientation. For the full operator catalog, refer to the upstream documentation:
 
@@ -33,7 +33,7 @@ Anything that is not an object with one of the known operator keys is returned a
 | `and`, `or`, `!` | Boolean composition and negation. |
 | `if` | Three-argument ternary: `{"if": [<cond>, <then>, <else>]}`. Accepts more arguments for `if / elseif / else` chains. |
 | `+`, `-`, `*`, `/`, `%` | Arithmetic. |
-| `cat` | String concatenation (treats `null` as `"null"`, unlike the Semantius [`concat`](/docs/business-logic/extensions) extension). |
+| `cat` | String concatenation (treats `null` as `"null"`, unlike the Semantius [`concat`](/docs/reference/business-logic/extensions) extension). |
 | `in` | Membership test in an array or substring test in a string. |
 | `map`, `filter`, `reduce`, `all`, `none`, `some` | Array combinators. |
 | `merge` | Flatten arrays. |
@@ -86,4 +86,4 @@ Anything that is not an object with one of the known operator keys is returned a
 
 ## What Semantius adds
 
-Semantius extends standard JsonLogic with reserved variables (`$today`, `$now`, `$user_id`, `$old`) and platform operators (`let`, `set_record`, `has_permission`, `require_permission`, `is_raci_actor`, `has_consultation`, `value_changed`, `concat`, `is_match`, `throw_error`). The extensions are scoped to the request the rule runs in and have no analog upstream. See [JsonLogic extensions](/docs/business-logic/extensions) for the full list.
+Semantius extends standard JsonLogic with reserved variables (`$today`, `$now`, `$user_id`, `$old`) and platform operators (`let`, `set_record`, `has_permission`, `require_permission`, `is_raci_actor`, `has_consultation`, `value_changed`, `concat`, `is_match`, `throw_error`). The extensions are scoped to the request the rule runs in and have no analog upstream. See [JsonLogic extensions](/docs/reference/business-logic/extensions) for the full list.

@@ -247,6 +247,9 @@ function getNoIndexUrls() {
           let relative = path.relative(contentDir, filePath);
           let urlPath = relative.replace(/\.(md|mdx)$/, '');
           urlPath = urlPath.replace(/\\/g, '/');
+          // A folder's index.mdx is served at the bare folder URL (see the
+          // docs route), so strip it or the noindex entry never matches.
+          urlPath = urlPath.replace(/\/index$/, '');
           if (!urlPath.startsWith('/')) urlPath = '/' + urlPath;
           urls.add(urlPath);
           urls.add(urlPath + '/');
@@ -355,24 +358,49 @@ function getAdapter() {
   }
 }
 
-// Legacy flat docs URLs (kept around because they were the only scheme before
-// the nested-folder refactor). 301 to the new nested URL so external links and
-// blog posts keep working.
+// Docs URLs have moved twice: flat -> nested folders, then nested -> grouped
+// under a sub-collection (/docs/reference/...). Every legacy URL points at its
+// final destination rather than chaining through the intermediate scheme.
 const docsLegacyRedirects = {
-  '/docs/models-overview': '/docs/models',
-  '/docs/models-structure': '/docs/models/structure',
-  '/docs/models-create': '/docs/models/create',
-  '/docs/models-templates': '/docs/models/templates',
-  '/docs/models-deploy': '/docs/models/deploy',
-  '/docs/models-optimize': '/docs/models/optimize',
-  '/docs/mcp-connectors-overview': '/docs/mcp-connectors',
-  '/docs/mcp-connectors-installation': '/docs/mcp-connectors/installation',
-  '/docs/agent-skills-overview': '/docs/agent-skills',
-  '/docs/agent-skills-installation': '/docs/agent-skills/installation',
-  '/docs/cli-overview': '/docs/cli',
-  '/docs/cli-command': '/docs/cli/command',
-  '/docs/cli-skill': '/docs/cli/use-semantius',
-  '/docs/cli/skill': '/docs/cli/use-semantius',
+  // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
+  '/docs/models-overview': '/docs/reference/models',
+  '/docs/models-structure': '/docs/reference/models/structure',
+  '/docs/models-create': '/docs/reference/models/create',
+  '/docs/models-templates': '/docs/reference/models/templates',
+  '/docs/models-deploy': '/docs/reference/models/deploy',
+  '/docs/models-optimize': '/docs/reference/models/optimize',
+  '/docs/mcp-connectors-overview': '/docs/reference/mcp-connectors',
+  '/docs/mcp-connectors-installation': '/docs/reference/mcp-connectors/installation',
+  '/docs/agent-skills-overview': '/docs/reference/agent-skills',
+  '/docs/agent-skills-installation': '/docs/reference/agent-skills/installation',
+  '/docs/cli-overview': '/docs/reference/cli',
+  '/docs/cli-command': '/docs/reference/cli/command',
+  '/docs/cli-skill': '/docs/reference/cli/use-semantius',
+  '/docs/cli/skill': '/docs/reference/cli/use-semantius',
+
+  // Scheme 2: nested folders, before the docs split into sub-collections.
+  '/docs/overview': '/docs/reference/overview',
+  '/docs/models': '/docs/reference/models',
+  '/docs/models/structure': '/docs/reference/models/structure',
+  '/docs/models/create': '/docs/reference/models/create',
+  '/docs/models/templates': '/docs/reference/models/templates',
+  '/docs/models/deploy': '/docs/reference/models/deploy',
+  '/docs/models/optimize': '/docs/reference/models/optimize',
+  '/docs/business-logic': '/docs/reference/business-logic',
+  '/docs/business-logic/jsonlogic': '/docs/reference/business-logic/jsonlogic',
+  '/docs/business-logic/extensions': '/docs/reference/business-logic/extensions',
+  '/docs/mcp-connectors': '/docs/reference/mcp-connectors',
+  '/docs/mcp-connectors/installation': '/docs/reference/mcp-connectors/installation',
+  '/docs/agent-skills': '/docs/reference/agent-skills',
+  '/docs/agent-skills/installation': '/docs/reference/agent-skills/installation',
+  '/docs/cli': '/docs/reference/cli',
+  '/docs/cli/command': '/docs/reference/cli/command',
+  '/docs/cli/use-semantius': '/docs/reference/cli/use-semantius',
+
+  // A collection folder without its own index.mdx generates no page for its
+  // root, so point it at its landing page. Any future collection added without
+  // a root index.mdx needs a row here too.
+  '/docs/reference': '/docs/reference/overview',
 };
 
 // https://astro.build/config

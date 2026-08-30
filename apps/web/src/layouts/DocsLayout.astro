@@ -6,11 +6,15 @@ import type { MarkdownHeading } from 'astro';
 import ScrollProgress from '~/components/layout/ScrollProgress.astro';
 import MobileDocsMenu from '~/components/islands/MobileDocsMenu';
 import NavTree from '~/components/docs/NavTree.astro';
+import DocsTabs from '~/components/docs/DocsTabs.astro';
 import {
   buildDocsTree,
   flattenTree,
   findTopAncestor,
   serializeTree,
+  getDocsCollectionNavs,
+  findCollectionForPath,
+  DEFAULT_DOCS_COLLECTION,
 } from '~/lib/docs-tree';
 
 interface Props {
@@ -25,7 +29,6 @@ const { title, description, noindex, nofollow, headings = [] } = Astro.props;
 
 const docs = await getCollection('docs');
 const tree = buildDocsTree(docs);
-const flat = flattenTree(tree);
 
 const currentPath = Astro.url.pathname;
 const normalizedCurrentPath =
@@ -33,30 +36,61 @@ const normalizedCurrentPath =
     ? currentPath.slice(0, -1)
     : currentPath;
 
+// Everything below the tabs is scoped to the active collection: the sidebar,
+// prev/next and the breadcrumb section all work off its subtree, so navigation
+// never bleeds from one collection into another.
+const collectionNavs = getDocsCollectionNavs(tree);
+const activeCollection =
+  findCollectionForPath(collectionNavs, normalizedCurrentPath) ??
+  collectionNavs.find((c) => c.slug === DEFAULT_DOCS_COLLECTION) ??
+  collectionNavs[0];
+
+const tabs = collectionNavs.map((c) => ({
+  slug: c.slug,
+  label: c.label,
+  href: c.landingPath,
+  active: c.slug === activeCollection?.slug,
+}));
+
+const collectionRoot = activeCollection?.node ?? tree;
+// When the collection folder is itself a page (its own index.mdx), show it as
+// the first sidebar entry — dropping its children so it renders as a plain
+// link rather than a duplicate of the section list below it.
+const sidebarNodes = collectionRoot.doc
+  ? [{ ...collectionRoot, children: [] }, ...collectionRoot.children]
+  : collectionRoot.children;
+
+const flat = flattenTree(collectionRoot);
 const currentIndex = flat.findIndex((n) => n.path === normalizedCurrentPath);
 const prevNode = currentIndex > 0 ? flat[currentIndex - 1] : null;
 const nextNode =
   currentIndex >= 0 && currentIndex < flat.length - 1 ? flat[currentIndex + 1] : null;
 
-// Breadcrumb: name of the topmost ancestor folder, if the current doc lives
-// inside one. Root-level docs show no section label.
-const topAncestor = findTopAncestor(tree, normalizedCurrentPath);
+// Breadcrumb: name of the topmost ancestor folder within the collection, if the
+// current doc lives inside one. The collection itself is already shown as the
+// active tab, so it is deliberately left out of the trail.
+const topAncestor = findTopAncestor(collectionRoot, normalizedCurrentPath);
 const currentSectionLabel =
   topAncestor && topAncestor.path !== normalizedCurrentPath ? topAncestor.navTitle : null;
 
-const serializedTree = serializeTree(tree);
+const serializedNodes = sidebarNodes.map(serializeTree);
 ---
 
 <UntranslatedLayout title={title} description={description} noindex={noindex} nofollow={nofollow}>
   <ScrollProgress />
-  <div class="max-w-360 mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex w-full lg:grid lg:grid-cols-[280px_1fr_240px] gap-10 pt-32 pb-24">
+  <div class="max-w-360 mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
+    <DocsTabs tabs={tabs} />
+    <div class="flex w-full lg:grid lg:grid-cols-[280px_1fr_240px] gap-10">
 
         {/* Sidebar Navigation */}
         <aside class="hidden lg:block fixed inset-y-0 left-0 z-20 w-72 overflow-y-auto border-r border-foreground/5 bg-background px-6 pb-4 pt-32 lg:static lg:w-auto lg:border-r-0 lg:bg-transparent lg:px-0 lg:pb-0 lg:pt-0">
              <div class="sticky top-24 space-y-8">
-                 <nav class="space-y-1" aria-label="Documentation Sidebar">
-                    <NavTree nodes={tree.children} currentPath={normalizedCurrentPath} />
+                 {/* The negative margins cancel the first nav link's own px-3
+                     py-1.5, so its text aligns with the breadcrumb and the
+                     "On this page" heading, which have no such padding. Hover
+                     pills keep their full padding and overhang into the gap. */}
+                 <nav class="space-y-1 -mx-3 -mt-1.5" aria-label="Documentation Sidebar">
+                    <NavTree nodes={sidebarNodes} currentPath={normalizedCurrentPath} />
                  </nav>
              </div>
         </aside>
@@ -82,7 +116,8 @@ const serializedTree = serializeTree(tree);
 
                 <MobileDocsMenu
                     client:load
-                    tree={serializedTree}
+                    nodes={serializedNodes}
+                    collections={tabs}
                     currentPath={Astro.url.pathname}
                 />
              </div>
