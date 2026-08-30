@@ -94,7 +94,7 @@ function NavBranch({ node, currentPath, depth, onNavigate }) {
   );
 }
 
-export default function MobileDocsMenu({ nodes, collections = [], currentPath }) {
+export default function MobileDocsMenu({ nodes, collections, currentPath }) {
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export default function MobileDocsMenu({ nodes, collections = [], currentPath })
                 </button>
               </div>
 
-              {collections.length > 1 && (
+              {collections?.length > 1 && (
                 <div className="flex gap-2 px-6 py-4 border-b border-foreground/5">
                   {collections.map((c) => (
                     <a

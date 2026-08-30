@@ -396,11 +396,6 @@ const docsLegacyRedirects = {
   '/docs/cli': '/docs/reference/cli',
   '/docs/cli/command': '/docs/reference/cli/command',
   '/docs/cli/use-semantius': '/docs/reference/cli/use-semantius',
-
-  // A collection folder without its own index.mdx generates no page for its
-  // root, so point it at its landing page. Any future collection added without
-  // a root index.mdx needs a row here too.
-  '/docs/reference': '/docs/reference/overview',
 };
 
 // https://astro.build/config

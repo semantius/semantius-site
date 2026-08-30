@@ -66,12 +66,20 @@ const prevNode = currentIndex > 0 ? flat[currentIndex - 1] : null;
 const nextNode =
   currentIndex >= 0 && currentIndex < flat.length - 1 ? flat[currentIndex + 1] : null;
 
-// Breadcrumb: name of the topmost ancestor folder within the collection, if the
-// current doc lives inside one. The collection itself is already shown as the
-// active tab, so it is deliberately left out of the trail.
+// Breadcrumb: Docs › <collection> › <section> › <page>, mirroring the URL. A
+// level is dropped when it is the page itself, so the trail never links to the
+// page you are already on — on a collection start page it reads Docs › Guide.
 const topAncestor = findTopAncestor(collectionRoot, normalizedCurrentPath);
 const currentSectionLabel =
   topAncestor && topAncestor.path !== normalizedCurrentPath ? topAncestor.navTitle : null;
+
+const crumbs: { label: string; href: string }[] = [{ label: 'Docs', href: '/docs' }];
+if (activeCollection && activeCollection.node.path !== normalizedCurrentPath) {
+  crumbs.push({ label: activeCollection.label, href: activeCollection.landingPath });
+}
+if (currentSectionLabel && topAncestor) {
+  crumbs.push({ label: currentSectionLabel, href: topAncestor.path });
+}
 
 const serializedNodes = sidebarNodes.map(serializeTree);
 ---
@@ -106,17 +114,15 @@ const serializedNodes = sidebarNodes.map(serializeTree);
              {/* Breadcrumbs & Mobile Menu */}
              <div class="mb-6 flex items-center justify-between gap-4" data-pagefind-ignore>
                 <div class="flex items-center gap-2 text-sm text-muted-foreground">
-                    <a href="/docs" class="hover:text-foreground transition-colors">Docs</a>
-                    <span class="text-foreground/30" aria-hidden="true">›</span>
-                    {currentSectionLabel && (
+                    {crumbs.map((crumb) => (
                         <>
                             <a
-                              href={topAncestor!.path}
+                              href={crumb.href}
                               class="hover:text-foreground transition-colors"
-                            >{currentSectionLabel}</a>
+                            >{crumb.label}</a>
                             <span class="text-foreground/30" aria-hidden="true">›</span>
                         </>
-                    )}
+                    ))}
                     <span class="text-foreground">{title}</span>
                 </div>
 

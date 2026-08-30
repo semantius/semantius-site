@@ -1,25 +1,58 @@
 ---
 import Layout from '~/layouts/Layout.astro';
 import { getCollection } from 'astro:content';
-import {
-    buildDocsTree,
-    getDocsCollectionNavs,
-    DEFAULT_DOCS_COLLECTION,
-} from '~/lib/docs-tree';
+import { buildDocsTree, getDocsCollectionNavs } from '~/lib/docs-tree';
 
+// The docs hub: one card per sub-collection, ordered by the DOCS_COLLECTIONS
+// registry. Adding a collection there (plus its content folder) adds a card.
 const docs = await getCollection('docs');
-const navs = getDocsCollectionNavs(buildDocsTree(docs));
-const target = navs.find((c) => c.slug === DEFAULT_DOCS_COLLECTION) ?? navs[0];
-
-if (target) {
-    return Astro.redirect(target.landingPath);
-}
+const collections = getDocsCollectionNavs(buildDocsTree(docs));
 ---
 
-<Layout title="Documentation" noindex={true} nofollow={true}>
-    <div class="max-w-7xl mx-auto px-6 pt-32 pb-24 text-center">
-        <h1 class="text-4xl font-bold mb-4 text-foreground">Documentation</h1>
-        <p class="text-xl text-foreground/70 mb-8">No documentation found.</p>
-        <a href="/" class="text-primary hover:text-primary/80 transition-colors">Go back home</a>
-    </div>
+<Layout
+    title="Documentation"
+    description="Guides and reference documentation for building on Semantius."
+    searchable={false}
+>
+    <section class="pt-32 pb-24">
+        <div class="max-w-3xl mx-auto px-6">
+            <h1 class="text-4xl font-display font-normal lg:text-[56px]">Documentation</h1>
+            <p class="mt-6 text-lg text-foreground/80">
+                Everything you need to describe your business as a semantic model and put it
+                to work for both humans and AI agents.
+            </p>
+
+            {collections.length > 0 ? (
+                <div class="mt-16 grid gap-6 sm:grid-cols-2">
+                    {collections.map((c) => (
+                        <a
+                            href={c.landingPath}
+                            class="group flex flex-col gap-3 p-6 rounded-2xl border border-foreground/10 hover:border-primary/30 hover:bg-primary/5 transition-all"
+                        >
+                            <span class="inline-flex items-center gap-2 text-lg font-bold text-foreground group-hover:text-primary transition-colors">
+                                {c.label}
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2"
+                                    stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                                    aria-hidden="true"
+                                >
+                                    <path d="M5 12h14" />
+                                    <path d="m12 5 7 7-7 7" />
+                                </svg>
+                            </span>
+                            <span class="text-foreground/70">{c.description}</span>
+                        </a>
+                    ))}
+                </div>
+            ) : (
+                <p class="mt-16 text-xl text-foreground/70">No documentation found.</p>
+            )}
+        </div>
+    </section>
 </Layout>

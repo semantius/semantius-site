@@ -112,11 +112,23 @@ export function serializeTree(node: NavNode): SerializableNavNode {
 export interface DocsCollectionDef {
   slug: string;
   label: string;
+  /** Shown on the /docs hub card. */
+  description: string;
 }
 
 export const DOCS_COLLECTIONS: DocsCollectionDef[] = [
-  { slug: 'guide', label: 'Guide' },
-  { slug: 'reference', label: 'Reference' },
+  {
+    slug: 'guide',
+    label: 'Guide',
+    description:
+      'Step-by-step walkthroughs that take you from a blank project to a deployed semantic model.',
+  },
+  {
+    slug: 'reference',
+    label: 'Reference',
+    description:
+      'Detailed documentation for models, business logic, MCP connectors, agent skills and the CLI.',
+  },
 ];
 
 // Where /docs lands, and the fallback sidebar for any docs page outside a
@@ -126,6 +138,7 @@ export const DEFAULT_DOCS_COLLECTION = 'reference';
 export interface DocsCollectionNav {
   slug: string;
   label: string;
+  description: string;
   node: NavNode;
   landingPath: string;
 }
@@ -136,10 +149,11 @@ export function getDocsCollectionNavs(tree: NavNode): DocsCollectionNav[] {
     // A registry entry without a matching folder is skipped rather than
     // rendering a tab that 404s.
     if (!node) return [];
-    // A collection folder with its own index.mdx is its landing page;
-    // otherwise the first page in display order stands in for it.
+    // Every collection should have its own index.mdx start page, which the tab
+    // and the breadcrumb both link to. The fallback keeps a collection that
+    // lacks one navigable, landing on its first page instead.
     const landingPath = node.doc ? node.path : (flattenTree(node)[0]?.path ?? node.path);
-    return [{ slug: def.slug, label: def.label, node, landingPath }];
+    return [{ slug: def.slug, label: def.label, description: def.description, node, landingPath }];
   });
 }
 
