@@ -17,6 +17,19 @@ The auto-memory directory at `~/.claude/projects/.../memory/` (and any equivalen
 
 Audit every file before saving. If existing content contains em/en dashes, fix them as part of the task.
 
+## Cloud Agent environment
+
+The workspace root is `/workspace`. Bootstrap lives at `workplace/setup.sh` (absolute: `/workspace/workplace/setup.sh`). Every existing caller already uses that relative path:
+
+- `.cursor/environment.json` `install`: `bash workplace/setup.sh`
+- `.devcontainer/devcontainer.json` `postCreateCommand`
+- `.github/workflows/copilot-setup-steps.yml`
+- `.claude/settings.json` SessionStart hook
+
+`/workplace/setup.sh` is not a real path. A personal dashboard install set to that value fails immediately with `bash: /workplace/setup.sh: No such file or directory` (exit 127) and never installs dependencies. Use the repo-relative command, not an absolute `/workplace/...` path.
+
+Cursor Cloud also prepends `/exec-daemon` to PATH. That `node` makes `npm prefix -g` resolve to `/`, so a naive `npm install -g` fails with `EACCES` on `/usr/lib/node_modules`. `workplace/setup.sh` prepends the nvm bin directory (and falls back to `$HOME/.npm-global`) before installing agent-browser, dotenvx, and wrangler.
+
 ## Packages
 
 ### `apps/web`

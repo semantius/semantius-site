@@ -1,13 +1,40 @@
 #!/bin/bash
 
 # Current script version
-VERSION="003"
+VERSION="004"
 
 # Setup workplace script
-# This script configures the environment and dependencies after checkout
+# This script configures the environment and dependencies after checkout.
+#
+# Invoke from the repository root (Cursor Cloud Agent cwd is /workspace):
+#   bash workplace/setup.sh
+# Do not use /workplace/setup.sh. That path is not the workspace root and
+# does not exist on Cloud Agent VMs. The script lives at workplace/setup.sh
+# (absolute: /workspace/workplace/setup.sh).
 
-# Get the directory where this script is located
+# Get the directory where this script is located and always run from repo root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+cd "$REPO_ROOT"
+
+# Cursor Cloud puts /exec-daemon ahead of nvm on PATH. That node binary
+# makes `npm prefix -g` resolve to "/" (not writable by ubuntu), so
+# `npm install -g` fails with EACCES on /usr/lib/node_modules. Prefer
+# nvm's node when present so globals land in the user-owned nvm prefix.
+if [ -d "${HOME}/.nvm/versions/node" ]; then
+    NVM_NODE_BIN="$(ls -d "${HOME}/.nvm/versions/node"/v*/bin 2>/dev/null | sort -V | tail -1)"
+    if [ -n "$NVM_NODE_BIN" ] && [ -x "$NVM_NODE_BIN/npm" ]; then
+        export PATH="$NVM_NODE_BIN:$PATH"
+    fi
+fi
+
+NPM_PREFIX="$(npm prefix -g 2>/dev/null || true)"
+if [ -z "$NPM_PREFIX" ] || [ ! -w "$NPM_PREFIX" ]; then
+    export NPM_CONFIG_PREFIX="${HOME}/.npm-global"
+    mkdir -p "${NPM_CONFIG_PREFIX}/bin"
+    export PATH="${NPM_CONFIG_PREFIX}/bin:$PATH"
+    echo "npm global prefix is not writable; using ${NPM_CONFIG_PREFIX}"
+fi
 
 # Function to send messages (wrapper around message.sh)
 send_message() {
@@ -174,7 +201,7 @@ if [ "${CLAUDECODE:-}" = "1" ] && [ "${CLAUDE_CODE_REMOTE:-}" = "true" ]; then
     fi
     _EXPECTED_BIN="/root/.cache/ms-playwright/chromium_headless_shell-${_REQUIRED_REV}/chrome-headless-shell-linux64/chrome-headless-shell"
     if [ -n "$_REQUIRED_REV" ] && [ ! -f "$_EXPECTED_BIN" ] && [ ! -L "$_EXPECTED_BIN" ]; then
-        echo "Detected Claude remote sandbox and agent-browser chromium fix is needed — applying compatibility fix..."
+        echo "Detected Claude remote sandbox and agent-browser chromium fix is needed; applying compatibility fix..."
         fix_agent_browser_claude_sandbox
     fi
 fi
