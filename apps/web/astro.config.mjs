@@ -451,12 +451,12 @@ export default defineConfig({
       }
     }),
     react(),
-    mdx({
-      rehypePlugins: [
-        rehypeSlug,
-        [rehypeAutolinkHeadings, autolinkHeadingsOptions],
-      ],
-    }),
+    // @astrojs/mdx 8 delegates MDX processing to `markdown.processor`, so
+    // MDX files inherit the remark/rehype plugins configured in the
+    // `unified()` call above (rehypeSlug and rehypeAutolinkHeadings among
+    // them). Passing `rehypePlugins` to `mdx()` is deprecated and ignored
+    // as of mdx 8, and warns on every build.
+    mdx(),
     mermaidEnhanced(),
     // CSS compression is left to Astro/Vite's native (lightningcss) minifier.
     // astro-compress must NOT touch CSS: its bundled csso minifier does not
