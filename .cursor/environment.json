@@ -1,0 +1,4 @@
+{
+  "name": "semantius-site",
+  "install": "bash workplace/setup.sh"
+}
