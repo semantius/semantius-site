@@ -398,11 +398,35 @@ const docsLegacyRedirects = {
   '/docs/cli/use-semantius': '/docs/reference/cli/use-semantius',
 };
 
+// "Semantic models" were renamed to "semantic blueprints" and the whole
+// /models/* route tree moved to /blueprints/*, which left /models a live 404.
+// The catalog was rebuilt in the same change, so none of the old model slugs
+// survive as blueprint slugs: every old page URL points at the catalog rather
+// than at a per-slug destination that would only 301 into another 404. These
+// are the twelve slugs the route served before it was removed (the `models/`
+// directory as of commit 5728e3f^). A dynamic `[...slug]` catch-all is not an
+// option: Astro rejects a redirect whose destination drops the source's params.
+const legacyModelSlugs = [
+  'apm', 'ats', 'cdp', 'cmdb', 'equipment_lease_management', 'itam',
+  'itsm', 'nwind', 'product_roadmap', 'saas_expense_tracker',
+  'workforce_planning', 'zero_based_budgeting',
+];
+
+const blueprintLegacyRedirects = {
+  '/models': '/blueprints',
+  ...Object.fromEntries(
+    legacyModelSlugs.flatMap((slug) => [
+      [`/models/${slug}`, '/blueprints'],
+      [`/models/${slug}/model`, '/blueprints'],
+    ]),
+  ),
+};
+
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
   output: 'static',
-  redirects: docsLegacyRedirects,
+  redirects: { ...docsLegacyRedirects, ...blueprintLegacyRedirects },
   fonts: [
     {
       provider: fontProviders.google(),

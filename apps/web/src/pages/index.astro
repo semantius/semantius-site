@@ -8,6 +8,9 @@ import LatestPosts from '~/components/sections/LatestPosts.astro';
 import CTA from '~/components/sections/CTA.astro';
 import FAQ from '~/components/sections/FAQ.astro';
 import OpenSourceNotification from '~/components/common/OpenSourceNotification.astro';
+import Container from '~/components/ui/Container.astro';
+import Grid from '~/components/ui/Grid.astro';
+import { Database, Github, Users } from 'lucide-react';
 
 const comparisonRows = [
   { label: 'Time to first version', point: 'Days', custom: 'Weeks', semantius: 'Minutes' },
@@ -15,6 +18,35 @@ const comparisonRows = [
   { label: 'Maintenance burden', point: "Vendor's roadmap", custom: 'Yours, forever', semantius: 'Just the model' },
   { label: 'Agents can act safely', point: 'No (or bolted-on)', custom: 'Only if you build it', semantius: 'Yes, by default' },
   { label: 'Lock-in', point: 'High', custom: 'None', semantius: 'None (open model + Postgres)' },
+];
+
+// The three points an answer engine has to be able to find in the visible copy:
+// it runs on PostgreSQL you can own, it is MIT open source and self-hostable,
+// and it serves people as well as agents. Keep these words on the page.
+const pillars = [
+    {
+        title: 'Runs on PostgreSQL you own',
+        description: 'Every entity you define is a real PostgreSQL table, served over HTTP by PostgREST. Role based access control, row level security and audit logs are enforced inside the database, not in a layer in front of it.',
+        icon: Database,
+        color: 'text-sky-400',
+        bg: 'bg-sky-400/10',
+    },
+    {
+        title: 'Open source, MIT licensed',
+        description: 'The PostgreSQL extension, the CLI, the app and the full self-hosted stack are MIT licensed on GitHub. Run the whole platform on your own infrastructure for free, or let the managed cloud operate it for you.',
+        href: 'https://github.com/Semantius',
+        icon: Github,
+        color: 'text-emerald-400',
+        bg: 'bg-emerald-400/10',
+    },
+    {
+        title: 'A UI for people, tools for agents',
+        description: 'Your team gets dashboards, forms, grids and charts generated from the model. Your agents get MCP servers and a CLI. Both are bound by the same permissions and validation rules, because both read the same model.',
+        href: '/features',
+        icon: Users,
+        color: 'text-purple-400',
+        bg: 'bg-purple-400/10',
+    },
 ];
 
 const homeFaqs = [
@@ -27,7 +59,7 @@ const homeFaqs = [
 
 ---
 
-<Layout title="Semantius | Engineered for the Unknown" description="Semantius -The ultimate Astro starter Boilerplate for your next project. Made by Gladtek">
+<Layout title="Semantius | Engineered for the Unknown" description="Define your domain model and deploy a governed PostgreSQL backend: REST APIs, an admin UI for your team, and guardrails for your agents. Open source, MIT licensed, self-hosted or managed.">
     <Schema item={{
             "@context": "https://schema.org",
             "@type": "WebSite",
@@ -52,19 +84,14 @@ const homeFaqs = [
                 "@type": "Offer",
                 "price": "0",
                 "priceCurrency": "USD"
-            },
-            "aggregateRating": {
-                "@type": "AggregateRating",
-                "ratingValue": "4.9",
-                "ratingCount": "120"
             }
         }} />
 
     <Hero
-        badge="The Agentic Data Platform"
+        badge="The Open Source Agentic Data Platform"
         title="The Agent-Ready Architecture:"
         highlight="No SaaS Silos. No Custom Code Debt."
-        description={`Until now, you had two bad choices for the agentic age: buy a rigid SaaS that traps your data, or "vibe-code" a custom mess you have to maintain forever. Semantius is the third option: define your domain model and deploy. Your database, APIs, and agent guardrails are live instantly.`}
+        description={`Until now, you had two bad choices for the agentic age: buy a rigid SaaS that traps your data, or "vibe-code" a custom mess you have to maintain forever. Semantius is the third option: define your domain model and deploy. A real PostgreSQL database, REST APIs, an admin UI for your team and guardrails for your agents go live together. Open source under MIT, self-hosted or managed.`}
         primaryCta={{ text: 'Deploy your first blueprint', href: `/pricing` }}
         secondaryCta={{ text: 'Explore blueprint library', href: `/blueprints` }}
     />
@@ -94,6 +121,31 @@ const homeFaqs = [
                 </table>
             </div>
         </div>
+    </Section>
+
+    <Section class="py-16! md:py-20!">
+        <Container class="relative z-10">
+            <Grid cols={3}>
+                {pillars.map((pillar) => {
+                    const Icon = pillar.icon;
+                    const cardClass = "group block p-8 rounded-3xl bg-foreground/2 border border-foreground/10 hover:border-primary/20 hover:bg-foreground/3 transition-all duration-300";
+                    const inner = (
+                        <>
+                            <div class={`w-12 h-12 rounded-xl ${pillar.bg} ${pillar.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                                <Icon size={24} />
+                            </div>
+                            <h2 class="text-xl font-bold mb-3">{pillar.title}</h2>
+                            <p class="text-foreground/60 text-sm leading-relaxed">{pillar.description}</p>
+                        </>
+                    );
+                    return pillar.href ? (
+                        <a href={pillar.href} class={cardClass}>{inner}</a>
+                    ) : (
+                        <div class={cardClass}>{inner}</div>
+                    );
+                })}
+            </Grid>
+        </Container>
     </Section>
 
     <LatestPosts count={6}/>

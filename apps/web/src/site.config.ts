@@ -2,7 +2,9 @@
 
 export const siteConfig = {
   name: 'Semantius',
-  description: 'Premium Astro Boilerplate for explorers.',
+  // Site-wide fallback: used by any page that does not pass its own description,
+  // and quoted verbatim by search results, link previews and AI answer engines.
+  description: 'Define your domain model and deploy a governed PostgreSQL backend: REST APIs, an admin UI for your team, and guardrails for your agents. Open source, MIT licensed, self-hosted or managed.',
   logo: {
     src: '/semantius-logo.svg',
     srcDark: '/semantius-logo.svg',       // Used when strategy is 'switch'
@@ -57,7 +59,7 @@ export const siteConfig = {
     },
   },
   waitlister: {
-    // Waitlister.me widget key — used to render the sign-up form in the modal.
+    // Waitlister.me widget key: used to render the sign-up form in the modal.
     // Set WAITLISTER_KEY in your .env to enable it (data-waitlist-key value).
     waitlistKey: import.meta.env.WAITLISTER_KEY || '3-wGxQmqKCyY',
   },
@@ -89,7 +91,7 @@ export const NAV_LINKS = [
       { href: '/changelog', label: 'Changelog', description: 'New features & fixes', icon: 'FileClock' },
     ]
   },
-  // Company section temporarily hidden — restore when About/Contact pages are ready.
+  // Company section temporarily hidden: restore when About/Contact pages are ready.
   // {
   //   href: '/about',
   //   label: 'Company',
