@@ -92,6 +92,16 @@ There are no `prerender = false` routes, so Astro builds in `static` mode. Conse
 - `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
 - With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/blueprints/[id].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`.
 
+### Verifying adapter-specific output: bypass turbo, build in `apps/web`
+
+`ADAPTER` decides what the build emits, but it is **not part of turbo's cache key**. Running `ADAPTER=cloudflare pnpm build` from the repo root happily replays a cached node-adapter build, so the output you inspect is not the output you asked for. Build directly instead:
+
+```bash
+cd apps/web && ADAPTER=cloudflare npx astro build
+```
+
+The plain `pnpm build` (node adapter, server mode) is fine for catching compile errors but cannot verify anything the static targets generate. In particular the `redirects` map in `astro.config.mjs` materializes **only** in the adapter builds: `dist/client/_redirects` for Cloudflare, the Netlify equivalent for Netlify. A node-adapter build emits no redirect artifacts at all, which makes a broken redirect look like a missing one and vice versa.
+
 ### `markdown.processor` is the only place remark/rehype plugins are registered
 
 Both `.md` and `.mdx` render through the single `unified()` processor passed to
