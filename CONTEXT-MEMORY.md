@@ -58,6 +58,13 @@ Derive values with:
 
 **Never invent a `github.com/user-attachments/assets/` URL.** Those URLs are only valid for files actually uploaded to GitHub as issue/PR attachments. Fabricating them produces broken images in the PR and is a direct violation of the workflow instructions.
 
+### `agent-browser screenshot` needs an absolute path
+
+`agent-browser screenshot --full screenshots/<name>.png` prints `✓ Screenshot saved to ...`
+and then exits 2 without writing anything: the success line is not proof the file exists.
+Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`), and always
+`ls` the file afterwards before treating the verification step as done.
+
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
 The site deploys to **both Cloudflare (Workers static assets) and Netlify**. Both
