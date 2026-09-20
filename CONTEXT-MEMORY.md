@@ -85,6 +85,24 @@ There are no `prerender = false` routes, so Astro builds in `static` mode. Conse
 - `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
 - With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/blueprints/[id].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`.
 
+### `markdown.processor` is the only place remark/rehype plugins are registered
+
+Both `.md` and `.mdx` render through the single `unified()` processor passed to
+`markdown.processor` in `astro.config.mjs`. Astro 7 stopped merging
+`markdown.remarkPlugins` that integrations inject via `updateConfig`, and
+`@astrojs/mdx` 8 stopped running a pipeline of its own: it hands MDX to
+`markdown.processor` and warns that `remarkPlugins`, `rehypePlugins`,
+`recmaPlugins` and `remarkRehype` on `mdx({...})` are deprecated and ignored.
+
+So a new remark or rehype plugin belongs in the top-level `unified()` call, never
+in an integration option and never pushed in from an integration hook. Registering
+it anywhere else means it silently applies to nothing. The upside is that `.md` and
+`.mdx` cannot drift: heading slugs, autolinked heading anchors and the mermaid
+transform all reach both by construction.
+
+Related: `@astrojs/cloudflare` peer-requires a minimum `wrangler`, so the adapter
+and `wrangler` have to be bumped together or install reports an unmet peer.
+
 ### Site search is Pagefind, wired inline in `astro.config.mjs`
 
 - The index is produced by the inline `pagefindIndex()` integration, which must stay **last** in `integrations` (after `astro-compress`, which globs the whole output dir and would re-minify `pagefind*.js`).
