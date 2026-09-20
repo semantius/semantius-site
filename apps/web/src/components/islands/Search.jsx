@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Search as SearchIcon, X, Book, Zap, LayoutGrid, FileText, CornerDownRight } from "lucide-react";
+import { Search as SearchIcon, X, Book, Zap, BookOpen, FileText, CornerDownRight } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import DevSearchModal from "./DevSearchModal";
 
 const POPULAR_LINKS = [
   { label: "Overview", href: "/docs/reference/overview/", icon: Book },
   { label: "Features", href: "/features/", icon: Zap },
-  { label: "Design System", href: "/design/", icon: LayoutGrid },
+  { label: "Guides", href: "/docs/guide/", icon: BookOpen },
   { label: "Blog", href: "/blog/", icon: FileText },
 ];
 
