@@ -1,0 +1,186 @@
+---
+import { ChevronDown } from 'lucide-react';
+import { getNavIcon } from '~/lib/nav-icons';
+
+interface NavChild {
+  href: string;
+  label: string;
+  description?: string;
+  icon?: string;
+}
+
+interface NavLink {
+  href?: string;
+  label: string;
+  children?: NavChild[];
+}
+
+interface Props {
+  links: NavLink[];
+  currentPath?: string;
+}
+
+const { links, currentPath = '/' } = Astro.props;
+
+function isActive(href: string) {
+  if (href === '/') return currentPath === '/';
+  return currentPath.startsWith(href);
+}
+---
+
+<nav class="hidden md:flex items-center gap-6" data-desktop-nav aria-label="Main Navigation">
+  <ul class="flex items-center gap-6 m-0 p-0 list-none">
+    {links.map((link, index) => {
+      const isLinkActive =
+        isActive(link.href || '') ||
+        (link.children && link.children.some((child) => isActive(child.href)));
+
+      return (
+        <li class="relative" data-nav-item>
+          {link.children ? (
+            <button
+              type="button"
+              class:list={[
+                'flex items-center gap-1 text-sm font-medium transition-colors bg-transparent border-0 cursor-pointer p-0',
+                isLinkActive
+                  ? 'text-primary dark:text-blue-300'
+                  : 'text-foreground/70 hover:text-foreground dark:text-white dark:hover:text-blue-300',
+              ]}
+              aria-expanded="false"
+              aria-haspopup="true"
+              aria-controls={`dropdown-${index}`}
+            >
+              {link.label}
+              <ChevronDown className="nav-chevron w-4 h-4 transition-transform duration-200" aria-hidden="true" />
+            </button>
+          ) : (
+            <a
+              href={link.href}
+              class:list={[
+                'text-sm font-medium transition-colors',
+                isLinkActive
+                  ? 'text-primary dark:text-blue-300'
+                  : 'text-foreground/70 hover:text-foreground dark:text-white dark:hover:text-blue-300',
+              ]}
+            >
+              {link.label}
+            </a>
+          )}
+
+          {link.children && (
+            <div
+              id={`dropdown-${index}`}
+              class="desktop-dropdown absolute top-full left-0 pt-4 w-60 z-50"
+              role="menu"
+            >
+              <div class="p-2 bg-background/95 backdrop-blur-xl border border-foreground/10 rounded-xl shadow-xl shadow-black/5 overflow-hidden">
+                <ul class="flex flex-col gap-1 m-0 p-0 list-none">
+                  {link.children.map((child) => {
+                    const Icon = getNavIcon(child.icon);
+                    return (
+                      <li role="none">
+                        <a
+                          href={child.href}
+                          class="block px-4 py-3 text-sm rounded-lg hover:bg-foreground/5 transition-colors group"
+                          role="menuitem"
+                        >
+                          <div class="flex items-center gap-3">
+                            {Icon && (
+                              <Icon
+                                className="w-5 h-5 text-primary/70 group-hover:text-primary dark:text-white/70 dark:group-hover:text-blue-300 transition-colors"
+                                aria-hidden="true"
+                              />
+                            )}
+                            <div>
+                              <div class="font-medium text-foreground group-hover:text-primary dark:text-white dark:group-hover:text-blue-300 transition-colors">
+                                {child.label}
+                              </div>
+                              {child.description && (
+                                <div class="text-xs text-foreground/50 mt-1 line-clamp-1">
+                                  {child.description}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </a>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            </div>
+          )}
+        </li>
+      );
+    })}
+  </ul>
+</nav>
+
+<style>
+  .desktop-dropdown {
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px) scale(0.95);
+    pointer-events: none;
+    transition:
+      opacity 0.2s ease-out,
+      transform 0.2s ease-out,
+      visibility 0.2s ease-out;
+  }
+  [data-nav-item].is-open > .desktop-dropdown {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
+  [data-nav-item].is-open .nav-chevron {
+    transform: rotate(180deg);
+  }
+</style>
+
+<script>
+  function initDesktopNav() {
+    const nav = document.querySelector('[data-desktop-nav]');
+    if (!nav || nav instanceof HTMLElement === false) return;
+    if (nav.dataset.bound === 'true') return;
+    nav.dataset.bound = 'true';
+
+    const items = nav.querySelectorAll('[data-nav-item]');
+
+    const setOpen = (item, open) => {
+      item.classList.toggle('is-open', open);
+      const btn = item.querySelector('[aria-haspopup]');
+      if (btn) btn.setAttribute('aria-expanded', String(open));
+    };
+
+    const closeAll = () => items.forEach((item) => setOpen(item, false));
+
+    items.forEach((item) => {
+      const btn = item.querySelector('[aria-haspopup]');
+      if (!btn) return;
+
+      item.addEventListener('mouseenter', () => {
+        closeAll();
+        setOpen(item, true);
+      });
+      item.addEventListener('mouseleave', () => setOpen(item, false));
+
+      btn.addEventListener('click', () => {
+        setOpen(item, btn.getAttribute('aria-expanded') !== 'true');
+      });
+      btn.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          setOpen(item, btn.getAttribute('aria-expanded') !== 'true');
+        } else if (e.key === 'Escape') {
+          setOpen(item, false);
+        }
+      });
+    });
+
+    nav.addEventListener('mouseleave', closeAll);
+  }
+
+  initDesktopNav();
+  document.addEventListener('astro:page-load', initDesktopNav);
+</script>

@@ -544,3 +544,27 @@ a.command-skill-prefix:hover {
     background: transparent;
     padding: 0;
 }
+
+/* Lazy search and signup overlays: CSS stand-ins for the motion/react springs
+ * those islands used to import. Kept global because the overlays mount into
+ * document.body from a client script, not from an Astro component. */
+@keyframes overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes overlay-scale-in {
+  from {
+    opacity: 0;
+    transform: translateY(-1.25rem) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.overlay-fade-in {
+  animation: overlay-fade-in 0.15s ease-out;
+}
+.overlay-scale-in {
+  animation: overlay-scale-in 0.2s ease-out;
+}

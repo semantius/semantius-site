@@ -44,7 +44,7 @@ The only package. It is an **Astro** site, not a React SPA.
 | Language    | TypeScript 5.9, extends `astro/tsconfigs/strict`                        |
 | Styling     | Tailwind CSS 4 via `@tailwindcss/vite`, plus `@tailwindcss/typography`  |
 | Components  | Hand-written `.astro` files in `src/components/ui`                      |
-| Interactive | React 19 islands in `src/components/islands`, animated with `motion`    |
+| Interactive | React 19 islands in `src/components/islands` (contact, showcase, audio, lazy search/signup overlays) |
 | Search      | Pagefind, indexed at build time (see Build)                             |
 | Linting     | None configured                                                         |
 
@@ -61,39 +61,41 @@ and used directly. Do not run a shadcn generator or assume a Radix primitive exi
 always reports success. `@astrojs/check` is installed but not wired to a script either.
 Never cite `pnpm lint` as evidence that a change is clean; run `pnpm build`.
 
-> Both `package.json` `description` fields still say "React monorepo with Vite,
-> TypeScript, shadcn/ui". They are starter-template leftovers and describe nothing here.
-
 ### React islands: what they cost and how to add one
 
 React is not load-bearing. There is no router, no form library and no React component
-library. The islands are roughly 1,600 lines of self-contained widgets, and React is
-present mostly because every island except `BeforeAfter.jsx` animates with `motion/react`.
-Prefer a plain `.astro` component plus CSS for anything new; reach for an island only when
-it needs real client state.
+library. Prefer a plain `.astro` component plus CSS for anything new; reach for an island
+only when it needs real client state. The gating rule: react-dom drops off a page only if
+no island on it hydrates eagerly. The header used to violate that on every page.
 
-- **The header hydrates React on every page.** `Header.astro` mounts `DesktopNav`,
-  `Search`, `SignUpModal` and `MobileMenu`, so nearly every built page downloads the
-  react-dom client runtime and `motion` whether or not the user interacts. Adding another
-  header island is close to free; the savings are in moving one out, not in trimming it.
-- **Header islands use `client:only="react"`, so the header is absent from the served
-  HTML.** There is no SSR fallback: the logo and the "Sign in" anchor are the only static
-  markup in it. That is why the nav pops in after paint, mildly in production and badly in
-  dev. Moving one to `client:load` means first confirming it renders identically on the
-  server.
+- **The header is static.** `DesktopNav` and `MobileMenu` are `.astro` with a few lines of
+  vanilla JS (hover/`aria-expanded` on the desktop dropdowns, open/close on the drawer).
+  Icons resolve through `lib/nav-icons.ts`, which named-imports the seven lucide icons
+  `NAV_LINKS` actually names, so they render as build-time SVG. Docs mobile nav is
+  `docs/MobileDocsMenu.astro` wrapping the existing `NavTree.astro`; `serializeTree` is
+  gone because the tree no longer has to cross into React.
+- **Search and sign-up overlays lazy-mount React on first open.** The trigger is static
+  HTML. A small always-on script dynamically imports `search-mount.js` /
+  `signup-mount.js`, which `createRoot` the overlay. Until someone opens one, the page
+  ships zero framework. The sign-up overlay must stay lazy rather than static-hidden, and
+  the waitlist key must not appear as `data-waitlist-key` on the trigger: Waitlister
+  `embed.js` injects its iframe into *any* element that carries that attribute (not only
+  `.waitlister-form`). Pass the key through a JSON `<script>` (see `SignUpTrigger.astro`).
+  Cmd+K toggles search: the trigger script tracks open state so it can close an
+  already-mounted overlay.
+- **Eager islands remain only where they earn it.** `ContactForm` (`client:load` on
+  `/contact`), `BeforeAfter` (`client:visible` on `/showcase`), `AudioPlayer` (behind
+  `audioUrl` on a blog post). Those three still pull react-dom, lucide, and (for contact
+  and audio) `motion`. Expected initial payload: every other page is zero framework.
 - **Never namespace-import an icon package.** `import * as Icons from 'lucide-react'`
   defeats tree-shaking in the production build too, not only in dev, because the namespace
-  object keeps every icon reachable. Both `DesktopNav.jsx` and `MobileMenu.jsx` do this, to
-  resolve `Icons[child.icon]` from the `icon` strings in `site.config.ts`. The resulting
-  shared chunk is two orders of magnitude larger than the handful of icons actually named.
-  Map the names to named imports explicitly instead. Named imports elsewhere in the repo
-  tree-shake correctly into small per-icon chunks.
-- **Dev-server slowness in the header has the same root cause.** Vite serves dependencies
-  unbundled and untree-shaken, so the pre-bundled `lucide-react` and `motion/react` dep
-  chunks are megabyte-scale. `client:only` imports are also discovered late by Vite's
-  dependency scan, which triggers a re-optimize and a forced reload partway through the
-  first load. Listing `react`, `react-dom/client`, `motion/react` and `lucide-react` in
-  `vite.optimizeDeps.include` removes that stutter.
+  object keeps every icon reachable. Map string names to named imports explicitly (see
+  `lib/nav-icons.ts`). Named imports elsewhere in the repo tree-shake correctly into small
+  per-icon chunks.
+- **`vite.optimizeDeps.include` covers the remaining client islands.** Listing `react`,
+  `react-dom/client`, `motion/react` and `lucide-react` stops Vite's first-load
+  re-optimize of those deps in `astro dev`. The lazy search/signup overlays are discovered
+  late by construction (dynamic `import()`), so this does not put them on the eager path.
 - **Pagefind itself is already lazy and should stay that way.** `Search.jsx` gates the
   `/pagefind/pagefind.js` import on the modal being open and loads it through a variable
   specifier so Vite's import analysis leaves it alone. Do not convert that to a static

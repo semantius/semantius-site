@@ -503,6 +503,13 @@ export default defineConfig({
     plugins: [tailwindcss()],
     define: {
       'import.meta.env.DEFAULT_LOCALE': JSON.stringify(DEFAULT_LOCALE)
-    }
+    },
+    // Header islands are gone, but remaining React islands (ContactForm,
+    // BeforeAfter, AudioPlayer) plus the lazy search/signup overlays are still
+    // discovered late by Vite's dep scan on first load. Pre-bundling them
+    // removes the re-optimize-and-reload stutter in `astro dev`.
+    optimizeDeps: {
+      include: ['react', 'react-dom/client', 'motion/react', 'lucide-react'],
+    },
   },
 });

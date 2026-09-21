@@ -4,14 +4,13 @@ import { getCollection } from 'astro:content';
 import TableOfContents from '~/components/blog/TableOfContents.astro';
 import type { MarkdownHeading } from 'astro';
 import ScrollProgress from '~/components/layout/ScrollProgress.astro';
-import MobileDocsMenu from '~/components/islands/MobileDocsMenu';
+import MobileDocsMenu from '~/components/docs/MobileDocsMenu.astro';
 import NavTree from '~/components/docs/NavTree.astro';
 import DocsTabs from '~/components/docs/DocsTabs.astro';
 import {
   buildDocsTree,
   flattenNodes,
   findTopAncestor,
-  serializeTree,
   getDocsCollectionNavs,
   findCollectionForPath,
 } from '~/lib/docs-tree';
@@ -81,8 +80,6 @@ if (activeCollection && activeCollection.node.path !== normalizedCurrentPath) {
 if (currentSectionLabel && topAncestor) {
   crumbs.push({ label: currentSectionLabel, href: topAncestor.path });
 }
-
-const serializedNodes = sidebarNodes.map(serializeTree);
 ---
 
 <UntranslatedLayout title={title} description={description} noindex={noindex} nofollow={nofollow}>
@@ -128,10 +125,9 @@ const serializedNodes = sidebarNodes.map(serializeTree);
                 </div>
 
                 <MobileDocsMenu
-                    client:load
-                    nodes={serializedNodes}
+                    nodes={sidebarNodes}
                     collections={tabs}
-                    currentPath={Astro.url.pathname}
+                    currentPath={normalizedCurrentPath}
                 />
              </div>
 

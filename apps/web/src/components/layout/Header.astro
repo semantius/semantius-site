@@ -1,8 +1,8 @@
 ---
-import MobileMenu from '~/components/islands/MobileMenu';
-import DesktopNav from '~/components/islands/DesktopNav';
-import Search from '~/components/islands/Search';
-import SignUpModal from '~/components/islands/SignUpModal';
+import MobileMenu from '~/components/layout/MobileMenu.astro';
+import DesktopNav from '~/components/layout/DesktopNav.astro';
+import SearchTrigger from '~/components/layout/SearchTrigger.astro';
+import SignUpTrigger from '~/components/layout/SignUpTrigger.astro';
 
 import { NAV_LINKS, ACTION_LINKS, siteConfig } from '~/site.config';
 
@@ -46,14 +46,13 @@ const signInLabel = 'Sign in';
       )}
     </a>
     <div class="flex-1 flex justify-center mx-4 lg:mx-8">
-      <DesktopNav client:only="react" links={links} currentPath={Astro.url.pathname} />
+      <DesktopNav links={links} currentPath={Astro.url.pathname} />
     </div>
 
     {/* Mobile/Flyout Menu */}
     <div class="flex items-center gap-4 flex-shrink-0">
-      {siteConfig.search.enabled && <Search 
-        client:only="react" 
-        placeholder='Search...' 
+      {siteConfig.search.enabled && <SearchTrigger
+        placeholder='Search...'
         devModalLabels={{
             title: 'Search needs a build first',
             description: 'Pagefind indexes the site at build time and the dev server serves the index from the last build. Run this once, then reload:',
@@ -69,17 +68,15 @@ const signInLabel = 'Sign in';
       >
         {signInLabel}
       </a>
-      <SignUpModal
-        client:only="react"
+      <SignUpTrigger
         triggerLabel={signUpLabel}
         waitlistKey={siteConfig.waitlister.waitlistKey}
       />
       
       <div class="md:hidden">
-        <MobileMenu 
-          client:only="react" 
-          links={links} 
-          currentPath={Astro.url.pathname} 
+        <MobileMenu
+          links={links}
+          currentPath={Astro.url.pathname}
           labels={{
             menu: 'Menu',
             getStarted: signUpLabel,
