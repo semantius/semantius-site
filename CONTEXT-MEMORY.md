@@ -150,16 +150,24 @@ rm -rf apps/web/.astro apps/web/node_modules/.astro
 ```
 Clearing only `apps/web/.astro` is insufficient because the deleted entries survive in the `node_modules/.astro` data store. CI is unaffected since a clean install has neither directory.
 
-### Docs sub-collections are top-level folders under `src/content/docs`
+### Docs navigation is declared in `nav.json`, URLs come from the folder structure
 
-The `docs` collection is one Astro collection, but the nav treats each top-level folder (`guide/`, `reference/`) as a separate sub-collection, surfaced as the tab bar above the docs columns. The registry is `DOCS_COLLECTIONS` in `apps/web/src/lib/docs-tree.ts` (slug, label, description); adding a collection means adding a folder plus one row there, and the `/docs` hub grows a card for it automatically. Nothing else is parameterised: routes (`pages/docs/[...slug].astro`) and nav paths (`buildDocsTree`) both derive from the folder structure, so the URL and the tree stay in sync by construction.
+The `docs` collection is one Astro collection. Every doc folder sits directly under `src/content/docs`; a folder does not live inside the tab it belongs to. Two things are deliberately independent:
 
-Consequences when adding docs:
+- **Display** is declared in `src/content/docs/nav.json`, validated by a zod schema in `apps/web/src/lib/docs-tree.ts` and described for editors by the sibling `nav.schema.json` through its `$schema` key. Each tab is `{ folder, folders }`: `folder` names the tab's own folder, and `folders` lists, in display order, the top-level folders that tab shows.
+- **URLs** come from the folder structure via `pages/docs/[...slug].astro`, unchanged.
 
-- A page placed directly under `src/content/docs/` sits outside every collection: it still gets a route, but no tab shows it and the sidebar falls back to `DEFAULT_DOCS_COLLECTION`. New pages belong inside a collection folder.
-- **Every collection needs its own `index.mdx` start page.** The tab and the breadcrumb both link to it, and the hierarchy is `/docs` (hub with collection cards) → `/docs/<collection>` (start page) → pages. Without one, `getDocsCollectionNavs` falls back to the collection's first page and the collection root 404s.
-- Sidebar, prev/next and the breadcrumb section all run off the active collection's subtree, so navigation never crosses collections. The breadcrumb mirrors the URL (`Docs › Reference › Models › Create a Model`) and drops any level that is the current page, so it never links to the page you are on.
-- Moving doc files changes their URLs. Old URLs get 301s from `docsLegacyRedirects` in `astro.config.mjs`, pointed at the final destination rather than chained through earlier schemes.
+Because they are independent, moving a folder from one tab to another is a one-line `nav.json` edit with no file move and no URL change, and reordering is likewise URL-safe. Only renaming or relocating a folder on disk changes a URL.
+
+Consequences when adding or restructuring docs:
+
+- **A new page inside an existing folder needs no manifest entry.** It appears automatically, positioned by its `order` frontmatter. `nav.json` lists folders, never individual pages.
+- **A new top-level folder must be listed in some tab's `folders`**, or it appears nowhere. The manifest is a whitelist for display only: an unlisted folder still builds and still resolves by deep link.
+- **Sections are folders, never bare `.mdx` files at the top level.** A folder whose only file is `index.mdx` renders as a plain sidebar link rather than an expandable node, so a single-page section costs nothing. This also rules out the `X.mdx` beside `X/` collision, where both map to the same URL and collapse onto one nav node.
+- **Every tab folder needs its own `index.mdx`.** It is the tab's start page, and it supplies the tab label and the `/docs` hub-card description. The manifest deliberately carries no copy, so labels cannot drift from the pages they name.
+- **The breadcrumb no longer mirrors the URL.** It reads `Docs > <tab> > <folder> > <page>` with the tab resolved through `nav.json`, while the URL is `/docs/<folder>/<page>`. Nothing may infer the tab from the path.
+- Two guards fail the build and name the offender: an entry listed with no matching folder, and a folder listed by two tabs.
+- Moving doc files changes their URLs. Old URLs get 301s from `docsLegacyRedirects` in `astro.config.mjs`, pointed at the final destination rather than chained through earlier schemes. **When a restructure restores an older scheme's URLs, that scheme's entries must be deleted, not retargeted**, or the redirect shadows the live page it now collides with.
 
 ## Styling
 
