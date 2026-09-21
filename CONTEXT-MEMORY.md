@@ -34,16 +34,70 @@ Cursor Cloud also prepends `/exec-daemon` to PATH. That `node` makes `npm prefix
 
 ### `apps/web`
 
-| Layer       | Technology                                          |
-| ----------- | --------------------------------------------------- |
-| Framework   | React 19                                            |
-| Language    | TypeScript 5.9                                      |
-| Build / Dev | Vite 7 (HMR on `localhost:5173`)                    |
-| Styling     | Tailwind CSS 4                                      |
-| Components  | shadcn/ui (Radix primitives + CVA + `cn()` utility) |
-| Linting     | ESLint 9                                            |
+The only package. It is an **Astro** site, not a React SPA.
 
-Path alias: `@` → `apps/web/src` (configured in `vite.config.ts` and `tsconfig.app.json`).
+| Layer       | Technology                                                              |
+| ----------- | ----------------------------------------------------------------------- |
+| Framework   | Astro 7, `output: 'static'`                                             |
+| Dev server  | `astro dev` on `localhost:4321` (Astro's default, not Vite's 5173)      |
+| Content     | MDX (`@astrojs/mdx` 8) over Astro content collections                   |
+| Language    | TypeScript 5.9, extends `astro/tsconfigs/strict`                        |
+| Styling     | Tailwind CSS 4 via `@tailwindcss/vite`, plus `@tailwindcss/typography`  |
+| Components  | Hand-written `.astro` files in `src/components/ui`                      |
+| Interactive | React 19 islands in `src/components/islands`, animated with `motion`    |
+| Search      | Pagefind, indexed at build time (see Build)                             |
+| Linting     | None configured                                                         |
+
+Path alias: `~/*` → `src/*`, declared once in `apps/web/tsconfig.json`. There is no
+`vite.config.ts` and no `tsconfig.app.json`: Astro owns the Vite config through the
+`vite` key in `astro.config.mjs`.
+
+**No shadcn/ui, no Radix, no CVA, no `cn()` helper.** Everything under
+`src/components/ui/` is a plain `.astro` file. `clsx` and `tailwind-merge` are installed
+and used directly. Do not run a shadcn generator or assume a Radix primitive exists.
+
+**`pnpm lint` is a no-op.** The root script runs `turbo lint`, but `apps/web` declares no
+`lint` script and has no ESLint config or dependency, so the task resolves to nothing and
+always reports success. `@astrojs/check` is installed but not wired to a script either.
+Never cite `pnpm lint` as evidence that a change is clean; run `pnpm build`.
+
+> Both `package.json` `description` fields still say "React monorepo with Vite,
+> TypeScript, shadcn/ui". They are starter-template leftovers and describe nothing here.
+
+### React islands: what they cost and how to add one
+
+React is not load-bearing. There is no router, no form library and no React component
+library. The islands are roughly 1,600 lines of self-contained widgets, and React is
+present mostly because every island except `BeforeAfter.jsx` animates with `motion/react`.
+Prefer a plain `.astro` component plus CSS for anything new; reach for an island only when
+it needs real client state.
+
+- **The header hydrates React on every page.** `Header.astro` mounts `DesktopNav`,
+  `Search`, `SignUpModal` and `MobileMenu`, so nearly every built page downloads the
+  react-dom client runtime and `motion` whether or not the user interacts. Adding another
+  header island is close to free; the savings are in moving one out, not in trimming it.
+- **Header islands use `client:only="react"`, so the header is absent from the served
+  HTML.** There is no SSR fallback: the logo and the "Sign in" anchor are the only static
+  markup in it. That is why the nav pops in after paint, mildly in production and badly in
+  dev. Moving one to `client:load` means first confirming it renders identically on the
+  server.
+- **Never namespace-import an icon package.** `import * as Icons from 'lucide-react'`
+  defeats tree-shaking in the production build too, not only in dev, because the namespace
+  object keeps every icon reachable. Both `DesktopNav.jsx` and `MobileMenu.jsx` do this, to
+  resolve `Icons[child.icon]` from the `icon` strings in `site.config.ts`. The resulting
+  shared chunk is two orders of magnitude larger than the handful of icons actually named.
+  Map the names to named imports explicitly instead. Named imports elsewhere in the repo
+  tree-shake correctly into small per-icon chunks.
+- **Dev-server slowness in the header has the same root cause.** Vite serves dependencies
+  unbundled and untree-shaken, so the pre-bundled `lucide-react` and `motion/react` dep
+  chunks are megabyte-scale. `client:only` imports are also discovered late by Vite's
+  dependency scan, which triggers a re-optimize and a forced reload partway through the
+  first load. Listing `react`, `react-dom/client`, `motion/react` and `lucide-react` in
+  `vite.optimizeDeps.include` removes that stutter.
+- **Pagefind itself is already lazy and should stay that way.** `Search.jsx` gates the
+  `/pagefind/pagefind.js` import on the modal being open and loads it through a variable
+  specifier so Vite's import analysis leaves it alone. Do not convert that to a static
+  import "for clarity": it would pull the whole search runtime onto every page.
 
 ## Deployment
 
