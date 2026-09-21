@@ -2,7 +2,7 @@
   "name": "semantius-site",
   "type": "module",
   "version": "1.1.0",
-  "description": "Astro-powered website for Semantius, built with React and Tailwind CSS.",
+  "description": "Static Astro website for Semantius, styled with Tailwind CSS.",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -41,7 +41,6 @@
     "astro": "^7.3.3",
     "astro-embed": "^0.13.0",
     "clsx": "^2.1.0",
-    "cmdk": "^1.1.1",
     "gray-matter": "^4.0.3",
     "lucide-react": "^0.562.0",
     "marked": "^18.0.2",

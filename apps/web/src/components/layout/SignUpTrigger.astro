@@ -1,0 +1,49 @@
+---
+interface Props {
+  triggerLabel?: string;
+  waitlistKey?: string;
+}
+
+const { triggerLabel = 'Sign up', waitlistKey = '' } = Astro.props;
+---
+
+<button
+  type="button"
+  id="signup-trigger"
+  data-waitlist-key={waitlistKey}
+  class="hidden md:block px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/90 transition-all cursor-pointer"
+>
+  {triggerLabel}
+</button>
+
+<script>
+  const button = document.getElementById('signup-trigger');
+  const waitlistKey = button?.getAttribute('data-waitlist-key') || '';
+  const props = { waitlistKey };
+
+  let mod = null;
+
+  async function load() {
+    if (!mod) {
+      mod = await import('../islands/signup-mount.js');
+    }
+    return mod;
+  }
+
+  async function open(trigger) {
+    const m = await load();
+    m.openModal(props, trigger);
+  }
+
+  if (button) {
+    button.addEventListener('click', () => open('button'));
+  }
+
+  if (window.location.hash === '#signup') {
+    open('hash');
+  }
+
+  window.addEventListener('hashchange', () => {
+    if (window.location.hash === '#signup') open('hash');
+  });
+</script>

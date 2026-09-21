@@ -2,7 +2,7 @@
   "name": "level3-workplace",
   "private": true,
   "version": "0.0.0",
-  "description": "Modern React monorepo with Vite, TypeScript, shadcn/ui, and agent-browser",
+  "description": "Astro website for Semantius: a pnpm workspace with a static Astro app, Tailwind CSS, and Cloudflare/Netlify deploys",
   "scripts": {
     "dev": "dotenvx run -- turbo dev",
     "build": "dotenvx run -- turbo build",

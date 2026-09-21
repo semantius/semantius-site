@@ -149,25 +149,6 @@ function walk(node: NavNode, acc: NavNode[]) {
   for (const c of node.children) walk(c, acc);
 }
 
-// Serializable shape for passing to React (no Astro CollectionEntry refs).
-export interface SerializableNavNode {
-  segment: string;
-  hasDoc: boolean;
-  children: SerializableNavNode[];
-  navTitle: string;
-  path: string;
-}
-
-export function serializeTree(node: NavNode): SerializableNavNode {
-  return {
-    segment: node.segment,
-    hasDoc: !!node.doc,
-    children: node.children.map(serializeTree),
-    navTitle: node.navTitle,
-    path: node.path,
-  };
-}
-
 export interface DocsCollectionNav {
   slug: string;
   label: string;
