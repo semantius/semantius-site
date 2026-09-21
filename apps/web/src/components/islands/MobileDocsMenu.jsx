@@ -189,7 +189,7 @@ export default function MobileDocsMenu({ nodes, collections, currentPath }) {
 
               <div className="p-6 border-t border-foreground/5 bg-foreground/2">
                 <a
-                  href="/docs/reference/overview"
+                  href="/docs/overview"
                   className="flex items-center justify-center w-full px-4 py-3 bg-primary text-white rounded-xl font-bold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all text-sm"
                 >
                   Quick Start Guide

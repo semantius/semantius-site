@@ -103,7 +103,7 @@ export const NAV_LINKS = [
 ];
 
 export const ACTION_LINKS = {
-  primary: { label: 'Get Started', href: '/docs/reference/overview' },
+  primary: { label: 'Get Started', href: '/docs/overview' },
   signIn: { label: 'Sign in', href: 'https://app.semantius.com/' },
   social: {
     twitter: 'https://twitter.com/gladtek',

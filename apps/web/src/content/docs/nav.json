@@ -1,0 +1,20 @@
+{
+  "$schema": "./nav.schema.json",
+  "tabs": [
+    {
+      "folder": "guide",
+      "folders": []
+    },
+    {
+      "folder": "reference",
+      "folders": [
+        "overview",
+        "models",
+        "business-logic",
+        "mcp-connectors",
+        "agent-skills",
+        "cli"
+      ]
+    }
+  ]
+}

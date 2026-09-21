@@ -1,4 +1,56 @@
 import type { CollectionEntry } from 'astro:content';
+import { z } from 'astro/zod';
+import navManifest from '../content/docs/nav.json';
+
+// `nav.json` declares which top-level folders are tabs, and which top-level
+// folders each tab shows, in order. Folders no longer live inside the tab they
+// belong to: every one of them sits directly under src/content/docs, and
+// membership is a line in the manifest rather than a position on disk. Moving a
+// folder from one tab to another is therefore a manifest edit with no file move
+// and no URL change.
+//
+// What the manifest does NOT own:
+//   - page order inside a folder, which comes from each page's `order`
+//     frontmatter
+//   - labels and descriptions, which come from each folder's index.mdx
+//   - URLs, which come from the folder structure via `pages/docs/[...slug].astro`
+//
+// A folder that no tab lists still builds and still resolves by deep link, it
+// simply appears in no sidebar and under no tab. The manifest is a whitelist for
+// display, never for routing.
+//
+// It is validated rather than trusted: nothing in `astro build` typechecks, so a
+// malformed manifest would otherwise surface as a silently broken nav instead of
+// a build failure.
+
+const navSchema = z
+  .object({
+    $schema: z.string().optional(),
+    tabs: z
+      .array(
+        z
+          .object({
+            folder: z.string().min(1),
+            folders: z.array(z.string().min(1)),
+          })
+          .strict(),
+      )
+      .min(1),
+  })
+  .strict();
+
+function loadNav() {
+  const parsed = navSchema.safeParse(navManifest);
+  if (!parsed.success) {
+    const issues = parsed.error.issues
+      .map((i) => `  ${i.path.join('.') || '(root)'}: ${i.message}`)
+      .join('\n');
+    throw new Error(`Invalid src/content/docs/nav.json:\n${issues}`);
+  }
+  return parsed.data;
+}
+
+const nav = loadNav();
 
 export interface NavNode {
   segment: string;
@@ -66,6 +118,9 @@ export function buildDocsTree(docs: CollectionEntry<'docs'>[]): NavNode {
   return root;
 }
 
+// Ordering below the top level is entirely the `order` frontmatter, unchanged.
+// The top level is not sorted here at all: a tab's folders are assembled in the
+// order nav.json lists them.
 function sortRecursive(node: NavNode) {
   node.children.sort((a, b) => {
     if (a.order !== b.order) return a.order - b.order;
@@ -79,6 +134,13 @@ function sortRecursive(node: NavNode) {
 export function flattenTree(node: NavNode): NavNode[] {
   const acc: NavNode[] = [];
   walk(node, acc);
+  return acc;
+}
+
+// Same, across an assembled list of folders rather than one subtree.
+export function flattenNodes(nodes: NavNode[]): NavNode[] {
+  const acc: NavNode[] = [];
+  for (const n of nodes) walk(n, acc);
   return acc;
 }
 
@@ -106,70 +168,90 @@ export function serializeTree(node: NavNode): SerializableNavNode {
   };
 }
 
-// A "collection" is a top-level folder under src/content/docs, surfaced as a
-// tab above the docs columns. Array order is the tab display order; adding a
-// future collection means adding a folder plus one row here.
-export interface DocsCollectionDef {
-  slug: string;
-  label: string;
-  /** Shown on the /docs hub card. */
-  description: string;
-}
-
-export const DOCS_COLLECTIONS: DocsCollectionDef[] = [
-  {
-    slug: 'guide',
-    label: 'Guide',
-    description:
-      'Step-by-step walkthroughs that take you from a blank project to a deployed semantic model.',
-  },
-  {
-    slug: 'reference',
-    label: 'Reference',
-    description:
-      'Detailed documentation for models, business logic, MCP connectors, agent skills and the CLI.',
-  },
-];
-
-// Where /docs lands, and the fallback sidebar for any docs page outside a
-// registered collection. Guide is a placeholder for now.
-export const DEFAULT_DOCS_COLLECTION = 'reference';
-
 export interface DocsCollectionNav {
   slug: string;
   label: string;
   description: string;
+  /** The tab's own folder node, holding its index.mdx start page. */
   node: NavNode;
+  /** The folders this tab shows, assembled in nav.json order. */
+  folders: NavNode[];
   landingPath: string;
 }
 
+// Tabs are the `tabs` array in nav.json, in array order. Each tab's folders are
+// looked up among the top-level folders and assembled in the listed order, so
+// the sidebar is built from the manifest rather than from filesystem nesting.
+//
+// The manifest carries no copy: the tab label and the hub-card description come
+// from the folder's own index.mdx, so there is exactly one place to edit either
+// and they cannot drift apart.
 export function getDocsCollectionNavs(tree: NavNode): DocsCollectionNav[] {
-  return DOCS_COLLECTIONS.flatMap((def) => {
-    const node = tree.children.find((c) => c.segment === def.slug);
-    // A registry entry without a matching folder is skipped rather than
-    // rendering a tab that 404s.
-    if (!node) return [];
-    // Every collection should have its own index.mdx start page, which the tab
-    // and the breadcrumb both link to. The fallback keeps a collection that
-    // lacks one navigable, landing on its first page instead.
-    const landingPath = node.doc ? node.path : (flattenTree(node)[0]?.path ?? node.path);
-    return [{ slug: def.slug, label: def.label, description: def.description, node, landingPath }];
+  const byName = new Map(tree.children.map((c) => [c.segment, c]));
+  // A folder belonging to two tabs would make the active-tab lookup ambiguous,
+  // so it is rejected rather than silently resolved to whichever tab is first.
+  const claimedBy = new Map<string, string>();
+
+  return nav.tabs.map((tab) => {
+    const node = byName.get(tab.folder);
+    if (!node) {
+      throw new Error(
+        `src/content/docs/nav.json declares tab "${tab.folder}" but src/content/docs/${tab.folder}/ does not exist.`,
+      );
+    }
+
+    const folders = tab.folders.map((name) => {
+      const child = byName.get(name);
+      if (!child) {
+        throw new Error(
+          `src/content/docs/nav.json: tab "${tab.folder}" lists "${name}", but src/content/docs/${name} does not exist.`,
+        );
+      }
+      const claimed = claimedBy.get(name);
+      if (claimed) {
+        throw new Error(
+          `src/content/docs/nav.json: "${name}" is listed by both tab "${claimed}" and tab "${tab.folder}".`,
+        );
+      }
+      claimedBy.set(name, tab.folder);
+      return child;
+    });
+
+    // Every tab should have its own index.mdx start page, which the tab and the
+    // breadcrumb both link to, and which supplies the label and description
+    // below. The fallback keeps a tab that lacks one navigable, landing on its
+    // first page instead.
+    const landingPath = node.doc ? node.path : (flattenNodes(folders)[0]?.path ?? node.path);
+
+    return {
+      slug: tab.folder,
+      label: node.navTitle,
+      description: node.doc?.data.description ?? '',
+      node,
+      folders,
+      landingPath,
+    };
   });
 }
 
+// The URL no longer contains the tab, so the active tab is the one whose own
+// page this is, or the one listing the folder the page sits in.
 export function findCollectionForPath(
   navs: DocsCollectionNav[],
   path: string,
 ): DocsCollectionNav | null {
-  return navs.find((c) => path === c.node.path || path.startsWith(`${c.node.path}/`)) ?? null;
+  return (
+    navs.find(
+      (c) =>
+        path === c.node.path ||
+        c.folders.some((f) => path === f.path || path.startsWith(`${f.path}/`)),
+    ) ?? null
+  );
 }
 
-// Find the topmost ancestor (just under root) of the node matching a path.
-export function findTopAncestor(root: NavNode, path: string): NavNode | null {
-  for (const child of root.children) {
-    if (containsPath(child, path)) return child;
-  }
-  return null;
+// Which of the tab's folders contains this path, for the breadcrumb.
+export function findTopAncestor(folders: NavNode[], path: string): NavNode | null {
+  return folders.find((f) => containsPath(f, path)) ?? null;
 }
 
 function containsPath(node: NavNode, path: string): boolean {

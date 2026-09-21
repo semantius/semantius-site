@@ -358,44 +358,50 @@ function getAdapter() {
   }
 }
 
-// Docs URLs have moved twice: flat -> nested folders, then nested -> grouped
-// under a sub-collection (/docs/reference/...). Every legacy URL points at its
-// final destination rather than chaining through the intermediate scheme.
+// Docs URLs have moved three times: flat -> nested folders -> grouped under a
+// sub-collection (/docs/reference/...) -> back to top-level folders, now that
+// tab membership is declared in content/docs/nav.json instead of being implied
+// by the folder path. Every legacy URL points at its final destination rather
+// than chaining through an intermediate scheme.
+//
+// Scheme 2 has no entries any more: the move back to top-level folders restored
+// exactly those URLs, so they are live pages again and must not be redirected.
 const docsLegacyRedirects = {
   // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
-  '/docs/models-overview': '/docs/reference/models',
-  '/docs/models-structure': '/docs/reference/models/structure',
-  '/docs/models-create': '/docs/reference/models/create',
-  '/docs/models-templates': '/docs/reference/models/templates',
-  '/docs/models-deploy': '/docs/reference/models/deploy',
-  '/docs/models-optimize': '/docs/reference/models/optimize',
-  '/docs/mcp-connectors-overview': '/docs/reference/mcp-connectors',
-  '/docs/mcp-connectors-installation': '/docs/reference/mcp-connectors/installation',
-  '/docs/agent-skills-overview': '/docs/reference/agent-skills',
-  '/docs/agent-skills-installation': '/docs/reference/agent-skills/installation',
-  '/docs/cli-overview': '/docs/reference/cli',
-  '/docs/cli-command': '/docs/reference/cli/command',
-  '/docs/cli-skill': '/docs/reference/cli/use-semantius',
-  '/docs/cli/skill': '/docs/reference/cli/use-semantius',
+  '/docs/models-overview': '/docs/models',
+  '/docs/models-structure': '/docs/models/structure',
+  '/docs/models-create': '/docs/models/create',
+  '/docs/models-templates': '/docs/models/templates',
+  '/docs/models-deploy': '/docs/models/deploy',
+  '/docs/models-optimize': '/docs/models/optimize',
+  '/docs/mcp-connectors-overview': '/docs/mcp-connectors',
+  '/docs/mcp-connectors-installation': '/docs/mcp-connectors/installation',
+  '/docs/agent-skills-overview': '/docs/agent-skills',
+  '/docs/agent-skills-installation': '/docs/agent-skills/installation',
+  '/docs/cli-overview': '/docs/cli',
+  '/docs/cli-command': '/docs/cli/command',
+  '/docs/cli-skill': '/docs/cli/use-semantius',
+  '/docs/cli/skill': '/docs/cli/use-semantius',
 
-  // Scheme 2: nested folders, before the docs split into sub-collections.
-  '/docs/overview': '/docs/reference/overview',
-  '/docs/models': '/docs/reference/models',
-  '/docs/models/structure': '/docs/reference/models/structure',
-  '/docs/models/create': '/docs/reference/models/create',
-  '/docs/models/templates': '/docs/reference/models/templates',
-  '/docs/models/deploy': '/docs/reference/models/deploy',
-  '/docs/models/optimize': '/docs/reference/models/optimize',
-  '/docs/business-logic': '/docs/reference/business-logic',
-  '/docs/business-logic/jsonlogic': '/docs/reference/business-logic/jsonlogic',
-  '/docs/business-logic/extensions': '/docs/reference/business-logic/extensions',
-  '/docs/mcp-connectors': '/docs/reference/mcp-connectors',
-  '/docs/mcp-connectors/installation': '/docs/reference/mcp-connectors/installation',
-  '/docs/agent-skills': '/docs/reference/agent-skills',
-  '/docs/agent-skills/installation': '/docs/reference/agent-skills/installation',
-  '/docs/cli': '/docs/reference/cli',
-  '/docs/cli/command': '/docs/reference/cli/command',
-  '/docs/cli/use-semantius': '/docs/reference/cli/use-semantius',
+  // Scheme 3: grouped under /docs/reference/. /docs/reference itself stays live
+  // as the tab's start page, so it is deliberately absent here.
+  '/docs/reference/overview': '/docs/overview',
+  '/docs/reference/models': '/docs/models',
+  '/docs/reference/models/structure': '/docs/models/structure',
+  '/docs/reference/models/create': '/docs/models/create',
+  '/docs/reference/models/templates': '/docs/models/templates',
+  '/docs/reference/models/deploy': '/docs/models/deploy',
+  '/docs/reference/models/optimize': '/docs/models/optimize',
+  '/docs/reference/business-logic': '/docs/business-logic',
+  '/docs/reference/business-logic/jsonlogic': '/docs/business-logic/jsonlogic',
+  '/docs/reference/business-logic/extensions': '/docs/business-logic/extensions',
+  '/docs/reference/mcp-connectors': '/docs/mcp-connectors',
+  '/docs/reference/mcp-connectors/installation': '/docs/mcp-connectors/installation',
+  '/docs/reference/agent-skills': '/docs/agent-skills',
+  '/docs/reference/agent-skills/installation': '/docs/agent-skills/installation',
+  '/docs/reference/cli': '/docs/cli',
+  '/docs/reference/cli/command': '/docs/cli/command',
+  '/docs/reference/cli/use-semantius': '/docs/cli/use-semantius',
 };
 
 // "Semantic models" were renamed to "semantic blueprints" and the whole

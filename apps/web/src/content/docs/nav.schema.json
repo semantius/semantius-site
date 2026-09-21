@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Docs navigation manifest",
+  "description": "Structure only: which folders are tabs, in which order, and the order of the folders inside each tab. Labels and descriptions come from each folder's index.mdx frontmatter. Page order inside a folder comes from the `order` field in each page's frontmatter.",
+  "type": "object",
+  "required": ["tabs"],
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": "string" },
+    "tabs": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Tab bar, in display order.",
+      "items": { "$ref": "#/definitions/tab" }
+    }
+  },
+  "definitions": {
+    "tab": {
+      "type": "object",
+      "required": ["folder", "folders"],
+      "additionalProperties": false,
+      "properties": {
+        "folder": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Top-level folder name under src/content/docs. Must exist, and should contain an index.mdx supplying the tab's label and hub-card description."
+        },
+        "folders": {
+          "type": "array",
+          "description": "Folder names at the top level of this tab, in display order. A standalone .mdx file at this level is currently also accepted, which is why entries are resolved by path rather than by directory. Anything omitted still appears, sorted after the listed entries by its frontmatter `order`.",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

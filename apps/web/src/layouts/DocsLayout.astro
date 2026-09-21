@@ -9,12 +9,11 @@ import NavTree from '~/components/docs/NavTree.astro';
 import DocsTabs from '~/components/docs/DocsTabs.astro';
 import {
   buildDocsTree,
-  flattenTree,
+  flattenNodes,
   findTopAncestor,
   serializeTree,
   getDocsCollectionNavs,
   findCollectionForPath,
-  DEFAULT_DOCS_COLLECTION,
 } from '~/lib/docs-tree';
 
 interface Props {
@@ -36,14 +35,14 @@ const normalizedCurrentPath =
     ? currentPath.slice(0, -1)
     : currentPath;
 
-// Everything below the tabs is scoped to the active collection: the sidebar,
-// prev/next and the breadcrumb section all work off its subtree, so navigation
-// never bleeds from one collection into another.
+// Everything below the tabs is scoped to the active tab: the sidebar, prev/next
+// and the breadcrumb all work off the folders nav.json assigns to it, so
+// navigation never bleeds from one tab into another.
 const collectionNavs = getDocsCollectionNavs(tree);
+// A docs page outside every tab folder still gets a route, so it needs some
+// sidebar to render. It falls back to the first tab in nav.json.
 const activeCollection =
-  findCollectionForPath(collectionNavs, normalizedCurrentPath) ??
-  collectionNavs.find((c) => c.slug === DEFAULT_DOCS_COLLECTION) ??
-  collectionNavs[0];
+  findCollectionForPath(collectionNavs, normalizedCurrentPath) ?? collectionNavs[0];
 
 const tabs = collectionNavs.map((c) => ({
   slug: c.slug,
@@ -52,15 +51,17 @@ const tabs = collectionNavs.map((c) => ({
   active: c.slug === activeCollection?.slug,
 }));
 
-const collectionRoot = activeCollection?.node ?? tree;
-// When the collection folder is itself a page (its own index.mdx), show it as
-// the first sidebar entry — dropping its children so it renders as a plain
-// link rather than a duplicate of the section list below it.
-const sidebarNodes = collectionRoot.doc
-  ? [{ ...collectionRoot, children: [] }, ...collectionRoot.children]
-  : collectionRoot.children;
+// The tab's folders, assembled by nav.json rather than read off the filesystem.
+const tabFolders = activeCollection?.folders ?? [];
+// The tab's own index.mdx leads the sidebar, with its children dropped so it
+// renders as a plain link rather than a duplicate of the folder list below it.
+const sidebarNodes = activeCollection?.node.doc
+  ? [{ ...activeCollection.node, children: [] }, ...tabFolders]
+  : tabFolders;
 
-const flat = flattenTree(collectionRoot);
+const flat = activeCollection?.node.doc
+  ? [activeCollection.node, ...flattenNodes(tabFolders)]
+  : flattenNodes(tabFolders);
 const currentIndex = flat.findIndex((n) => n.path === normalizedCurrentPath);
 const prevNode = currentIndex > 0 ? flat[currentIndex - 1] : null;
 const nextNode =
@@ -68,8 +69,8 @@ const nextNode =
 
 // Breadcrumb: Docs › <collection> › <section> › <page>, mirroring the URL. A
 // level is dropped when it is the page itself, so the trail never links to the
-// page you are already on — on a collection start page it reads Docs › Guide.
-const topAncestor = findTopAncestor(collectionRoot, normalizedCurrentPath);
+// page you are already on, on a collection start page it reads Docs › Guide.
+const topAncestor = findTopAncestor(tabFolders, normalizedCurrentPath);
 const currentSectionLabel =
   topAncestor && topAncestor.path !== normalizedCurrentPath ? topAncestor.navTitle : null;
 
