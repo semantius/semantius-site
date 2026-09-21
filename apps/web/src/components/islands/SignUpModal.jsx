@@ -28,8 +28,8 @@ export default function SignUpModal({ open, onClose, waitlistKey = '' }) {
           className="overlay-scale-in pointer-events-auto w-full max-w-2xl max-h-[calc(100dvh-2rem)] overflow-y-auto bg-white dark:bg-background rounded-2xl shadow-2xl"
         >
           <div className="p-6">
-            {/* embed.js (preloaded in <head>) watches document.body via MutationObserver
-                and injects its iframe as soon as this div appears in the DOM */}
+            {/* embed.js (preloaded in <head>) injects its iframe into any element
+                that carries data-waitlist-key, so this div must not exist until open */}
             <div
               className="waitlister-form"
               data-waitlist-key={waitlistKey}

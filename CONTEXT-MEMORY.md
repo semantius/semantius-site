@@ -77,11 +77,12 @@ no island on it hydrates eagerly. The header used to violate that on every page.
 - **Search and sign-up overlays lazy-mount React on first open.** The trigger is static
   HTML. A small always-on script dynamically imports `search-mount.js` /
   `signup-mount.js`, which `createRoot` the overlay. Until someone opens one, the page
-  ships zero framework. The sign-up overlay must stay lazy rather than static-hidden:
-  Waitlister `embed.js` watches `document.body` and injects its iframe as soon as
-  `.waitlister-form` appears, so rendering a hidden dialog on every page would load that
-  iframe everywhere. Cmd+K toggles search: the trigger script tracks open state so it can
-  close an already-mounted overlay.
+  ships zero framework. The sign-up overlay must stay lazy rather than static-hidden, and
+  the waitlist key must not appear as `data-waitlist-key` on the trigger: Waitlister
+  `embed.js` injects its iframe into *any* element that carries that attribute (not only
+  `.waitlister-form`). Pass the key through a JSON `<script>` (see `SignUpTrigger.astro`).
+  Cmd+K toggles search: the trigger script tracks open state so it can close an
+  already-mounted overlay.
 - **Eager islands remain only where they earn it.** `ContactForm` (`client:load` on
   `/contact`), `BeforeAfter` (`client:visible` on `/showcase`), `AudioPlayer` (behind
   `audioUrl` on a blog post). Those three still pull react-dom, lucide, and (for contact

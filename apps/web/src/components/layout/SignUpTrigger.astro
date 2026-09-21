@@ -10,15 +10,23 @@ const { triggerLabel = 'Sign up', waitlistKey = '' } = Astro.props;
 <button
   type="button"
   id="signup-trigger"
-  data-waitlist-key={waitlistKey}
   class="hidden md:block px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/90 transition-all cursor-pointer"
 >
   {triggerLabel}
 </button>
+{/* Waitlister embed.js injects an iframe into any element with data-waitlist-key,
+    so the key lives in this JSON blob rather than on the button. */}
+<script is:inline type="application/json" id="signup-config" set:html={JSON.stringify({ waitlistKey })}></script>
 
 <script>
   const button = document.getElementById('signup-trigger');
-  const waitlistKey = button?.getAttribute('data-waitlist-key') || '';
+  const configEl = document.getElementById('signup-config');
+  let waitlistKey = '';
+  try {
+    waitlistKey = JSON.parse(configEl?.textContent || '{}').waitlistKey || '';
+  } catch {
+    waitlistKey = '';
+  }
   const props = { waitlistKey };
 
   let mod = null;
