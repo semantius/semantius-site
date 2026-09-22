@@ -61,6 +61,62 @@ and used directly. Do not run a shadcn generator or assume a Radix primitive exi
 always reports success. `@astrojs/check` is installed but not wired to a script either.
 Never cite `pnpm lint` as evidence that a change is clean; run `pnpm build`.
 
+### Every page is published twice: HTML and markdown
+
+The site serves an agent-facing markdown twin of every page at `<page-url>.md`
+(`/about/` → `/about.md`, `/` → `/index.md`). This is the AEO layer, ported from
+[dualmark](https://github.com/dodopayments/dualmark) (Apache-2.0) and inlined under
+`src/lib/dualmark/` rather than depended on. Keep the `NOTICE` and the per-file
+"Adapted from dualmark" headers: they are the licence obligation.
+
+Three tiers, in priority order. **Nothing here ever fails the build, and no page ever
+requires a hand-written twin**; those two properties are the design, not an accident.
+
+| Tier | Source | Written by |
+| ---- | ------ | ---------- |
+| A | content collections, via a unified AST pipeline | `src/pages/[...twin].md.ts` + `src/lib/dualmark/manifest.ts` |
+| B | the page's own rendered HTML, the universal fallback | `markdownTwins()` in `src/lib/dualmark/integration.ts` |
+| C | a hand-written file in `src/data/twin-overrides/<path>.md` | the route writer, presence is the whole mechanism |
+
+Things that are non-obvious and easy to break:
+
+- **There are two writers, and there have to be.** Tier B reads built HTML, which does
+  not exist until every route has rendered, so it cannot live in a `getStaticPaths`
+  route. The integration writes a twin for any page the route did not claim during
+  *this* build (compared by mtime against build start, so a rebuild over a dirty `dist`
+  does not silently skip extraction).
+- **Tier B reuses the Pagefind content contract.** `<main data-pagefind-body>` in
+  `Layout.astro` plus `excludeSelectors` in `astro.config.mjs` define what counts as
+  content, for both the search index and the twins. Marking a region
+  `data-pagefind-ignore` improves both at once, which is the reason not to invent a
+  second selector list.
+- **The MDX branch must stay an AST walk, never regex.** `docs/cli/command.mdx` has a
+  bash heredoc (`<<EOF`) inside a code fence; any tag-stripping regex mangles it. The
+  visitor never enters `code` nodes.
+- **`normalizeUnicode` is only for strings we compose**, never for verbatim bodies.
+  Blueprint bodies carry mermaid fences where `-->` and `->` are syntax.
+- **`joinLines` keeps empty strings** on purpose: they are how callers request a blank
+  line, and markdown is whitespace-significant.
+- **`/blueprints/<file-id>.md` is not a twin.** It is the verbatim source download,
+  frontmatter included, and its URL is interpolated into a copyable command on the
+  detail page, so those URLs are already in users' agent transcripts. The bytes and the
+  path shape are frozen. Its namespace (file ids, all ending `-semantic-blueprint`) must
+  stay disjoint from page slugs; `getStaticPaths` throws if they ever collide, which is
+  the one deliberate hard failure in the feature because it guards data loss.
+- **`_headers` carries a per-page `Link: rel="alternate"`** via four `:placeholder`
+  rules. Verified working on Cloudflare, which interpolates the matched segment into the
+  header value. Netlify does not, so those rules only make sense on a Cloudflare-only
+  deploy.
+
+### All content URLs come from `src/lib/routes.ts`
+
+Slug derivation lives in exactly one module, imported by the `.astro` pages, the twin
+writers, `llms.txt` and `rss.xml.js`. This is not tidiness. Before it existed,
+`rss.xml.js` derived blog links from `post.slug`, which the Astro content layer stopped
+providing, and every item in the live feed pointed at `/blog/undefined` for an unknown
+length of time. Deriving the same URL in two places is how that happens. Add a helper
+here rather than inlining a second expression.
+
 ### React islands: what they cost and how to add one
 
 React is not load-bearing. There is no router, no form library and no React component
@@ -159,7 +215,27 @@ that would duplicate the header on one platform and let the two targets drift.
 There are no `prerender = false` routes, so Astro builds in `static` mode. Consequences a future session must not undo by accident:
 
 - `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
-- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/blueprints/[id].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`.
+- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/lib/dualmark/manifest.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`. The failure mode is a **zero-byte file, not an error**, so check sizes: `find dist/client -name '*.md' -size -100c` must print nothing.
+- That rule is narrower than it looks, and treating it as a blanket ban costs work:
+  - **`entry.body` from `getCollection()` is safe in workerd.** The content-layer store is bundled as a Vite virtual module, not read from disk at prerender time. Only reach for `import.meta.glob` when you need a repo file *verbatim including frontmatter*, or a file that is in no collection at all.
+  - **`astro:build:done` runs in Node under every adapter.** Anything needing the filesystem, or a heavy dependency you would rather not bundle into workerd, belongs in an integration hook rather than a route. `markdownTwins()` and `pagefindIndex()` both rely on this.
+  - Heavy parsers are better run in a **content loader** than in a route: the loaders run in Node, and a derived field on the entry is then free at render time. `docs` and `blog` derive `markdownTwin` this way, mirroring how `blueprints` derives `overview` and `subsetHtml`.
+
+### Prerendered endpoint response headers are discarded
+
+An `APIRoute` that returns `new Response(body, { headers })` in a static build contributes **only the body**. Astro writes the bytes to disk and drops the headers, because the Cloudflare adapter declares no `staticHeaders` feature. The tell is live and observable: the same `.md` file is served as `text/markdown; charset=UTF-8` by Netlify and `text/markdown` by Cloudflare, so the type is coming from each platform's extension table, not from the endpoint.
+
+So **`public/_headers` is the only header surface**. Setting a content type on an endpoint is still worth doing because it is correct in `astro dev`, but nothing may depend on it reaching production.
+
+One trap in `_headers` itself: Cloudflare matches rules against the **request** path and applies them **after** resolving the 404 asset. A `Content-Type` under `/*.md` therefore labels the HTML 404 page as markdown on every missing `.md` URL. Set `nosniff`, `X-Robots-Tag`, `Cache-Control` and `Vary` there, never `Content-Type`.
+
+### A `public/` file silently shadows a route with the same output path
+
+`public/` is copied verbatim into the output, and a collision is resolved in its favour with only a log line: `Skipping src/pages/llms.txt.ts because a file with the same name exists in the public folder`. The route then emits nothing. When converting a static `public/` file into a generated route, delete the original **in the same commit**. Prose partials for such routes belong in `src/data/`, not `src/content/`, because `getNoIndexUrls()` in `astro.config.mjs` walks all of `src/content` looking for frontmatter.
+
+### Dynamic `import()` inside `astro:build:done` races Vite's module runner
+
+`await import('pagefind')` inside a build-done hook resolves through Vite's module runner, which can already be closed by the time trailing hooks run, producing `Vite module runner has been closed`. It is timing-dependent, so it can survive for a long time and then break when another integration is added ahead of it. Import such modules statically at the top of `astro.config.mjs` instead.
 
 ### Verifying adapter-specific output: bypass turbo, build in `apps/web`
 

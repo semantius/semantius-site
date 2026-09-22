@@ -9,3 +9,58 @@
 #   service-doc -> /docs       (human-oriented documentation, RFC 8631)
 /*
   Link: </llms.txt>; rel="describedby"; type="text/plain", </docs>; rel="service-doc"; type="text/html"
+
+# Markdown twins. Every page is also published as agent-facing markdown at the
+# same path with the trailing slash removed and ".md" appended:
+#   /about/    -> /about.md
+#   /docs/cli/ -> /docs/cli.md
+#   /          -> /index.md
+#
+# Content-Type is pinned because Cloudflare serves .md as bare "text/markdown"
+# with NO charset, and markdown has no in-band way to declare its encoding. The
+# docs bodies contain real UTF-8 (arrows, typographic quotes), so without this a
+# browser decodes them as Latin-1 and renders mojibake.
+#
+# Measured trade-off, not a guess: with this line, a request for a .md that does
+# not exist returns HTTP 404 with an HTML body still labelled text/markdown,
+# because Cloudflare matches these rules against the REQUEST path and applies
+# them after resolving the 404 asset. That was verified on a preview deploy.
+# Accepted, because the 404 status code is the primary signal and stays correct,
+# whereas dropping this line mis-decodes all 232 valid markdown files. The clean
+# fix for both is a markdown-aware 404, which needs a Worker.
+#
+# Cache-Control is safe under /*.md but must NEVER appear under /*: the
+# Cloudflare adapter probes /_astro/probe against this file and skips injecting
+# its own immutable cache block if any matching rule sets Cache-Control.
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+  X-Robots-Tag: noindex
+  Cache-Control: public, max-age=3600
+  Vary: Accept
+
+# Per-page markdown alternate, as an HTTP header for clients that never parse
+# the HTML. Cloudflare's rules engine compiles :name to a named capture and
+# substitutes it into the value; Netlify treats :name as a path matcher only and
+# would emit a literal "</:s1.md>", so these rules only pay off once Cloudflare
+# is the single target. Until then the <link rel="alternate"> in SEO.astro is
+# what carries this relation, and it reaches every page on both platforms.
+#
+# Every rule requires a trailing slash, which no asset URL has, so they cannot
+# match /logo.png or /_astro/hash.css. Max route depth in this build is 3.
+/
+  Link: </index.md>; rel="alternate"; type="text/markdown"
+/:s1/
+  Link: </:s1.md>; rel="alternate"; type="text/markdown"
+/:s1/:s2/
+  Link: </:s1/:s2.md>; rel="alternate"; type="text/markdown"
+/:s1/:s2/:s3/
+  Link: </:s1/:s2/:s3.md>; rel="alternate"; type="text/markdown"
+
+# The wildcard rules above cannot express the hasMarkdownTwin() guard that
+# SEO.astro applies to the HTML <link>, so they would advertise a twin for the
+# 13 /blueprints/page/N redirect stubs, which have none and would 404. Unset the
+# header for them. These are noindex meta-refresh stubs that hand-roll their own
+# document and never reach Layout, so they lose nothing else by it.
+/blueprints/page/:n/
+  ! Link

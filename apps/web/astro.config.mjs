@@ -13,6 +13,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sirv from 'sirv';
 import matter from 'gray-matter';
+import { markdownTwins } from './src/lib/dualmark/integration';
+// Imported statically rather than with `await import('pagefind')` inside the
+// astro:build:done hook. That dynamic import resolves through Vite's module
+// runner, which can already be closed by the time trailing build hooks run,
+// producing "Vite module runner has been closed".
+import * as pagefind from 'pagefind';
 
 /**
  * Remark plugin that injects a "Use <Skill>" heading and install command box
@@ -201,7 +207,6 @@ function pagefindIndex() {
       },
       'astro:build:done': async ({ dir, logger }) => {
         const out = fileURLToPath(dir);
-        const pagefind = await import('pagefind');
         const { index, errors } = await pagefind.createIndex({
           // Sidebars, breadcrumbs, TOC, heading permalinks and anything marked
           // data-pagefind-ignore never reach the index.
@@ -366,6 +371,24 @@ function getAdapter() {
 //
 // Scheme 2 has no entries any more: the move back to top-level folders restored
 // exactly those URLs, so they are live pages again and must not be redirected.
+/**
+ * Turn a map of HTML redirects into the same map for their markdown twins:
+ *   "/docs/models-overview" -> "/docs/models"
+ * becomes
+ *   "/docs/models-overview.md" -> "/docs/models.md"
+ *
+ * Targets that are already a file (the blueprint source downloads) or external
+ * are skipped, since they have no twin.
+ */
+function markdownRedirects(map) {
+  const out = {};
+  for (const [from, to] of Object.entries(map)) {
+    if (typeof to !== 'string' || !to.startsWith('/') || /\.[a-z0-9]{2,4}$/i.test(to)) continue;
+    out[`${from.replace(/\/$/, '')}.md`] = `${to.replace(/\/$/, '')}.md`;
+  }
+  return out;
+}
+
 const docsLegacyRedirects = {
   // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
   '/docs/models-overview': '/docs/models',
@@ -432,7 +455,15 @@ const blueprintLegacyRedirects = {
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
   output: 'static',
-  redirects: { ...docsLegacyRedirects, ...blueprintLegacyRedirects },
+  redirects: {
+    ...docsLegacyRedirects,
+    ...blueprintLegacyRedirects,
+    // Markdown twins of every legacy path. Without these, an agent that was
+    // given an old URL and appends ".md" gets a 404, because Astro's redirects
+    // only cover the HTML form. Derived from the same maps so the two can
+    // never disagree about where a legacy path now lives.
+    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects }),
+  },
   fonts: [
     {
       provider: fontProviders.google(),
@@ -497,6 +528,14 @@ export default defineConfig({
     // whole site to its mobile layout (desktop nav and multi-column grids gone).
     (await import("astro-compress")).default({ Image: false, JavaScript: true, HTML: false, CSS: false }),
     // Keep last (see pagefindIndex docblock).
+    // Tier B markdown twins: extract from the rendered HTML of any page the
+    // .md route did not already emit from source. Must run BEFORE
+    // pagefindIndex(), which has to stay last; Pagefind globs **/*.html so the
+    // .md files it writes are never indexed.
+    // siteUrl is read from the resolved Astro config inside the integration,
+    // not from process.env: Vite merges apps/web/.env (SITE_URL=localhost:4321)
+    // into process.env after this file is evaluated.
+    markdownTwins(),
     pagefindIndex(),
   ],
   vite: {
