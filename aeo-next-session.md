@@ -10,18 +10,56 @@ Three pieces of work, in strict order. Each is a prerequisite for the next.
 | **B** | Remove the trailing slash | **Done and verified on preview.** Ships *with* the twins, in one release: B lands before `aeo` merges. |
 | **A** | Markdown and copy actions in the docs header | **Done and verified on preview.** |
 
-## Still open, after B and A landed
+## Still open
 
-1. **Merge `aeo` into `main` and `pnpm deploy:wrangler --prod`.** This is the
-   release. Production is still the 2026-05-27 build (section 0c), so this
-   deploy moves it forward by 57 commits *and* changes the URL scheme. Nothing
-   in B or A reaches a real user until it runs.
-2. **Unblock `GPTBot` and `ClaudeBot`** at the zone. Dashboard only, not
-   reachable from code. Still 403.
-3. **Section 0b, removing Netlify.** Deliberately still gated, and the gate has
-   not opened: it is the rollback path, and a rollback is still plausible until
-   the production release in item 1 has landed and held.
-4. **Decide whether the Worker gets deploy-on-push** (section 0c).
+`aeo` is merged into `main` and pushed. Sections B and A are done and verified
+on preview. What remains:
+
+1. **BLOCKER: the placeholder claims in `/pricing.md`.** The twin publishes, as
+   clean quotable markdown, "We offer a 14-day free trial on the Pro plan",
+   "We accept all major credit cards, PayPal, and wire transfers for
+   Enterprise" and "Yes, we have a 30-day money-back guarantee", while every
+   price on the same page renders as `X/month`. These are commercial
+   commitments, and a claim an answer engine has quoted cannot be retracted the
+   way a web page can. **Do not run the production deploy until this is fixed**,
+   because that deploy is the moment these 176 documents first become
+   crawlable. One-file fix: `apps/web/src/data/twin-overrides/pricing.md`.
+   Needs the real terms from the human; see `aeo-followup.md` item 1.
+2. **The release: `pnpm deploy:wrangler --prod`.** Production still serves the
+   2026-05-27 build, so this moves it forward by 57 commits *and* changes the
+   URL scheme. Now more urgent than when it was written: the AI crawlers were
+   unblocked on 2026-09-22 and are currently crawling that stale build, where
+   every `.md`, `llms-full.txt` and every `Link` header 404s or is absent.
+3. **Section 0b, removing Netlify.** Still gated: it is the rollback path, and
+   a rollback stays plausible until item 2 has landed and held.
+4. **Decide whether the Worker gets deploy-on-push** (section 0c). A manual
+   deploy plus a four-month gap is how the staleness in item 2 happened.
+5. **Verify `_headers` and `robots.txt` against production** once item 2 lands.
+   Neither has ever run there (section 0c), and two things can only be checked
+   on the real host: `X-Robots-Tag` behaviour, which the `workers.dev` preview
+   masks by injecting its own `noindex`, and whether Cloudflare's Bot
+   Preference Sync starts prepending directives to our `robots.txt`.
+
+**Done since this list was written:** the AI crawler block (item 2 of
+`aeo-followup.md`, now resolved, measured below), and the blueprint source move
+to `/blueprints/source/` that let every markdown twin carry a `rel="canonical"`
+instead of being suppressed with `noindex`.
+
+### Crawler access, measured 2026-09-22 after the zone change
+
+| Crawler | Category | Before | After |
+|---|---|---|---|
+| GPTBot | Training | 403 | **200** |
+| ClaudeBot | Training | 403 | **200** |
+| OAI-SearchBot | Search | 200 | 200 |
+| Claude-SearchBot | Search | 200 | 200 |
+| Claude-User | Agent | 200 | 200 |
+| PerplexityBot | Search | 200 | 200 |
+
+Only the Training category was ever blocked. Everything that decides whether
+this site is cited in AI answers was already open, so unblocking Training was a
+licensing decision rather than an AEO one. Setting lives under **AI Crawl
+Control** in the zone sidebar, per-crawler, grouped Search / Agent / Training.
 
 Background on the markdown twins is in `CONTEXT-MEMORY.md` under "Every page is
 published twice: HTML and markdown". Open items from that work are in

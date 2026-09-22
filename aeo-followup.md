@@ -16,7 +16,7 @@ https://aeo-20260922102428-semantius-site.ma532.workers.dev
 
 ## Blockers before this is production ready
 
-### 1. Decide what `/pricing` claims, then fix the page or override the twin
+### 1. BLOCKS THE PRODUCTION RELEASE: decide what `/pricing` claims
 
 **Size: small to override, medium to fix properly.**
 
@@ -42,7 +42,33 @@ Either finish the pricing copy, or land
 `apps/web/src/data/twin-overrides/pricing.md` as a hand-written twin. The second
 is a one file drop and is what Resend does for the same page.
 
-### 2. Confirm GPTBot and ClaudeBot are unblocked at the Cloudflare zone
+### 2. RESOLVED 2026-09-22: GPTBot and ClaudeBot are unblocked
+
+**Done.** Re-measured against `https://www.semantius.com/llms.txt` after the
+change: GPTBot 200, ClaudeBot 200, and OAI-SearchBot, Claude-SearchBot,
+Claude-User and PerplexityBot unchanged at 200.
+
+Two corrections to what this item originally claimed, so the reasoning is not
+reused as-is next time:
+
+- **Only the Training category was ever blocked.** The line below about "the
+  two crawlers that matter most" overstated it. ChatGPT Search reaches this
+  site through OAI-SearchBot, Claude's search through Claude-SearchBot, and
+  live fetches through Claude-User and ChatGPT-User. All four returned 200
+  throughout. Unblocking Training was therefore a licensing decision, not an
+  AEO one.
+- **The setting is under `AI Crawl Control` in the zone sidebar**, not under
+  Security, and it is per-crawler across three categories (Search, Agent,
+  Training) rather than one "Block AI bots" switch.
+
+**Caveat that now matters more than the block did:** the crawlers are in, and
+production still serves the 2026-05-27 build. Every `.md`, `llms-full.txt` and
+every `Link` header 404s or is absent there. See item 2 of the "Still open"
+list in `aeo-next-session.md`.
+
+---
+
+*Original text follows.*
 
 **Size: small. A dashboard toggle, not code.**
 
