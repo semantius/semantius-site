@@ -1,6 +1,7 @@
 ---
 export const prerender = true;
 import { getCollection } from 'astro:content';
+import { skillSourceUrl } from '~/lib/repo';
 import Layout from '~/layouts/Layout.astro';
 import Command from '~/components/common/Command.astro';
 import SkillInstall from '~/components/common/SkillInstall.astro';
@@ -31,12 +32,10 @@ const paragraphs = (catalog.catalog_description ?? '')
 	.map((p) => p.trim())
 	.filter(Boolean);
 
-// Install command mirrors the one the remark plugin injects on skill READMEs.
-// SkillInstall wraps this URL in `npx skills add <url> ...` and appends the
-// agent/global flags chosen in its UI.
-const installUrl = catalog.skill_name
-	? `https://github.com/semantius/semantius/tree/main/skills/${catalog.skill_name}`
-	: null;
+// Same URL the remark plugin injects on skill READMEs, from one definition in
+// ~/lib/repo. SkillInstall wraps it in `npx skills add <url> ...` and appends
+// the agent/global flags chosen in its UI.
+const installUrl = catalog.skill_name ? skillSourceUrl(catalog.skill_name) : null;
 
 // Usage command shows how to invoke the installed skill in chat.
 const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` : null;
@@ -130,7 +129,7 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 			{catalog.skill_name && (
 				<div class="mt-10 border-t border-border pt-6">
 					<a
-						href={`https://github.com/semantius/semantius/tree/main/skills/${catalog.skill_name}`}
+						href={skillSourceUrl(catalog.skill_name)}
 						target="_blank"
 						rel="noopener noreferrer"
 						class="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"

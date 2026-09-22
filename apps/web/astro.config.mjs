@@ -14,6 +14,8 @@ import { fileURLToPath } from 'node:url';
 import sirv from 'sirv';
 import matter from 'gray-matter';
 import { markdownTwins } from './src/lib/dualmark/integration';
+import { skillSourceUrl } from './src/lib/repo';
+import { skillInstallCommand } from './src/lib/skill-install';
 // Imported statically rather than with `await import('pagefind')` inside the
 // astro:build:done hook. That dynamic import resolves through Vite's module
 // runner, which can already be closed by the time trailing build hooks run,
@@ -37,7 +39,9 @@ function remarkSkillInstallCommand() {
         if (!match) return;
 
         const slug = match[1];
-        const command = `npx skills add https://github.com/semantius/semantius/tree/main/skills/${slug}`;
+        // Both halves come from one definition: the repo URL from ~/lib/repo and
+        // the flags from ~/lib/skill-install, which is what the page renders.
+        const command = skillInstallCommand(skillSourceUrl(slug));
 
         // Title: prefer frontmatter data set by Astro's remark pipeline; fall
         // back to parsing the raw file source, then to the slug.
