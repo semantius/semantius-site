@@ -242,9 +242,9 @@ deployment all carry `X-Robots-Tag: noindex`, and it is absent from the built
 header there, and a rule that does nothing looks identical to a rule that
 works. Verify those against `www.semantius.com` after a production deploy.
 
-This is the same family of trap as the zone-level AI crawler block in
-`aeo-followup.md`: the preview host is not in the `semantius.com` zone and does
-not behave like production for anything a crawler cares about.
+This is the same family of trap as the zone-level AI crawler block was: the
+preview host is not in the `semantius.com` zone and does not behave like
+production for anything a crawler cares about.
 
 ### Markdown twins are canonicalised, not noindexed
 

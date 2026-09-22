@@ -24,8 +24,8 @@
  *    and no more.
  *
  *    REMOVE THIS ENTRY once the pricing copy is real or a hand-written twin
- *    lands at src/data/twin-overrides/pricing.md. Tracked as item 1 in
- *    aeo-followup.md and as the release blocker in aeo-next-session.md.
+ *    lands at src/data/twin-overrides/pricing.md. Tracked as the open item at
+ *    the top of todo.md.
  *    Nothing else needs changing when it goes: twinUrl() already falls back to
  *    the HTML URL for excluded pages, so /llms.txt links stay valid either way.
  */
