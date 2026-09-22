@@ -1,9 +1,8 @@
 # RFC 8288 Link response headers for agent / machine discovery.
-# A single source honored by BOTH deploy targets: Astro copies this file from
-# public/ into the published output (dist/client for the Cloudflare adapter,
-# dist root for the Netlify adapter), and each platform's static asset handler
-# applies it. Keep this as the only place these headers are defined so the two
-# targets never drift.
+# Astro copies this file from public/ into dist/client and Cloudflare's static
+# asset handler applies it. Cloudflare is the only deploy target; the file was
+# previously kept platform-neutral for Netlify, which is no longer in the
+# request path.
 # Relation types are IANA-registered and point to resources that exist:
 #   describedby -> /llms.txt   (LLM-readable description of this site, RFC 8288)
 #   service-doc -> /docs       (human-oriented documentation, RFC 8631)
@@ -11,10 +10,10 @@
   Link: </llms.txt>; rel="describedby"; type="text/plain", </docs>; rel="service-doc"; type="text/html"
 
 # Markdown twins. Every page is also published as agent-facing markdown at the
-# same path with the trailing slash removed and ".md" appended:
-#   /about/    -> /about.md
-#   /docs/cli/ -> /docs/cli.md
-#   /          -> /index.md
+# same path with ".md" appended:
+#   /about    -> /about.md
+#   /docs/cli -> /docs/cli.md
+#   /         -> /index.md
 #
 # Content-Type is pinned because Cloudflare serves .md as bare "text/markdown"
 # with NO charset, and markdown has no in-band way to declare its encoding. The
@@ -39,28 +38,18 @@
   Cache-Control: public, max-age=3600
   Vary: Accept
 
-# Per-page markdown alternate, as an HTTP header for clients that never parse
-# the HTML. Cloudflare's rules engine compiles :name to a named capture and
-# substitutes it into the value; Netlify treats :name as a path matcher only and
-# would emit a literal "</:s1.md>", so these rules only pay off once Cloudflare
-# is the single target. Until then the <link rel="alternate"> in SEO.astro is
-# what carries this relation, and it reaches every page on both platforms.
+# There is deliberately NO per-page "Link: rel=alternate" rule here.
 #
-# Every rule requires a trailing slash, which no asset URL has, so they cannot
-# match /logo.png or /_astro/hash.css. Max route depth in this build is 3.
-/
-  Link: </index.md>; rel="alternate"; type="text/markdown"
-/:s1/
-  Link: </:s1.md>; rel="alternate"; type="text/markdown"
-/:s1/:s2/
-  Link: </:s1/:s2.md>; rel="alternate"; type="text/markdown"
-/:s1/:s2/:s3/
-  Link: </:s1/:s2/:s3.md>; rel="alternate"; type="text/markdown"
-
-# The wildcard rules above cannot express the hasMarkdownTwin() guard that
-# SEO.astro applies to the HTML <link>, so they would advertise a twin for the
-# 13 /blueprints/page/N redirect stubs, which have none and would 404. Unset the
-# header for them. These are noindex meta-refresh stubs that hand-roll their own
-# document and never reach Layout, so they lose nothing else by it.
-/blueprints/page/:n/
-  ! Link
+# An earlier revision carried /:s1/, /:s1/:s2/ and /:s1/:s2/:s3/ rules that
+# advertised each page's markdown twin as an HTTP header. They depended on the
+# trailing slash as the only thing separating a page URL from an asset URL:
+# every page ended in "/", no asset did. Canonical URLs are now slash-less
+# (trailingSlash:'never' in astro.config.mjs), so those patterns would match
+# /logo.png and /_astro/hash.css, and the slashed forms they did match no longer
+# resolve. A scoped rewrite (per-section prefixes plus an enumerated list of
+# root-level pages) was rejected: it fails silently the first time someone adds
+# a top-level page.
+#
+# Nothing is lost by this. The <link rel="alternate" type="text/markdown"> in
+# SEO.astro reaches every page, applies the same hasMarkdownTwin() guard these
+# rules could not express, and is the form crawlers actually parse.

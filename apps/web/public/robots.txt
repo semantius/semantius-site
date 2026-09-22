@@ -1,8 +1,8 @@
 # Everything here is crawlable, including by AI crawlers.
 #
 # Machine-readable twins: every page is also published as markdown at the same
-# path with the trailing slash removed and ".md" appended, for example
-# https://www.semantius.com/pricing/ -> https://www.semantius.com/pricing.md
+# path with ".md" appended, for example
+# https://www.semantius.com/pricing -> https://www.semantius.com/pricing.md
 # Each HTML page advertises its own twin with
 #   <link rel="alternate" type="text/markdown" href="...">
 #

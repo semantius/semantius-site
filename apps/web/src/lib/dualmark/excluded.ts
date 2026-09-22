@@ -9,8 +9,8 @@
 
 /**
  * Pages with no twin:
- *  - /404, which is an error page, not content. Note Astro reports its
- *    pathname as "/404/" even though the emitted file is 404.html.
+ *  - /404, which is an error page, not content. The regexes below tolerate a
+ *    trailing slash because Astro has reported this route both ways.
  *  - /blueprints/page/N, 13 meta-refresh redirect stubs that hand-roll their
  *    own <html> and never pass through Layout.
  */

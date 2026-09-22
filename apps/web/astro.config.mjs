@@ -455,6 +455,14 @@ const blueprintLegacyRedirects = {
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
   output: 'static',
+  // Canonical URLs carry no trailing slash. With build.format left at its
+  // 'directory' default the output layout is unchanged (docs/cli/index.html);
+  // only Astro.url.pathname changes, which is what the canonical, og:url and
+  // the markdown twins are built from. Cloudflare's html_handling matches this
+  // in workplace/wrangler.jsonc. Do NOT "simplify" this with
+  // build.format: 'file' — that sets ending='.html' unconditionally and makes
+  // the canonical /docs/cli.html.
+  trailingSlash: 'never',
   redirects: {
     ...docsLegacyRedirects,
     ...blueprintLegacyRedirects,

@@ -22,9 +22,11 @@ export function twinUrl(pathname: string, siteUrl: string): string {
 }
 
 export function canonicalUrl(pathname: string, siteUrl: string): string {
-	// Canonical HTML URLs carry the trailing slash: Astro builds in directory
-	// format, and both deploy targets redirect the bare form to the slashed one.
-	const p = pathname === '/' ? '/' : `${pathname.replace(/\/+$/, '')}/`;
+	// Canonical HTML URLs carry NO trailing slash: astro.config.mjs sets
+	// trailingSlash:'never' and the Worker's html_handling is
+	// drop-trailing-slash, so the slashed form 307s away. Strip rather than
+	// pass through, because callers pass route-helper paths that may not agree.
+	const p = pathname === '/' ? '/' : pathname.replace(/\/+$/, '');
 	return new URL(p, siteUrl).toString();
 }
 

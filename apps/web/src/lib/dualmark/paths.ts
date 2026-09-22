@@ -3,11 +3,11 @@
  * See ./NOTICE. Modified: added toHtmlPath and isMarkdownPath.
  *
  * URL path helpers for the markdown twin convention. Every HTML page at
- * `/foo/` has a twin at `/foo.md`; the site root maps to `/index.md`.
+ * `/foo` has a twin at `/foo.md`; the site root maps to `/index.md`.
  *
- * The trailing slash strip matters here rather than being cosmetic: Astro
- * builds in directory format (no `build.format` override), so every page URL
- * ends in `/` and both deploy targets redirect the bare form to it.
+ * Canonical URLs carry no trailing slash (`trailingSlash: 'never'`), so the
+ * strip below is defensive rather than load-bearing: callers pass route-helper
+ * paths and raw pathnames, and a slashed one must not produce `/foo/.md`.
  */
 
 /**

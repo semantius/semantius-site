@@ -9,7 +9,11 @@
   "compatibility_flags": ["nodejs_compat"],
   "assets": {
     "directory": "../apps/web/dist/client",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    // Canonical URLs are slash-less, matching trailingSlash:'never' in
+    // astro.config.mjs. /foo serves 200; /foo/, /foo.html and /foo/index.html
+    // all 307 to /foo. The 307 is not configurable.
+    "html_handling": "drop-trailing-slash"
   },
   "observability": {
     "enabled": true

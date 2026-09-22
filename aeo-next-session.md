@@ -5,8 +5,9 @@ Three pieces of work, in strict order. Each is a prerequisite for the next.
 | | | |
 |---|---|---|
 | **0** | Cloudflare cutover | **Done.** `www` on the Worker, apex redirect live, Netlify out of the request path. |
+| **0c** | Production is four months stale | **Read this.** The Worker's last prod deploy is 2026-05-27, so `_headers` has never run in production. |
 | **0b** | Remove Netlify from the codebase | Gated, deliberately not done. It is the rollback path. |
-| **B** | Remove the trailing slash | **Next. Fresh session.** |
+| **B** | Remove the trailing slash | **Next. Fresh session.** Ships *with* the twins, in one release: B lands before `aeo` merges. |
 | **A** | Markdown and copy actions in the docs header | After B. B changes URL shape, A builds UI that embeds URLs. |
 
 Background on the markdown twins is in `CONTEXT-MEMORY.md` under "Every page is
@@ -141,10 +142,10 @@ scope only.
       `Hostname 'www.semantius.com' already has externally managed DNS records`
       means. It is not a sign the domain is off Cloudflare.
 
-- [ ] Workers, `semantius-site`, Domains & Routes, add Custom Domain
+- [x] Workers, `semantius-site`, Domains & Routes, add Custom Domain
       `www.semantius.com`. Confirm a new Workers-managed `www` record appears.
 
-- [ ] **DNS: edit the apex `A` record from `75.2.60.5` to `192.0.2.1`, keeping
+- [x] **DNS: edit the apex `A` record from `75.2.60.5` to `192.0.2.1`, keeping
       it proxied. Do not delete it.** Deleting leaves the apex with no record,
       so there is nothing proxied for the Redirect Rule to fire on and
       `semantius.com` NXDOMAINs.
@@ -163,7 +164,7 @@ scope only.
       off the apex also means rule-versus-Worker execution order never has to be
       reasoned about.
 
-- [ ] Rules, Redirect Rules, new single redirect:
+- [x] Rules, Redirect Rules, new single redirect:
 
       | | |
       |---|---|
@@ -175,9 +176,11 @@ scope only.
       Single Redirects are available on all plans including Free, and require
       the hostname to be proxied.
 
-- [ ] While in the dashboard, check the AI crawler block for the zone. `GPTBot`
-      and `ClaudeBot` were 403 at planning time (item 2 in `aeo-followup.md`).
-      Record the decision in `CONTEXT-MEMORY.md` so nobody quietly reverts it.
+- [ ] **Still open.** Check the AI crawler block for the zone. Re-measured
+      against production on 2026-09-22 and unchanged: `GPTBot` 403,
+      `ClaudeBot` 403, `Googlebot` 200 on `/llms.txt` (item 2 in
+      `aeo-followup.md`). Record the decision in `CONTEXT-MEMORY.md` so nobody
+      quietly reverts it.
 
 **Zero-downtime alternative to the first two items:** add a Worker Route instead
 of a Custom Domain. Routes attach to an existing proxied hostname without
@@ -232,14 +235,40 @@ works under the Cloudflare adapter, so the `preview` script needed no change.
 
 - [ ] **Commit before deploying.** Deploys can crash the agent and uncommitted
       work is lost.
-- [ ] `pnpm deploy:wrangler` to ship the build-script change. Not urgent: it
-      produces byte-identical output to the previous `ADAPTER=cloudflare` path,
-      so the live site is already correct.
+- [ ] `pnpm deploy:wrangler --prod`. **This is urgent, not cosmetic.** An
+      earlier draft called it "not urgent, the live site is already correct".
+      That was wrong: see section 0c.
 
 Do **not** delete `apps/web/wrangler.jsonc`. An earlier draft of this plan called
 it dead. It is not: the Astro Cloudflare adapter reads it (`platformProxy` is
 enabled in `astro.config.mjs`) and the build writes a resolved copy to
 `dist/client/wrangler.json` naming it as the `configPath`.
+
+---
+
+# 0c. Production is four months stale
+
+**Found during the plan review. Read before planning the release.**
+
+The Worker's last production deploy was **2026-05-27**; `main` has had 57
+commits since, and this branch is on top of that. Measured 2026-09-22:
+
+| Probe | Result | Means |
+|---|---|---|
+| `/models` | 404 | the `/models -> /blueprints` redirect in `astro.config.mjs` is not deployed |
+| `Link:` on any page | absent | `public/_headers` is not in effect at all, not even the `/*` `describedby` rule that landed on `main` in `47ee4e2` |
+| `/_astro/*.css` `Cache-Control` | `max-age=0, must-revalidate` | the adapter's immutable cache block is not in effect either, same cause |
+| `/pricing.md`, `/llms-full.txt` | 404 | the twins are on this branch only |
+| `/llms.txt` | 200 | the OLD hand-written `public/llms.txt` from `main` |
+
+The consequence that matters: **`_headers` has never run in production.**
+Everything that file does is proven on preview deploys only, including the
+`/*.md` `Content-Type: text/markdown; charset=utf-8` pin that
+`CONTEXT-MEMORY.md` records as the only thing between the twins and mojibake.
+The first production deploy is where that gets proven.
+
+- [ ] Decide whether the Worker gets deploy-on-push or stays manual. A manual
+      deploy plus a four-month gap is how this happened.
 
 ---
 
@@ -281,6 +310,19 @@ curl -sSI https://www.semantius.com/docs/cli/ | grep -i 'x-nf-request-id'
 > It is safe to start only when `www.semantius.com` is served by the Worker and
 > Netlify is out of the request path.
 
+## Release sequencing: B lands before `aeo` merges
+
+**Decided.** B is not a follow-up to the twins, it ships with them. The twins
+have never been in production (section 0c), so the two-step
+"strip the slash, then append `.md`" convention has never been published. Land
+B on this branch, then merge and deploy once. Production sees a single canonical
+change and the prose in `llms-intro.md` and `robots.txt` is written once, in its
+final form.
+
+B is therefore **not done at a green preview**. Done is: merged to `main` and
+`pnpm deploy:wrangler --prod`, with the verification block below re-run against
+`www.semantius.com`.
+
 ## The problem
 
 `/docs/reference/` is the canonical URL. Appending `.md` to it gives
@@ -313,18 +355,27 @@ Nobody chose it. Two defaults compound:
 
 ## The argument, ranked by strength
 
-1. **The redirect tax is real and measured.** Every hardcoded href in
-   `src/**/*.astro` is slash-less (verified: zero slashed hrefs), every
-   `NavNode.path` in `src/lib/docs-tree.ts` is slash-less, and `DocsLayout`
-   compares against a `normalizedCurrentPath` with the slash stripped. The whole
-   codebase already thinks slash-less. The slash exists only at the edge, so
-   **every internal navigation is a redirect hop that buys nothing** (4 of 4
-   tested). Browsers cache a 301; crawlers and agents doing one-shot fetches do
-   not, and they are this project's audience.
-2. **The published convention takes two steps where everyone else's takes one.**
+1. **The redirect tax is real, measured, and paid by everyone.** Every
+   hardcoded href in `src/**/*.astro` is slash-less (verified: zero slashed
+   hrefs; the four in `src/components/islands/Search.jsx` are the only
+   exception anywhere in `src/`, and step 5 fixes them), every `NavNode.path`
+   in `src/lib/docs-tree.ts` is slash-less, and `DocsLayout` compares against a
+   `normalizedCurrentPath` with the slash stripped. The whole codebase already
+   thinks slash-less. The slash exists only at the edge, so **every internal
+   navigation is a redirect hop that buys nothing** (4 of 4 tested).
+
+   **Correction to an earlier draft, which said "browsers cache a 301" and
+   treated the tax as falling mainly on crawlers.** The hop is a **307**, not a
+   301: `auto-trailing-slash` issues 307 in the same way `drop-trailing-slash`
+   will. A 307 is never cached by anything. So the tax is paid on every
+   navigation by every visitor, human or agent, forever. This is the whole
+   argument for B. The direction of the surviving redirect, discussed in step 2,
+   is a footnote by comparison.
+2. **The two-step convention would ship wrong, and has not shipped yet.**
    `robots.txt` and `llms-intro.md` both literally instruct "the same path with
    the trailing slash removed and .md appended". Two-step instructions get
-   followed wrong.
+   followed wrong. Neither file is in production (section 0c), so this is
+   prevention, not repair, which is exactly why B goes in before `aeo` merges.
 3. **The naive append 404s.** Narrower than it sounds: anything reading the
    `<link rel="alternate">` or the `Link` header gets the exact URL and never
    guesses. But it is the reason B must precede A, whose entire premise is
@@ -375,10 +426,27 @@ canonical normalisation is needed.
 own `config-schema.json`: the `html_handling` enum is
 `["auto-trailing-slash", "force-trailing-slash", "drop-trailing-slash", "none"]`.
 
-Documented behaviour: `/foo` serves 200, and `/foo/`, `/foo.html` and
-`/foo/index.html` all 307 to `/foo`. So redirects for already-indexed slashed
-URLs come for free and no redirect map is needed. Consider whether 301 is wanted
-instead of 307.
+Documented behaviour: `/foo` serves 200, and `/foo/`, `/foo.html`, `/foo/index`
+and `/foo/index.html` all 307 to `/foo`. So redirects for already-indexed
+slashed URLs come for free and no redirect map is needed.
+
+> **307 is not configurable. Accepted, and not worth more discussion.**
+>
+> The enum carries no status-code option, and Cloudflare issues 307 in both
+> directions: the site returns `/pricing` 307 `/pricing/` today under the
+> default, and will return `/pricing/` 307 `/pricing` after the flip.
+>
+> It barely matters, because **almost nothing requests the slashed form.**
+> Every internal link is already slash-less, so today every internal navigation
+> pays a pointless 307 and after the flip none does. The only population that
+> hits the new redirect is Google's current index, which holds 189 URLs in
+> slashed form because that is today's canonical, plus any external backlinks.
+> One re-crawl, consolidated by the `<link rel="canonical">` on each
+> destination. No user ever sees it.
+>
+> If a 301 is ever wanted, `_redirects` runs ahead of `html_handling`, so one
+> generated `/foo/  /foo  301` line per page from an `astro:build:done` hook
+> does it. Not now: 307 is the only one of the two that can be undone.
 
 ### 3. Revert the twin code that hard-codes the slash
 
@@ -405,13 +473,23 @@ assets, and the file says so in a comment. Every page URL ends in `/`; no asset
 URL does. Remove the slash and the rules stop matching pages, and patterns
 without it would match `/logo.png` or `/_astro/hash.css`.
 
-**Delete the four rules, and the `/blueprints/page/:n/ ! Link` rule with them.**
-Keep `/*` and `/*.md`. A scoped replacement is technically possible (prefix
-rules plus `! Link` under `/*.md`) but it would also unset the `describedby`
-relation on twins, and `_headers` has no negative matching for the root-level
-assets. The HTML `<link rel="alternate" type="text/markdown">` in `SEO.astro`
-reaches every page and is the form crawlers actually parse. Losing the header is
-a real but small regression. State it in the PR rather than glossing.
+**Delete all four rules, the `/` rule included, and the
+`/blueprints/page/:n/ ! Link` rule with them.** Keep `/*` and `/*.md`.
+
+**This is not a regression, because the header was never live.** Production
+returns no `Link` header at all (section 0c), so the per-page `rel="alternate"`
+relation has only ever existed on preview deploys. Nothing is being taken from
+a crawler that ever saw it. An earlier draft called this "a real but small
+regression" and told you to state it in the PR; that was written believing
+production matched the build. Do not carry that sentence into the PR.
+
+The `/` rule alone would still match after the change, since the root stays `/`.
+It is deleted anyway: one page carrying a relation the other 188 lack is not
+worth the explaining. A scoped replacement (prefix rules plus an enumerated list
+of root-level pages) was considered and rejected, because it rots silently the
+first time someone adds a top-level page. The HTML
+`<link rel="alternate" type="text/markdown">` in `SEO.astro` reaches every page
+and is the form crawlers actually parse.
 
 ### 5. Fix the hand-written slashed URLs
 
@@ -423,6 +501,18 @@ false of the prose.**
       convention sentence and all three example URLs are hand-written and
       slashed. This is the first thing an agent reads at `/llms.txt`.
 - [ ] `public/robots.txt`: same prose, same stale example.
+- [ ] `src/components/islands/Search.jsx` lines 6-9: four hardcoded slashed
+      hrefs in the quick-links list (`/docs/overview/`, `/features/`,
+      `/docs/guide/`, `/blog/`). **The "zero slashed hrefs" measurement in the
+      argument above only covered `src/**/*.astro`.** These four are the only
+      slashed internal links left anywhere in `src/`; content `.md` and `.mdx`
+      are clean (verified).
+- [ ] `Search.jsx` again, the Pagefind results: `d.url` comes from the indexed
+      file location, so every result is the directory form. Verified by
+      decompressing the fragments in `dist/client/pagefind/fragment/`:
+      `/features/`, `/blueprints/hiring-starter/`. Pagefind has no
+      trailing-slash option, so strip it where the result is mapped, or every
+      search click costs a 307.
 
 ### 6. Update the comments that document the old shape
 
@@ -449,10 +539,14 @@ grep -o '<link rel="canonical"[^>]*>' dist/client/docs/reference/index.html
 find dist/client -name '*.md' -size -100c      # must print nothing
 ```
 
+`astro dev` and `astro preview` have no host-level redirect, so a hand-typed
+slashed URL 404s locally after this change. That is expected, not a regression.
+
 Then on a preview deploy, with `U` from `.preview-url.md`. **This matrix covers
 the redirect map, which an earlier draft omitted**: `astro.config.mjs` ships
 roughly 60 redirects into `dist/client/_redirects`, and those are the entries
-most likely to interact badly with `html_handling`.
+most likely to interact badly with `html_handling`. Expect that file to shrink
+from 223 lines to ~112, all slash-less (see the risks table).
 
 ```bash
 for p in /docs/reference /docs/reference/ /docs/reference.md \
@@ -463,7 +557,9 @@ done
 # want: /docs/reference      -> 200
 #       /docs/reference/     -> 307 to /docs/reference
 #       /docs/reference.md   -> 200
-# watch for double hops on the legacy paths (307 drop-slash, then 301)
+# legacy SLASHED paths will double-hop (307 drop-slash, then 301). Expected,
+# see the risks table. What this matrix is really checking is that _redirects
+# is evaluated BEFORE html_handling, which Cloudflare implies but never states.
 
 curl -sS -o /dev/null -w '%{http_code}\n' "$U/docs/cli"   # want 200, not a redirect
 curl -sS "$U/docs/cli" | grep -o 'rel="alternate" type="text/markdown"[^>]*'
@@ -473,8 +569,9 @@ curl -sS "$U/docs/cli" | grep -o 'rel="alternate" type="text/markdown"[^>]*'
 
 | Risk | Note |
 |---|---|
-| Ranking wobble while Google consolidates 189 changed canonicals | Normal migration. `drop-trailing-slash` issues the redirects automatically. |
-| Per-page `Link` header is lost | Accepted above. The HTML link covers it. |
+| Ranking wobble while Google consolidates 189 changed canonicals | Normal migration. `drop-trailing-slash` issues the redirects automatically, at 307. See step 2. |
+| Per-page `Link` header is lost | Not a loss: it was never live. See step 4 and section 0c. |
+| Legacy slashed paths double-hop | Verified, not a risk to watch: `getTrailingSlashPaths` in `@astrojs/underscore-redirects@1.0.4` returns `[withoutSlash]` under `never` against `[withoutSlash, withSlash]` under `ignore`, so `_redirects` drops from 223 lines to ~112 and `/models/` becomes 307 then 301. Only affects legacy forms that are canonical nowhere. |
 | Netlify disagreeing | Eliminated by section 0. Do not start B before it is done. |
 | `Astro.url.pathname` shape | Resolved and verified. See step 1. |
 
@@ -603,4 +700,8 @@ be the differentiating version. Separate decision, larger than this task.
       `build.format: 'file'` trap, so nobody re-proposes it.
 - [ ] `CONTEXT-MEMORY.md`: record the AI crawler-block decision from section 0.
 - [ ] `aeo-followup.md`: close item 2 if the crawler block was resolved.
+- [ ] `CONTEXT-MEMORY.md`, "Custom response headers": record that the Worker has
+      no deploy-on-push, so `_headers` changes are not live until someone runs
+      `pnpm deploy:wrangler --prod` by hand. That is what section 0c is about
+      and it is the kind of thing a future session would get wrong twice.
 - [ ] Delete this file once all three sections are done.

@@ -35,10 +35,10 @@ Until now, a team whose business data has to be usable by both people and AI age
 ## Machine-readable formats
 
 Every page on this site is also published as markdown, at the same path with
-the trailing slash removed and ".md" appended:
+".md" appended:
 
-    https://www.semantius.com/pricing/        ->  https://www.semantius.com/pricing.md
-    https://www.semantius.com/docs/cli/       ->  https://www.semantius.com/docs/cli.md
+    https://www.semantius.com/pricing         ->  https://www.semantius.com/pricing.md
+    https://www.semantius.com/docs/cli        ->  https://www.semantius.com/docs/cli.md
     https://www.semantius.com/                ->  https://www.semantius.com/index.md
 
 Each HTML page advertises its own twin with
