@@ -35,13 +35,15 @@ Needs a human decision on the actual trial, payment and refund terms.
 
 ## Next up
 
-### Write the twin abstract for an agent, not for a search snippet
+### Write the summary line for an agent, not for a search result
 
-Every twin's header carries a one-line abstract, taken from the page's
-`<meta name="description">` (Tier B) or the content frontmatter `description`
-(Tier A). Both are written for a search result: they sell the page. Neon's
-twins carry a different thing in the same slot, written for an agent deciding
-whether to open the page at all:
+Every markdown copy opens with a one-line abstract of the page. Today that line
+is the page's meta description - the sentence written to sell the page in a
+Google result. Neon, whose markdown copies this site's format is modelled on,
+puts something different in that slot: a summary written for a machine deciding
+whether the page is worth opening at all.
+
+Theirs, on their Next.js guide:
 
 > Summary: Connection guide for wiring a Next.js application to Neon serverless
 > Postgres using node-postgres, postgres.js, or the Neon serverless driver.
@@ -50,36 +52,34 @@ whether to open the page at all:
 > Functions, or Edge Functions. The guide also explains Next.js static render
 > caching and the force-dynamic workaround.
 
-Note the shape: what the page covers, **when to choose it**, and what else is
-on it that the title does not imply. Three to five sentences, concrete nouns,
-no positioning. Ours currently reads "Detailed documentation for models,
-business logic, MCP connectors, agent skills and the CLI." - true, and no help
-in deciding anything.
+Three things make that work: it says what the page covers, it says **when to
+choose it** over a similar page, and it names things on the page the title does
+not imply. Three to five sentences, concrete nouns, nothing sold.
 
-**Where it would go.** `docHeader()` in `apps/web/src/lib/dualmark/compose.ts`
-renders `meta.description`. The cleanest shape is a separate optional
-`agentSummary` field that falls back to `description` when absent, so an
-unwritten page degrades to today's output rather than to nothing:
+Ours, on `/docs/reference.md`, currently reads "Detailed documentation for
+models, business logic, MCP connectors, agent skills and the CLI." True, and no
+help to anyone deciding whether to open it.
 
-- **Docs and blog** (Tier A): add `agentSummary` to the collection schemas in
-  `apps/web/src/content.config.ts` and write it per page in frontmatter. It must
-  NOT be rendered in the HTML page - it is not marketing copy, and duplicating
-  it on the page invites someone to "fix" it back into a sales line.
-- **Blueprints** (Tier A): derivable rather than hand-written. `system_name` +
-  the entity count + the domain already say what the model covers; a generated
-  sentence beats 56 hand-written ones.
-- **Tier B pages** (marketing, skills, domain landings): no source to read it
-  from. Either leave them on the meta description or add a small override map
-  beside `src/data/twin-overrides/`.
+**How to build it.** `docHeader()` in `apps/web/src/lib/dualmark/compose.ts`
+renders that line from the page description. Give it a second, optional field
+that falls back to the description when it is missing, so every page nobody has
+written a summary for behaves exactly as it does today. Then:
 
-**Why it is worth doing.** The abstract is what an agent reads before deciding
-to fetch the body, and it is what an answer engine quotes. It is also the one
-part of the header we have not borrowed from the convention Neon set: the
-breadcrumb, the index link and the URL line all match theirs already.
+- **Docs and blog pages** carry it in their frontmatter, next to title and
+  description; add the field to the schemas in
+  `apps/web/src/content.config.ts`. It must **not** appear on the HTML page. It
+  is not marketing copy, and showing it invites the next person to rewrite it
+  into a sales line.
+- **Blueprints** should have it generated rather than written 56 times by hand.
+  The name, the domain and the entity count already say what each model covers.
+- **Pages whose copy is extracted from HTML** (marketing, skills, domains) have
+  no source file to read it from. Leave those on the meta description, or keep a
+  short list of hand-written summaries next to
+  `apps/web/src/data/twin-overrides/`.
 
-**Not blocked on anything.** It is copywriting plus a schema field, and the
-parity guard in `integration.ts` will not complain either way - it compares the
-body, not the header.
+**Before starting:** this is a writing job far more than a coding one, it is
+blocked on nothing, and the build's page-versus-copy check will not complain
+either way, because it compares body text and ignores the header.
 
 ### Remove Netlify
 
@@ -111,44 +111,118 @@ curl -sSI https://www.semantius.com/docs/cli/ | grep -i 'x-nf-request-id'
 
 ### Twin pipeline debt
 
-Carried over from the markdown-twins implementation. None of it blocks
-anything; all of it is the kind of thing that goes wrong silently.
+**Background, because none of this reads sensibly without it.** Every page on
+this site is published twice: the normal HTML page, and a plain-markdown copy of
+it at the same address with `.md` on the end (`/docs/cli` and `/docs/cli.md`).
+The markdown copy is what AI agents and answer engines read. A copy is produced
+in one of three ways:
 
-- **The "claimed by the route writer" check is a heuristic.** `integration.ts`
-  decides whether to extract a page by testing whether its `.md` already exists
-  with an mtime at or after the build start. It was observed failing once,
-  reporting `176 twins (176 from source, 0 extracted)` while Tier B had silently
-  done nothing for 39 pages. Failure modes: anything touching `dist` mid-build,
-  the one-second slack window, and `buildStart` staying `0` if
-  `astro:build:start` never fires. The route writer already knows the exact set
-  it claimed (the `seen` set in `src/pages/[...twin].md.ts`); persist that and
-  read it here. A coverage report that can be confidently wrong is worse than
-  none.
-- **The Tier C staleness check was specified and never built.** An override in
-  `src/data/twin-overrides/` is served verbatim forever, and nothing tells you
-  it drifted from the page. As specified: store the sha256 of what Tier B
-  *would* have extracted (before nav injection and `normalizeUnicode`) in the
-  override's frontmatter, recompute at build, and **print the new value on
-  mismatch** or nobody can regenerate it. Also strip that frontmatter before
-  serving. Moot while the directory is empty; urgent the moment the pricing
-  override lands, which is the one case it was designed for.
-- **`getBlueprintSources()` filters out a source whose body came back empty.**
-  That is exactly the workerd zero-byte regression the build is supposed to
-  catch, turned into silence. Log it.
-- **The size-floor warning fires on deliberate Tier C overrides**, which are a
-  decision rather than extraction failing.
-- **`/contact.md` says "Fill out the form below" and then has no form**, because
-  `form` is in `DROP_TAGS`. The page's contact details are placeholder copy
-  anyway (`support@interstellar.com`, "Endurance / Interstellar Space Station"),
-  so fix the page first.
-- **Housekeeping.** `apps/web/README.md` still has no third-party / dualmark /
-  Apache-2.0 mention, which was a stated licence deliverable (the vendored
-  licence text, `NOTICE`, pinned upstream SHA and per-file headers are all in
-  place). `toHtmlPath`, `isMarkdownPath`, `toMarkdownUrl` and `allOverridePaths`
-  are exported with no consumers, and `toHtmlPath`'s comment claims the coverage
-  report uses it, which it does not. `Cache-Control: public, max-age=3600`
-  applies to the HTML 404 served for a missing `.md`, so an agent that guesses a
-  twin URL an hour before it ships caches the 404.
+1. **From the page's own source file.** Docs, blog posts and blueprints are
+   written in markdown already, so the copy is built from that source.
+2. **Extracted from the finished HTML page.** Marketing pages, skill pages and
+   domain pages have no single source file, so after the site is built their
+   copy is made by converting the rendered page back into markdown.
+3. **Hand-written.** Any page's copy can be replaced by a file checked in at
+   `apps/web/src/data/twin-overrides/`. Nothing uses this today.
+
+Nothing below breaks the site. Every item is something that fails **quietly**,
+which is why it is written down rather than left to be noticed.
+
+#### 1. The build can skip a fifth of the copies and still report success
+
+Ways 1 and 2 above are carried out by two different pieces of code, and they
+have to agree on who handles which page. The second one decides
+"has the first already written this page?" by looking at the file's timestamp:
+if a `.md` file exists and was modified after the build started, it assumes yes
+and moves on.
+
+That assumption has been wrong at least once. A build reported
+`176 markdown twins (176 from source, 0 extracted)` - meaning 39 pages that
+should have had a copy generated from their HTML got nothing at all, while the
+build reported success. It also breaks if anything else writes into the output
+folder mid-build, if a file lands inside the one-second tolerance, or if the
+build-start hook never fires, in which case the recorded start time stays at
+zero, every file looks newer than it, and every page looks already-handled.
+
+**Fix.** The first writer already knows exactly which pages it wrote; it holds
+that list while running, in `apps/web/src/pages/[...twin].md.ts`. Save the list
+and have `apps/web/src/lib/dualmark/integration.ts` read it, instead of
+inferring it from timestamps. Small job. A coverage report that can be
+confidently wrong is worse than no report at all.
+
+#### 2. A hand-written copy can drift away from its page forever
+
+Once a page's copy is hand-written, that file is served exactly as written for
+as long as it exists. If the page it mirrors changes, nothing notices and
+nothing warns. The original plan included a check for this. It was never built.
+
+**Fix, as it was specified.** Store a fingerprint (a sha256) of the text the
+build *would* have extracted from the page inside the hand-written file,
+recompute it on every build, and warn when the two no longer match. Two details
+decide whether that is useful or ornamental:
+
+- Fingerprint the raw extracted text, **before** the header and footer are added
+  and before the punctuation is ASCII-folded. Otherwise it changes for reasons
+  that have nothing to do with the page changing, and every build warns.
+- **Print the new fingerprint in the warning.** Without it nobody can update the
+  file by hand, so the check becomes noise and gets disabled.
+
+Strip the fingerprint out again before the file is served, so readers do not
+receive build metadata inside their document.
+
+All theoretical while that folder is empty. It becomes real the moment the
+pricing copy at the top of this file is hand-written, which is exactly the case
+it was designed for: a stale hand-written page means agents quoting prices we no
+longer charge.
+
+#### 3. A blueprint whose text fails to load is dropped instead of reported
+
+`getBlueprintSources()` in `apps/web/src/lib/dualmark/manifest.ts` skips any
+blueprint whose body came back empty. Empty is not a normal state - it is the
+signature of a known build failure in which reading a file returns nothing
+instead of raising an error (CONTEXT-MEMORY.md, "The site is fully static").
+Skipping it means a build quietly ships 55 blueprints instead of 56 and calls
+that success. It should fail, or at the very least name every blueprint it
+dropped.
+
+#### 4. The "this copy looks too small" warning cries wolf
+
+The build warns about any copy under 200 bytes, on the assumption that the
+extraction found nothing. A hand-written copy is a deliberate decision and is
+allowed to be short, so it should be exempt from that warning. A warning that
+fires on correct files is one people learn to scroll past - which is how several
+items on this page went unnoticed for months.
+
+#### 5. The contact page promises a form its markdown copy cannot contain
+
+`/contact.md` says "Fill out the form below" and then has no form. The missing
+form is correct: form controls are deliberately removed from the markdown
+copies, because an agent reading a text file cannot fill one in. The sentence is
+what is wrong.
+
+Fix the page itself first, though - its contact details are still template
+placeholders: `support@interstellar.com`, `+1 (555) 123-4567`, and "Endurance /
+Interstellar Space Station". Then reword the sentence so it is true in both
+versions, for instance by giving the email address in the text instead of
+pointing at a form.
+
+#### 6. Housekeeping
+
+- **Licence attribution.** `apps/web/README.md` does not mention that part of
+  this code is adapted from the dualmark project under Apache-2.0. Everything
+  else that licence requires is already in place: the licence text is vendored,
+  `NOTICE` exists, the upstream commit is pinned, and the individual files carry
+  headers. Only the README line is missing.
+- **Four exported functions that nothing calls.** `toHtmlPath`,
+  `isMarkdownPath` and `toMarkdownUrl` in
+  `apps/web/src/lib/dualmark/paths.ts`, and `allOverridePaths` in
+  `manifest.ts`. The comment on `toHtmlPath` claims the coverage report uses it;
+  it does not. Delete them.
+- **A missing `.md` file is cached as missing for an hour.** Asking for a
+  markdown copy that does not exist returns the HTML 404 page with
+  `Cache-Control: public, max-age=3600`. An agent that guesses a URL an hour
+  before that page ships caches the failure and does not come back. Missing
+  `.md` paths need a short cache lifetime, or none.
 
 ---
 
