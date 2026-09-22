@@ -222,6 +222,46 @@ function pagefindIndex() {
   };
 }
 
+/**
+ * Appends the catch-all trailing-slash redirect, and appends it LAST.
+ *
+ * Why the rule exists: html_handling 'drop-trailing-slash' only redirects when
+ * an asset actually exists at the slash-less path. Redirect-only routes have no
+ * HTML file, so /models/ fell through to the 404 page instead of reaching the
+ * /models -> /blueprints rule. This catches every slashed request, and issues a
+ * cacheable 301 instead of html_handling's 307.
+ *
+ * Why it must be last, and why this is an integration rather than a line in
+ * public/_redirects: Cloudflare allows 2,000 static redirect rules but only 100
+ * dynamic (wildcard) ones, and it counts every rule FOLLOWING the first dynamic
+ * rule as dynamic as well. Put this line at the top and a 112-rule file is
+ * rejected at upload with "Maximum number of dynamic _redirects rules limit of
+ * 100 exceeded". A public/_redirects file is copied in before the Cloudflare
+ * adapter appends its generated rules, so it can only ever land first.
+ * Static rules first, wildcard last, which is also the matching order we want.
+ */
+function trailingSlashRedirect() {
+  // Spaces, not tabs: _redirects accepts either, and a tab here is invisible.
+  const RULE = '/*/  /:splat  301';
+  let clientDir;
+  return {
+    name: 'trailing-slash-redirect',
+    hooks: {
+      'astro:config:setup': ({ config }) => {
+        if (config.adapter) clientDir = fileURLToPath(config.build.client);
+      },
+      'astro:build:done': ({ dir, logger }) => {
+        const file = path.join(clientDir ?? fileURLToPath(dir), '_redirects');
+        const existing = fs.existsSync(file)
+          ? fs.readFileSync(file, 'utf8').replace(/\s*$/, '') + '\n'
+          : '';
+        fs.writeFileSync(file, existing + RULE + '\n');
+        logger.info('catch-all trailing-slash rule appended to _redirects');
+      },
+    },
+  };
+}
+
 // Helper to find noindex URLs
 function getNoIndexUrls() {
   const urls = new Set();
@@ -545,6 +585,7 @@ export default defineConfig({
     // into process.env after this file is evaluated.
     markdownTwins(),
     pagefindIndex(),
+    trailingSlashRedirect(),
   ],
   vite: {
     plugins: [tailwindcss()],
