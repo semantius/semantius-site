@@ -88,7 +88,10 @@ const iconClass = 'opacity-60';
 				|
 			</span>
 
-			<button type="button" class={`page-actions-copy ${itemClass}`} data-md={mdPath}>
+			{/* cursor-pointer is not redundant: a <button> defaults to the arrow
+			    cursor while the sibling <a> elements get the hand, so without it
+			    this one item silently reads as non-interactive. */}
+			<button type="button" class={`page-actions-copy cursor-pointer ${itemClass}`} data-md={mdPath}>
 				<svg
 					class={iconClass}
 					width="14"
