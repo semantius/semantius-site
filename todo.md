@@ -36,6 +36,52 @@ Detail: `aeo-followup.md` item 1.
 
 ## Next up
 
+### Write the twin abstract for an agent, not for a search snippet
+
+Every twin's header carries a one-line abstract, taken from the page's
+`<meta name="description">` (Tier B) or the content frontmatter `description`
+(Tier A). Both are written for a search result: they sell the page. Neon's
+twins carry a different thing in the same slot, written for an agent deciding
+whether to open the page at all:
+
+> Summary: Connection guide for wiring a Next.js application to Neon serverless
+> Postgres using node-postgres, postgres.js, or the Neon serverless driver.
+> Choose this page when you need working DATABASE_URL setup and driver code for
+> App Router (Server Components, Server Actions), Pages Router, Serverless
+> Functions, or Edge Functions. The guide also explains Next.js static render
+> caching and the force-dynamic workaround.
+
+Note the shape: what the page covers, **when to choose it**, and what else is
+on it that the title does not imply. Three to five sentences, concrete nouns,
+no positioning. Ours currently reads "Detailed documentation for models,
+business logic, MCP connectors, agent skills and the CLI." - true, and no help
+in deciding anything.
+
+**Where it would go.** `docHeader()` in `apps/web/src/lib/dualmark/compose.ts`
+renders `meta.description`. The cleanest shape is a separate optional
+`agentSummary` field that falls back to `description` when absent, so an
+unwritten page degrades to today's output rather than to nothing:
+
+- **Docs and blog** (Tier A): add `agentSummary` to the collection schemas in
+  `apps/web/src/content.config.ts` and write it per page in frontmatter. It must
+  NOT be rendered in the HTML page - it is not marketing copy, and duplicating
+  it on the page invites someone to "fix" it back into a sales line.
+- **Blueprints** (Tier A): derivable rather than hand-written. `system_name` +
+  the entity count + the domain already say what the model covers; a generated
+  sentence beats 56 hand-written ones.
+- **Tier B pages** (marketing, skills, domain landings): no source to read it
+  from. Either leave them on the meta description or add a small override map
+  beside `src/data/twin-overrides/`.
+
+**Why it is worth doing.** The abstract is what an agent reads before deciding
+to fetch the body, and it is what an answer engine quotes. It is also the one
+part of the header we have not borrowed from the convention Neon set: the
+breadcrumb, the index link and the URL line all match theirs already.
+
+**Not blocked on anything.** It is copywriting plus a schema field, and the
+parity guard in `integration.ts` will not complain either way - it compares the
+body, not the header.
+
 ### Remove Netlify (section 0b)
 
 The gate was "after the release has landed and held". It landed on 2026-09-22.

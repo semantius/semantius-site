@@ -331,9 +331,11 @@ export function markdownTwins() {
 							title: heading ?? title,
 							description: description ? decodeEntities(description) : undefined,
 							url: canonicalUrl(pagePath, siteUrl),
-							// The trail ends with the page itself, so drop the last level:
-							// a breadcrumb should not name the page you are already on.
-							trail: trail.slice(0, -1),
+							// Whole trail, with the last crumb replaced by the page's real
+							// heading: trailFromPath can only slug-case the URL segment
+							// ("Itsm"), while the page calls itself "IT Service
+							// Management".
+							trail: [...trail.slice(0, -1), heading ?? title],
 							indexUrl,
 						}) +
 						body +

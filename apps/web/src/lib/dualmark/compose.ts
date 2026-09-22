@@ -29,7 +29,12 @@ export interface DocMeta {
 	description?: string;
 	/** Canonical HTML URL of the page this twin mirrors. Absolute. */
 	url: string;
-	/** Breadcrumb trail, outermost first, excluding the page itself. */
+	/**
+	 * Breadcrumb trail, outermost first, ENDING with the page itself - the shape
+	 * the docblock above shows and the shape Neon's twins use. A trail that stops
+	 * at the parent renders as a single generic crumb on any two-level page
+	 * ("Docs"), which says strictly less than the `- **URL**:` line below it.
+	 */
 	trail?: string[];
 	/** Absolute URL of the site-wide agent index. */
 	indexUrl: string;
@@ -50,9 +55,12 @@ export interface RelatedLink {
  * agents appear to tolerate well.
  */
 export function docHeader(meta: DocMeta): string {
-	const location = meta.trail?.length
-		? `> This page location: ${meta.trail.join(' > ')}`
-		: undefined;
+	// Two crumbs minimum: with one, the only crumb IS the page, so the line
+	// would name the page it heads and nothing else.
+	const location =
+		(meta.trail?.length ?? 0) > 1
+			? `> This page location: ${meta.trail!.join(' > ')}`
+			: undefined;
 	const facts = (meta.facts ?? []).filter((f): f is [string, string] => Boolean(f[1]));
 	return normalizeUnicode(
 		joinLines(

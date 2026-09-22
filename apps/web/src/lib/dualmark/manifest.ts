@@ -112,7 +112,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 				title: post.data.title,
 				description: post.data.description,
 				url: canonicalUrl(blogPath(post), siteUrl),
-				trail: ['Blog'],
+				trail: ['Blog', post.data.title],
 				indexUrl,
 				updated: fmtDate(post.data.updatedDate ?? post.data.pubDate),
 				facts: [
@@ -160,11 +160,12 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 		const tabFolders = nav?.folders ?? [];
 		const top = findTopAncestor(tabFolders, path);
 
-		// Mirrors DocsLayout: Docs > tab > section > page, dropping any level
-		// that is the page itself so the trail never names the current page.
+		// Mirrors DocsLayout: Docs > tab > section > page. The guards skip a level
+		// that IS this page, so it is named once, at the end, rather than twice.
 		const trail = ['Docs'];
 		if (nav && nav.node.path !== path) trail.push(nav.label);
 		if (top && top.path !== path) trail.push(top.navTitle);
+		trail.push(doc.data.title);
 
 		const flat: NavNode[] = nav?.node.doc
 			? [nav.node, ...flattenNodes(tabFolders)]
@@ -259,6 +260,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 
 		const trail = ['Blueprints'];
 		if (domain) trail.push(domain.data.name);
+		trail.push(bp.data.system_name);
 
 		const overview = extractOverview(bp.body ?? '');
 		const subset = extractSubsetMarkdown(bp.body ?? '');
@@ -312,7 +314,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 				title: `${bp.data.system_name}: full specification`,
 				description: bp.data.system_description ?? bp.data.description,
 				url: canonicalUrl(blueprintBodyPath(bp), siteUrl),
-				trail: [...trail, bp.data.system_name],
+				trail: [...trail, 'Full specification'],
 				indexUrl,
 				updated: fmtDate(bp.data.created_at),
 				facts: [['Source file', new URL(blueprintSourcePath(bp), siteUrl).toString()]],
