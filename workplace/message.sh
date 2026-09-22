@@ -36,7 +36,11 @@ curl -X POST "$WEBHOOK_URL" \
     -d "{\"text\": \"[$HOSTNAME]$GIT_INFO $MESSAGE\"}" \
     --silent --show-error --output /dev/null
 
+# A notification is not the deploy. Exiting non-zero here marked a SUCCESSFUL
+# production deploy as a failed CI run: wrangler had already uploaded and
+# printed its version id, and only this curl failed. Warn and carry on, so red
+# always means the site did not ship.
 if [ $? -ne 0 ]; then
-    echo "Failed to send message"
-    exit 1
+    echo "Warning: could not send notification. The deploy itself is unaffected." >&2
 fi
+exit 0

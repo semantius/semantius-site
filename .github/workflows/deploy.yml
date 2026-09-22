@@ -37,9 +37,9 @@ jobs:
       # Build-time vars (PUBLIC_POSTHOG_*) live in that committed .env too, so
       # there is nothing else to supply: apps/web/.env is untracked and absent on
       # a CI checkout, and with no file present Astro takes those values from the
-      # process env dotenvx populates. Measured, not assumed - and it works only
-      # in that direction: when apps/web/.env DOES exist (a dev machine) the file
-      # wins over the process env, so root .env cannot override a local value.
+      # process env dotenvx populates. Measured, not assumed. The same measurement
+      # is why those keys were removed from apps/web/.env: a key present in that
+      # file wins over the process env, so a stale copy there would mask this one.
     steps:
       - uses: actions/checkout@v4
 

@@ -360,29 +360,34 @@ ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 
 The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
 
-### Build-time env vars: `apps/web/.env` wins locally, and CI has no such file
+### Build-time env vars: one key, one file
 
 Values reach `import.meta.env` through two channels: `apps/web/.env` (gitignored,
 dev machines only) and the process env, which `dotenvx run --` fills from the
-committed, encrypted root `.env`. The precedence between them is measured, and it
-is the **opposite** of Vite's documented `loadEnv` behaviour, where `process.env`
-wins:
+committed, encrypted root `.env`. Where a key exists in both, the precedence is
+measured, and it is the **opposite** of Vite's documented `loadEnv` behaviour,
+where `process.env` wins:
 
-- **`apps/web/.env` present → the file wins.** Building with
+- **Key present in `apps/web/.env` → that file wins.** Building with
   `PUBLIC_POSTHOG_PROJECT_TOKEN` set only in the process env put it in 0 of 190
-  pages. Root `.env` therefore cannot override a local value; edit
-  `apps/web/.env` for that.
-- **`apps/web/.env` absent → the process env is used.** The same build with the
-  file moved aside inlined the process-env value into 177 pages.
+  pages.
+- **Key absent from it → the process env is used.** The same build with the file
+  moved aside inlined the process-env value into 177 pages.
 
-So any build-time var that must survive an automated build belongs in the root
-`.env` (`dotenvx set KEY value`), not only in `apps/web/.env`. A var that lives
-only in the untracked file disappears from CI builds **silently** — the page just
-ships without that snippet. `SITE_URL` is the exception that needs nothing:
-`astro.config.mjs` falls back to `https://www.semantius.com`.
+The consequence is a silent one in both directions: a var that lives only in the
+untracked file disappears from CI builds with no error (the page just ships
+without that snippet), and a stale copy in that file quietly masks the committed
+value on a dev machine.
 
-Encrypting the `PUBLIC_*` analytics values there buys tidiness, not secrecy: they
-are inlined into every page's HTML by `PostHog.astro` and are public by design.
+So each key lives in exactly **one** of the two. Anything a CI build needs goes in
+the root `.env` via `dotenvx set KEY value` and is then deliberately absent from
+`apps/web/.env` — that is why the PostHog pair is not in the app-level file.
+`apps/web/.env` keeps only what is genuinely local (`SITE_URL`, `ADAPTER`).
+`SITE_URL` needs nothing in CI: `astro.config.mjs` falls back to
+`https://www.semantius.com`.
+
+Encrypting the `PUBLIC_*` analytics values buys tidiness, not secrecy: they are
+inlined into every page's HTML by `PostHog.astro` and are public by design.
 
 ### `markdown.processor` is the only place remark/rehype plugins are registered
 
