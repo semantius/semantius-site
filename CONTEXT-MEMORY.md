@@ -231,6 +231,48 @@ domain-level redirect support. They are zone config: dashboard, or the Rulesets
 API with a token carrying `Zone > Config Rules > Edit`. The deploy token has
 Workers scope only.
 
+### `workers.dev` previews inject `X-Robots-Tag: noindex` on every response
+
+Measured: `/`, `/pricing`, `/docs/cli` and even `/logo.png` on a preview
+deployment all carry `X-Robots-Tag: noindex`, and it is absent from the built
+`_headers`. Cloudflare adds it so preview URLs cannot be indexed.
+
+**Consequence: indexing behaviour cannot be verified on a preview deploy.** Any
+`X-Robots-Tag` rule in `public/_headers` is indistinguishable from the platform
+header there, and a rule that does nothing looks identical to a rule that
+works. Verify those against `www.semantius.com` after a production deploy.
+
+This is the same family of trap as the zone-level AI crawler block in
+`aeo-followup.md`: the preview host is not in the `semantius.com` zone and does
+not behave like production for anything a crawler cares about.
+
+### Markdown twins are canonicalised, not noindexed
+
+Each `.md` twin sends `Link: <...>; rel="canonical"` to its HTML page, and no
+`noindex`. The reasoning, so it is not quietly reverted: `noindex` tells the
+answer engines this site exists to reach that they should skip the cleanest
+version of its own content, while a canonical resolves the duplicate without
+suppressing anything. Surveyed in the field: Vercel and Svelte send
+`rel="canonical"` and no `noindex`; Stripe and Firecrawl send `noindex` and no
+canonical; Cloudflare sends neither. **Nobody sends both**, because Google
+treats them as contradictory signals.
+
+Two measured properties of Cloudflare's `_headers` that shaped the rules, and
+that the file's own comments repeat:
+
+- **`! Header` does not unset.** A blanket `noindex` under `/*.md` plus
+  `! X-Robots-Tag` on the twin rules left the noindex in place on every twin.
+  Set a header only where it is wanted.
+- **Matching rules ADD, they do not override.** Two rules matching one path
+  emit both values, which produced two conflicting `rel="canonical"` links on
+  `/index.md`.
+
+`/blueprints/:s1.md` is the one path left on `noindex`: it mixes 68 real twins
+with 56 verbatim source downloads that have no HTML page, and `_headers`
+matches whole segments, so no rule separates them. Giving the 68 a canonical
+would point the other 56 at a 404. The fix, if it matters, is to emit the
+verbatim sources under their own path prefix.
+
 ### Canonical URLs carry no trailing slash
 
 `/docs/cli`, never `/docs/cli/`. This is configured in **two places that must
