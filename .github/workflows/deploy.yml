@@ -1,0 +1,75 @@
+name: Deploy to Cloudflare
+
+# Runs the same path as a manual deploy: workplace/deploy-wrangler.sh via
+# `pnpm run deploy:wrangler` (build -> wrangler deploy -> health-check the URL ->
+# notify the webhook). Nothing about the deploy is reimplemented here, so the
+# script stays the single source of truth for how this site ships.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: What to deploy
+        type: choice
+        default: production
+        options:
+          - production
+          - preview
+
+# Two pushes to main must not race to overwrite the live Worker.
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    env:
+      # CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID are decrypted out of the
+      # committed .env by dotenvx, so this is the only secret the deploy needs.
+      # It must be the full 64-char hex key (see CONTEXT-MEMORY.md, Deployment):
+      # a 63-char value leaves every secret undecrypted without failing loudly.
+      DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
+      # apps/web/.env is untracked, so the build-time analytics vars
+      # (PUBLIC_POSTHOG_*) are absent on a CI checkout and PostHog silently drops
+      # off the deployed site. Store that file's contents as the WEB_ENV repo
+      # secret to make CI builds match local ones; until then this step no-ops.
+      WEB_ENV: ${{ secrets.WEB_ENV }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # Before setup-node, so its pnpm cache can resolve the store.
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22.22.0'
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Restore apps/web/.env
+        if: env.WEB_ENV != ''
+        run: printf '%s\n' "$WEB_ENV" > apps/web/.env
+
+      - name: Deploy
+        # `pnpm run <script>`, never `pnpm deploy:...` — pnpm has a built-in
+        # `deploy` command that shadows bare invocations.
+        env:
+          TARGET: ${{ inputs.target || 'production' }}
+        run: |
+          if [ "$TARGET" = "preview" ]; then
+            pnpm run preview:wrangler
+          else
+            pnpm run deploy:wrangler
+          fi
+
+      # The script writes the deployed URL here as its final step; surfacing it
+      # in the run summary means the absence of a URL is visible at a glance.
+      - name: Report deployed URL
+        if: always()
+        run: test -f .preview-url.md && cat .preview-url.md >> "$GITHUB_STEP_SUMMARY" || echo 'No .preview-url.md — deploy did not complete.' >> "$GITHUB_STEP_SUMMARY"
