@@ -2,7 +2,8 @@
 #
 # Machine-readable twins: every page is also published as markdown at the same
 # path with ".md" appended, for example
-# https://www.semantius.com/pricing -> https://www.semantius.com/pricing.md
+# https://www.semantius.com/docs/cli -> https://www.semantius.com/docs/cli.md
+# (/pricing is the one deliberate exception, see excluded.ts)
 # Each HTML page advertises its own twin with
 #   <link rel="alternate" type="text/markdown" href="...">
 #

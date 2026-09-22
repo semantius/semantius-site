@@ -7,9 +7,7 @@ Last reviewed: 2026-09-22.
 
 ---
 
-## 🔴 Blocks the production release
-
-### Pricing page publishes placeholder commitments
+## 🔴 Open: pricing page states things that are not true
 
 `apps/web/src/pages/pricing.astro` carries template FAQ copy that reads as real
 commercial terms:
@@ -20,57 +18,29 @@ commercial terms:
 
 while every price on the same page renders as `X/month`.
 
-**Held, not solved.** `/pricing` is in the `EXCLUDED` list in
-`apps/web/src/lib/dualmark/excluded.ts`, so no `/pricing.md` twin is published
-and the page advertises no markdown alternate. That restores the status quo —
-the claims stay buried in HTML markup where they have always been — but it does
-not make them true, and the HTML page is still indexed and still says this.
+**Contained, not fixed.** `/pricing` is in `EXCLUDED` in
+`apps/web/src/lib/dualmark/excluded.ts`, so no `/pricing.md` twin exists and the
+page advertises no markdown alternate. That stops the claims becoming cleanly
+machine-quotable. **The HTML page is live and still says all of this**, and it is
+indexed.
 
-**To close it:** either write the real terms into the page, or land a
-hand-written twin at `apps/web/src/data/twin-overrides/pricing.md`. Then remove
-the `/pricing` entry from `EXCLUDED`; nothing else needs changing, `twinUrl()`
-already falls back correctly.
+**To close it:** write the real terms into the page, or land a hand-written twin
+at `apps/web/src/data/twin-overrides/pricing.md`. Then remove the `/pricing`
+entry from `EXCLUDED` and the exception note in `public/robots.txt`. Nothing else
+needs changing; `twinUrl()` already falls back correctly.
 
-Needs a decision from a human on what the actual trial, payment and refund
-terms are. Detail: `aeo-followup.md` item 1.
+Needs a human decision on the actual trial, payment and refund terms.
+Detail: `aeo-followup.md` item 1.
 
 ---
 
 ## Next up
 
-### Production release
-
-`main` is merged and ready but **not pushed**. Pushing now triggers
-`.github/workflows/deploy.yml`, which deploys straight to production — so the
-push *is* the release. Do not push until the pricing item above is closed.
-
-Production currently serves the **2026-05-27 build**: 57 commits behind, no
-markdown twins, no `llms-full.txt`, and `public/_headers` has never taken
-effect there at all. The AI crawlers were unblocked on 2026-09-22 and are
-crawling that stale build right now, which makes this more urgent rather than
-less.
-
-### Verify against production once the release lands
-
-Two things are structurally unverifiable on a preview deploy and must be
-checked on `www.semantius.com`:
-
-- **`X-Robots-Tag` behaviour.** `workers.dev` injects `noindex` on every
-  response, including `/logo.png`, so a rule that does nothing looks identical
-  to one that works.
-- **Whether Cloudflare's Bot Preference Sync prepends to `robots.txt`.** The
-  toggle is on and currently prepends nothing, but our real `robots.txt` has
-  never been live. It explicitly warns against disallowing `/*.md`, which is
-  exactly what a sync could inject above it.
-
-Also worth a look afterwards: **Agent Readiness** in the Cloudflare zone
-sidebar, to see whether the twins and `llms.txt` are detected.
-
 ### Remove Netlify (section 0b)
 
-Gated deliberately. It is the rollback path, and a rollback stays plausible
-until the release above has landed and held. Steps are in `aeo-next-session.md`
-section 0b.
+The gate was "after the release has landed and held". It landed on 2026-09-22.
+Let it sit for a few days, then follow `aeo-next-session.md` section 0b. Until
+then `pnpm deploy:netlify` from an earlier commit is still the escape hatch.
 
 ---
 
@@ -85,6 +55,26 @@ section 0b.
 ---
 
 ## Done, for context
+
+**Released to production 2026-09-22** via `.github/workflows/deploy.yml`, which
+now deploys on every push to `main`. Verified live:
+
+```
+/docs/cli        200            slash-less canonical, no redirect hop
+/docs/cli/       301 -> /docs/cli
+/docs/cli.md     200            twin, Link: rel="canonical" -> /docs/cli
+/llms-full.txt   200
+/pricing.md      404            deliberately held
+ClaudeBot, GPTBot on /docs/cli.md   200
+```
+
+Both things that could only ever be checked on the real host came out clean:
+**no `X-Robots-Tag`** anywhere (the `workers.dev` preview masks this by
+injecting its own `noindex`), and **Bot Preference Sync prepends nothing** to
+`robots.txt` — our own 701-byte file is served verbatim. Worth re-checking if
+that toggle is ever reconfigured.
+
+
 
 - Markdown twins: every page also published at `<page-url>.md`, plus
   `/llms.txt` and `/llms-full.txt`.
