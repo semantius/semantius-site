@@ -32,61 +32,56 @@
 # Cloudflare adapter probes /_astro/probe against this file and skips injecting
 # its own immutable cache block if any matching rule sets Cache-Control.
 #
-# X-Robots-Tag here is the DEFAULT, and the rules below lift it for every .md
-# that is a twin of a real HTML page. See the block after this one.
+# NOTE there is no X-Robots-Tag here. It used to be a blanket noindex that the
+# twin rules below lifted with "! X-Robots-Tag". That does not work: measured on
+# a preview deploy, the unset is ignored and every twin kept the noindex, which
+# left canonical and noindex on the same response, the one combination Google
+# calls contradictory. Rules here ADD, they do not override. So noindex is now
+# set only where it is actually wanted, further down.
 /*.md
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
-  X-Robots-Tag: noindex
   Cache-Control: public, max-age=3600
   Vary: Accept
 
-# Twins point at their HTML page with rel="canonical", and drop the blanket
-# noindex above.
+# Twins point at their HTML page with rel="canonical".
 #
-# This is the "consolidate" strategy, not the "suppress" one, and the choice
+# This is the "consolidate" strategy rather than "suppress", and the choice
 # matters for an AEO site: noindex tells the answer engines we are trying to
 # reach to skip the cleanest version of our own content, while a canonical
 # resolves the duplicate without suppressing anything. Measured across the
 # field: Vercel and Svelte send rel="canonical" and no noindex; Stripe and
 # Firecrawl send noindex and no canonical; Cloudflare sends neither. Nobody
-# sends both, because Google treats them as contradictory. We are in the first
-# camp deliberately.
+# sends both.
 #
 # Safe where the page-side rules were not: ".md" is itself the discriminator.
 # No asset on this site ends in .md, so none of these can match /logo.png or
 # /_astro/hash.css.
 #
-# NOT covered: /blueprints/:s1.md . That one path mixes 68 real twins with 56
-# verbatim source downloads (<file-id>-semantic-blueprint.md) that have no HTML
-# page at all, and _headers matches whole segments, so a rule cannot tell them
-# apart. They keep the default noindex rather than being handed a canonical
-# that 404s for 56 of them. The fix, if the 68 turn out to matter, is to emit
-# the verbatim sources under their own prefix so the two become addressable.
+# Do not add a /index.md rule to make the root's canonical "/" instead of
+# "/index". Rules add rather than override, so it produces TWO canonicals and
+# Google discards both. "/index" 307s to "/", which resolves correctly.
 /:s1.md
   Link: </:s1>; rel="canonical"
-  ! X-Robots-Tag
 /docs/:s1.md
   Link: </docs/:s1>; rel="canonical"
-  ! X-Robots-Tag
 /docs/:s1/:s2.md
   Link: </docs/:s1/:s2>; rel="canonical"
-  ! X-Robots-Tag
 /blog/:s1.md
   Link: </blog/:s1>; rel="canonical"
-  ! X-Robots-Tag
 /skills/:s1.md
   Link: </skills/:s1>; rel="canonical"
-  ! X-Robots-Tag
 /blueprints/:s1/blueprint.md
   Link: </blueprints/:s1/blueprint>; rel="canonical"
-  ! X-Robots-Tag
 
-# The root's twin is /index.md, whose canonical is "/" and not "/index".
-# Placed after /:s1.md so that whichever rule Cloudflare resolves last wins.
-/index.md
-  Link: </>; rel="canonical"
-  ! X-Robots-Tag
+# The one path that cannot be canonicalised, so it is suppressed instead.
+# /blueprints/:s1.md mixes 68 real twins with 56 verbatim source downloads
+# (<file-id>-semantic-blueprint.md) that have no HTML page at all, and _headers
+# matches whole segments, so no rule can separate them. Handing all 124 a
+# canonical would point 56 of them at a 404. The fix, if the 68 turn out to
+# matter, is to emit the verbatim sources under their own path prefix.
+/blueprints/:s1.md
+  X-Robots-Tag: noindex
 
 # There is deliberately NO per-page "Link: rel=alternate" rule here.
 #
