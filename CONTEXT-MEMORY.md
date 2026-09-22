@@ -200,9 +200,13 @@ adapter prepends its own auto-generated entries (cache rules, redirects) without
 clobbering ours. Do **not** express these as Worker middleware: the Worker is
 assets-only by design and a header belongs in `_headers`.
 
-Because Cloudflare is now the only target, the `:placeholder` rules in that file
-(which Netlify would have emitted literally) do pay off. Netlify config remains
-in the tree as a rollback path but nothing deploys to it.
+The file deliberately carries **no** per-page `Link: rel="alternate"` rules.
+They existed briefly and used the trailing slash as the only discriminator
+between a page URL and an asset URL; canonical URLs no longer have one, so the
+patterns would match `/logo.png`. The `<link rel="alternate">` in `SEO.astro`
+covers every page and applies the `hasMarkdownTwin()` guard the header rules
+could not express. Netlify config remains in the tree as a rollback path but
+nothing deploys to it.
 
 **Hosting shape**, so nobody re-derives it:
 
@@ -226,6 +230,33 @@ and **not** expressible in `_redirects`, which Cloudflare documents as having no
 domain-level redirect support. They are zone config: dashboard, or the Rulesets
 API with a token carrying `Zone > Config Rules > Edit`. The deploy token has
 Workers scope only.
+
+### Canonical URLs carry no trailing slash
+
+`/docs/cli`, never `/docs/cli/`. This is configured in **two places that must
+agree**, and a change to either alone breaks the site:
+
+| | |
+| --- | --- |
+| `apps/web/astro.config.mjs` | `trailingSlash: 'never'`. Travels inside the build artifact: canonicals, `og:url`, sitemap, and every markdown twin's `- **URL**:` line. |
+| `workplace/wrangler.jsonc` | `html_handling: 'drop-trailing-slash'`. Host config, one Worker. |
+
+`build.format` stays at its `directory` default, so the output layout
+(`docs/cli/index.html`) is unchanged and only `Astro.url.pathname` moves.
+**Never "simplify" this with `build.format: 'file'`**: Astro's `getUrlForPath`
+sets `ending = '.html'` unconditionally for that format and ignores
+`trailingSlash`, which makes the canonical `/docs/cli.html`, makes the twin
+`/docs/cli.html.md`, and breaks active-nav matching in `DocsLayout`.
+
+A third piece closes a gap the first two leave: `trailingSlashRedirect()` in
+`astro.config.mjs` appends a catch-all `/*/  /:splat  301` to `_redirects`.
+`html_handling` only redirects when an asset exists at the slash-less path, so
+redirect-only routes (`/models/`) 404ed without it. Its docblock records why the
+rule must be the file's last line and why it cannot live in `public/_redirects`;
+both constraints cost a failed deploy to find.
+
+Consequence worth knowing: `astro dev` and `astro preview` have no host-level
+redirect, so a hand-typed slashed URL 404s locally. That is expected.
 
 ### nodejs_compat required (RESOLVED)
 
