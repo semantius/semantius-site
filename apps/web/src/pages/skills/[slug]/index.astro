@@ -90,13 +90,18 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 					<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 						What it does
 					</h2>
-					<div class="flex flex-wrap gap-2">
+					{/* A list, not a row of spans. The separation between pills is
+					    `gap-2`, i.e. CSS, and CSS does not survive into a markdown
+					    twin: 20 capability names arrived glued into one token run
+					    ("AI Triage and ClassificationApproval Workflow..."). <li>
+					    carries the boundary in the document itself. */}
+					<ul class="flex list-none flex-wrap gap-2 p-0">
 						{catalog.capability_names.map((capability) => (
-							<span class="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-sm text-foreground/90">
+							<li class="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-sm text-foreground/90">
 								{capability}
-							</span>
+							</li>
 						))}
-					</div>
+					</ul>
 				</div>
 			)}
 
@@ -105,16 +110,20 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 					<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
 						Related blueprints
 					</h2>
-					<div class="flex flex-wrap gap-2">
+					{/* Also a list, for the same reason: adjacent <a> pills flattened
+					    into "[One](...)[Two](...)[Three](...)" on a single line. */}
+					<ul class="flex list-none flex-wrap gap-2 p-0">
 						{modules.map((module) => (
-							<a
-								href={`/blueprints/${module.code.toLowerCase()}`}
-								class="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-primary hover:text-white"
-							>
-								{module.name}
-							</a>
+							<li>
+								<a
+									href={`/blueprints/${module.code.toLowerCase()}`}
+									class="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-primary hover:text-white"
+								>
+									{module.name}
+								</a>
+							</li>
 						))}
-					</div>
+					</ul>
 				</div>
 			)}
 

@@ -24,6 +24,8 @@ interface Props {
   includeSubagents?: boolean;
 }
 
+import { skillInstallCommand } from '~/lib/skill-install';
+
 const { url, title, includeSubagents = false } = Astro.props;
 
 // Agent display name -> `--agent` slug. Multi-agent rows from the source table
@@ -105,15 +107,16 @@ const AGENTS: { value: string; label: string }[] = [
   { value: "zenflow", label: "Zenflow" },
 ];
 
-const base = `npx skills add ${url}`;
 // Server render matches the default control state (Agent = All, Global = on).
-// The client script reconciles this with any saved cookie on load.
-const defaultCommand = `${base} --all --global`;
+// The client script reconciles this with any saved cookie on load. Both it and
+// the markdown-twin writer build the same string from ~/lib/skill-install, so
+// the page, the copy button and the twin cannot disagree.
+const defaultCommand = skillInstallCommand(url);
 ---
 
 <div
   class="skill-install not-prose"
-  data-base={base}
+  data-url={url}
   data-include-subagents={includeSubagents ? "true" : undefined}
 >
   <div class="skill-install-controls">
@@ -176,8 +179,13 @@ const defaultCommand = `${base} --all --global`;
     </button>
   </div>
 
+  {/* The trigger for this modal is currently commented out below, so nothing can
+      open it. Marked pagefind-ignore per the repo contract for invisible UI:
+      otherwise both Pagefind and the markdown twin index a warning no reader can
+      reach, and a search for "OpenClaw" lands on text that is not on the page.
+      Re-enable the trigger and this can come back out. */}
   {includeSubagents && (
-    <div class="skill-install-modal" role="presentation">
+    <div class="skill-install-modal" role="presentation" data-pagefind-ignore>
       <div class="skill-install-modal-backdrop" data-close></div>
       <div
         class="skill-install-modal-dialog"
@@ -243,6 +251,8 @@ const defaultCommand = `${base} --all --global`;
 </div>
 
 <script>
+  import { skillInstallCommand } from "~/lib/skill-install";
+
   const COOKIE_AGENT = "skillAgent";
   const COOKIE_GLOBAL = "skillGlobal";
 
@@ -262,13 +272,6 @@ const defaultCommand = `${base} --all --global`;
       "; path=/; max-age=31536000; samesite=lax";
   }
 
-  function buildCommand(base: string, agent: string, global: boolean): string {
-    let cmd = base;
-    // "all" is special: it emits `--all` and never `--agent`.
-    cmd += agent && agent !== "all" ? ` --agent ${agent}` : " --all";
-    if (global) cmd += " --global";
-    return cmd;
-  }
 
   async function copyText(text: string): Promise<void> {
     try {
@@ -286,7 +289,7 @@ const defaultCommand = `${base} --all --global`;
   }
 
   type Instance = {
-    base: string;
+    url: string;
     select: HTMLSelectElement;
     checkbox: HTMLInputElement;
     code: HTMLElement;
@@ -309,16 +312,15 @@ const defaultCommand = `${base} --all --global`;
         const code = root.querySelector<HTMLElement>(".command-text");
         const copy = root.querySelector<HTMLElement>(".command-copy");
         if (!select || !checkbox || !code || !copy) return null;
-        return { base: root.dataset.base ?? "", select, checkbox, code, copy };
+        return { url: root.dataset.url ?? "", select, checkbox, code, copy };
       })
       .filter((value): value is Instance => value !== null);
 
     const render = (instance: Instance): void => {
-      const cmd = buildCommand(
-        instance.base,
-        instance.select.value,
-        instance.checkbox.checked,
-      );
+      const cmd = skillInstallCommand(instance.url, {
+        agent: instance.select.value,
+        global: instance.checkbox.checked,
+      });
       instance.code.textContent = cmd;
       instance.copy.dataset.command = cmd;
     };

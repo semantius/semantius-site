@@ -360,6 +360,64 @@ ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 
 The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
 
+### A twin and its page must not be rendered twice from two places
+
+Every page here is rendered twice: by Astro components, and by the twin writers
+in `src/lib/dualmark/`. Where the second renderer **re-derived a value the first
+one computes**, the two drifted silently and shipped that way:
+
+- the skills install command (page said `npx skills add <url> --all --global`,
+  the twin said `npx skills add https://github.com/<url> --global`)
+- the blueprint deploy prompt (on every page, in no twin)
+- a module-code join written as `system_name === m.code`, comparing a label
+  ("Background Checks") against a code ("ATS-BACKGROUND-CHECKS"). It matched 0
+  of 56 in **four** places: sibling links, the domain lookup, the detail page's
+  catalog copy and the llms.txt grouping, which filed all 56 blueprints under
+  one "Other" heading.
+
+The rule that prevents all of it: **one definition, imported by both renderers.**
+`lib/skill-install.ts` and `lib/blueprint-deploy.ts` exist for exactly that, and
+the join key is `system_slug` (the lowercased module code), never `system_name`.
+
+Two corollaries worth keeping:
+
+- **If the page computes it, extract it; if the source is it, copy it.** A
+  component that builds its content from a collection cannot be re-rendered from
+  MDX: `<ModelList />` is self-closing, so the "unwrap and keep children" branch
+  emitted nothing under a heading promising 56 models. `mdxNeedsExtraction()` now
+  detects that shape and withholds the source twin so Tier B extracts the page.
+- **Meaning encoded only in CSS does not survive.** Pills separated by `gap-2`
+  flatten into one token run ("Skill-Based AssignmentService Catalog Authoring").
+  Mark up a list as `<ul>/<li>`; the twin then gets the boundary for free, and so
+  does a screen reader.
+
+### The parity guard is the only thing that sees this class of bug
+
+`integration.ts` compares each source-derived twin against markdown extracted
+from the page it shipped with, and warns about sentences the page has and the
+twin lacks. It is a warning, never a build failure: some divergence is
+deliberate.
+
+It found, on its first runs, the missing deploy prompt on 56 pages and a
+truncated abstract, and it will catch the next component whose twin rendering
+returns nothing. Keep it tuned rather than silencing it: table rows, fenced code
+and link-only lines are excluded because they differ by formatting alone, and
+both sides are typography-folded because Tier A bodies are ASCII while pages are
+not. Without those exclusions it reported 8485 differences, none of them real.
+
+Currently accepted (not a regression): the `/blog`, `/docs` and `/blueprints`
+index twins do not carry the page's marketing lede, because the composed twin
+writes its own description of the page. Anything else it reports is a bug.
+
+### Quote-aware attribute regexes, or the abstract truncates
+
+`/content=["']([^"']*)["']/` closes on the **first** quote of either kind, so an
+apostrophe inside a double-quoted attribute ends the capture: `blueprints/hcm`
+shipped 87 of 777 description characters, cut mid-clause. Capture the opening
+quote and back-reference it: `/content=(["'])(.*?)/`. This bit twice — the
+`<meta name="description">` read and, later the same day, the `alt=` read that
+dropped a hero image whose alt contains `'Vibe Coding'`.
+
 ### Build-time env vars: one key, one file
 
 Values reach `import.meta.env` through two channels: `apps/web/.env` (gitignored,

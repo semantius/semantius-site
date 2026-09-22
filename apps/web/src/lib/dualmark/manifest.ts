@@ -24,6 +24,7 @@ import {
 import { extractOverview, extractSubsetMarkdown } from '../models-extract';
 import { docHeader, docFooter, listingBody, type RelatedLink, type ListingItem } from './compose';
 import { canonicalUrl, relatedLink, twinUrl } from './nav';
+import { blueprintDeployHeading, blueprintDeployPrompt } from '../blueprint-deploy';
 import { hasMarkdownTwin } from './excluded';
 import { fmtDate } from './text';
 import { toMarkdownPath, resolveSite } from './paths';
@@ -96,6 +97,14 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 			.map((p) => relatedLink(p.data.title, blogPath(p), siteUrl));
 	};
 
+	// The hero image is content-hashed at build time, so its URL is unknowable
+	// here. Emit the alt text as its own paragraph and restoreImages() in
+	// integration.ts promotes it to a real image once the HTML exists: the same
+	// placeholder convention source.ts uses for <Image> in MDX. BlogPost.astro
+	// sets alt={title}, which is what makes the two sides meet.
+	const heroPlaceholder = (post: CollectionEntry<'blog'>) =>
+		post.data.heroImage ? `${post.data.title}\n\n` : '';
+
 	for (const post of posts) {
 		push(
 			blogPath(post),
@@ -111,6 +120,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 					['Tags', post.data.tags?.join(', ')],
 				],
 			}) +
+				heroPlaceholder(post) +
 				resolveSite(post.data.markdownTwin ?? '', siteUrl) +
 				docFooter(
 					[...sharingTags(post), relatedLink('All articles', BLOG_INDEX_PATH, siteUrl)],
@@ -168,6 +178,12 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 		if (next) related.push(relatedLink(next.navTitle, next.path, siteUrl));
 		related.push(relatedLink('Docs home', DOCS_INDEX_PATH, siteUrl));
 
+		// No source twin means the source could not express the page (a component
+		// computes the content). Skipping the push leaves the page unclaimed so
+		// the HTML extractor takes it; pushing a header with an empty body would
+		// instead ship a twin that looks complete and says nothing.
+		if (!doc.data.markdownTwin) continue;
+
 		push(
 			path,
 			docHeader({
@@ -221,17 +237,22 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 	const domainFor = (bp: CollectionEntry<'blueprints'>) =>
 		(bp.data.domain_code
 			? domains.find((d) => d.data.code === bp.data.domain_code)
-			: undefined) ?? domainByModuleCode.get(bp.data.system_name);
+			: undefined) ?? domainByModuleCode.get(bp.data.system_slug.toUpperCase());
 
 	for (const bp of blueprints) {
 		const path = blueprintPath(bp);
 		const domain = domainFor(bp);
 
+		// Join on system_slug, NOT system_name. A module code is "ATS-BACKGROUND-
+		// CHECKS"; system_name is the label "Background Checks" and system_slug is
+		// the lowercased code. Comparing code to name matched 0 of 56, so every
+		// blueprint silently shipped with no siblings while the relationship data
+		// sat in domain-map.json and in related_modules frontmatter.
 		const siblings = (domain ? modulesByCode.get(domain.data.code) ?? [] : [])
-			.filter((m) => m.code !== bp.data.system_name)
+			.filter((m) => m.code.toLowerCase() !== bp.data.system_slug)
 			.slice(0, 8)
 			.map((m) => {
-				const sib = blueprints.find((b) => b.data.system_name === m.code);
+				const sib = blueprints.find((b) => b.data.system_slug === m.code.toLowerCase());
 				return sib ? relatedLink(m.name, blueprintPath(sib), siteUrl) : null;
 			})
 			.filter((x): x is RelatedLink => x !== null);
@@ -242,7 +263,17 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 		const overview = extractOverview(bp.body ?? '');
 		const subset = extractSubsetMarkdown(bp.body ?? '');
 
-		// Detail twin mirrors the detail page: overview plus entity summary.
+		// The page's most actionable line is the deploy prompt, and no twin had it.
+		// Built from the same module the page uses so the two cannot diverge.
+		const deployBlock = [
+			`### ${blueprintDeployHeading(bp.data.system_name)}`,
+			'',
+			'```text',
+			blueprintDeployPrompt(new URL(blueprintSourcePath(bp), siteUrl).toString()),
+			'```',
+		].join('\n');
+
+		// Detail twin mirrors the detail page: overview, deploy prompt, summary.
 		push(
 			path,
 			docHeader({
@@ -261,7 +292,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 					['Source file', new URL(blueprintSourcePath(bp), siteUrl).toString()],
 				],
 			}) +
-				[overview, subset].filter(Boolean).join('\n\n') +
+				[overview, deployBlock, subset].filter(Boolean).join('\n\n') +
 				docFooter(
 					[
 						relatedLink('Full specification', blueprintBodyPath(bp), siteUrl),
@@ -297,6 +328,21 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 		);
 	}
 
+	// Domain landings are Tier B twins carrying the buyer-facing copy for a whole
+	// domain. Listing only blueprints left all 12 reachable from nothing - not
+	// from here, not from llms.txt - and a twin nothing links to is unpublished.
+	const blueprintSlugs = new Set(blueprints.map((b) => b.data.system_slug));
+	const domainItems: GroupedItem[] = domains
+		// Mirrors blueprints/[slug]/index.astro: a domain whose code collides with
+		// a blueprint slug has no landing page of its own.
+		.filter((d) => !blueprintSlugs.has(d.data.code.toLowerCase()))
+		.map((d) => ({
+			title: d.data.name,
+			href: twinUrl(`/blueprints/${d.data.code.toLowerCase()}`, siteUrl),
+			description: d.data.catalog_description ?? d.data.description,
+			group: 'Domains',
+		}));
+
 	const blueprintItems: GroupedItem[] = blueprints.map((bp) => ({
 		title: bp.data.system_name,
 		href: twinUrl(blueprintPath(bp), siteUrl),
@@ -313,7 +359,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 			trail: ['Blueprints'],
 			indexUrl,
 		}) +
-			listingBody(blueprintItems, (item) => (item as GroupedItem).group ?? 'Other') +
+			listingBody([...domainItems, ...blueprintItems], (item) => (item as GroupedItem).group ?? 'Other') +
 			docFooter([], indexUrl),
 	);
 

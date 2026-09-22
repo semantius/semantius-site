@@ -4,6 +4,7 @@ import { type CollectionEntry, getCollection } from 'astro:content';
 import Layout from '~/layouts/Layout.astro';
 import { blueprintSourcePath } from '~/lib/routes';
 import Command from '~/components/common/Command.astro';
+import { blueprintDeployHeading, blueprintDeployPrompt } from '~/lib/blueprint-deploy';
 import DomainLanding from '~/components/blueprints/DomainLanding.astro';
 
 // This route serves two page kinds at /blueprints/<slug>:
@@ -35,7 +36,11 @@ export async function getStaticPaths() {
 		props: {
 			kind: 'blueprint' as const,
 			blueprint,
-			catalogDescription: catalogDescriptions.get(blueprint.data.system_name) ?? '',
+			// Keyed by module code ("ATS-BACKGROUND-CHECKS"), so look it up with the
+			// slug uppercased. system_name is the label ("Background Checks") and
+			// never matched, so every detail page silently fell back to the
+			// technical frontmatter description instead of the buyer-facing copy.
+			catalogDescription: catalogDescriptions.get(blueprint.data.system_slug.toUpperCase()) ?? '',
 		},
 	}));
 
@@ -150,8 +155,8 @@ if (props.kind === 'blueprint') {
 
 			{/* Full container width: command box and the entity summary table. */}
 			<div class="prose dark:prose-invert prose-base max-w-none mt-4 prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-xl prose-code:before:content-none prose-code:after:content-none">
-				<h3>Use the {systemName} semantic blueprint</h3>
-				<Command mode="chat" command={`/semantius-admin use the architect, analyst and modeler skills to update the semantius platform with the model specified in ${blueprintFileUrl}`} />
+				<h3>{blueprintDeployHeading(systemName)}</h3>
+				<Command mode="chat" command={blueprintDeployPrompt(blueprintFileUrl)} />
 				{subsetHtml && <div set:html={subsetHtml} />}
 			</div>
 

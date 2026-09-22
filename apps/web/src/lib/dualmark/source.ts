@@ -23,6 +23,7 @@ import remarkStringify from 'remark-stringify';
 import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
 import { visit, SKIP } from 'unist-util-visit';
+import { skillInstallCommand } from '../skill-install';
 import { collapseBlankLines } from './text';
 import { toMarkdownPath } from './paths';
 import { hasMarkdownTwin } from './excluded';
@@ -79,6 +80,35 @@ function codeNode(value: string, lang: string) {
  * inside a bash fence, and a tag-stripping regex mangles that heredoc. The
  * visitor never enters `code` nodes, so it cannot.
  */
+/** Components rewriteMdx knows how to express as markdown. */
+const KNOWN_COMPONENTS = new Set(['Command', 'SkillInstall', 'Image']);
+
+/**
+ * Does this MDX hold content that only the RENDERED page has?
+ *
+ * rewriteMdx unwraps an unknown component and keeps its children, which is the
+ * right default for a wrapper. A component that COMPUTES its content has no
+ * children to keep, so it unwraps to nothing: `<ModelList />` turned a page
+ * promising "every semantic model, sorted A to Z" into that sentence followed
+ * by an empty space, and the build said nothing.
+ *
+ * Such a page must not get a source-derived twin at all. Leaving it unclaimed
+ * hands it to the HTML extractor in integration.ts, which can see what the
+ * component actually rendered. If the page computes it, extract it; if the
+ * source is it, copy it.
+ */
+export function mdxNeedsExtraction(text: string): boolean {
+	let needs = false;
+	const tree = unified().use(remarkParse).use(remarkMdx).parse(text);
+	visit(tree, (node: any) => {
+		if (node.type !== 'mdxJsxFlowElement' && node.type !== 'mdxJsxTextElement') return;
+		const name: string = node.name ?? '';
+		if (!name || !/^[A-Z]/.test(name) || KNOWN_COMPONENTS.has(name)) return;
+		if ((node.children ?? []).length === 0) needs = true;
+	});
+	return needs;
+}
+
 function rewriteMdx() {
 	return (tree: any) => {
 		visit(tree, (node: any, index: number | undefined, parent: any) => {
@@ -107,19 +137,26 @@ function rewriteMdx() {
 			if (name === 'SkillInstall') {
 				const url = attr(node, 'url');
 				if (url) {
-					const flags = attr(node, 'includeSubagents') !== undefined ? ' --all' : '';
-					parent.children.splice(
-						index,
-						1,
-						codeNode(`npx skills add https://github.com/${url}${flags} --global`, 'bash'),
-					);
+					// The same builder the component renders with, so the twin cannot
+					// state a different command than the page. Do NOT reconstruct the
+					// string here: that is exactly how the two drifted apart.
+					//
+					// Note for anyone tempted to gate a flag on a JSX prop: a
+					// valueless attribute such as `includeSubagents` parses with
+					// value null, so attr() never returns it and the branch is dead.
+					parent.children.splice(index, 1, codeNode(skillInstallCommand(url), 'bash'));
 					return [SKIP, index];
 				}
 			}
 
 			if (name === 'Image') {
 				// The real src is content-hashed at build time and is not derivable
-				// from source, so keep the alt text and drop the reference.
+				// from source, so emit the alt text on a paragraph of its own.
+				// That paragraph is a placeholder, not the final twin: restoreImages()
+				// in integration.ts turns it back into a real markdown image once the
+				// HTML exists, matching on exactly this text. Keep it a whole
+				// paragraph and keep the alt text verbatim, or the match fails and
+				// the image silently stays missing.
 				const alt = attr(node, 'alt') ?? '';
 				parent.children.splice(index, 1, { type: 'paragraph', children: [{ type: 'text', value: alt }] });
 				return [SKIP, index];
@@ -146,7 +183,26 @@ function rewriteMdx() {
  */
 const DROP_TAGS = new Set([
 	'script', 'style', 'svg', 'button', 'noscript', 'form', 'iframe', 'nav', 'aside', 'template',
+	// Widget parts. A <select> reaches hast-util-to-mdast as its selected option
+	// and a checked <input> as a task-list item, so the skills install picker was
+	// arriving in every twin as "AgentAll (all)[x]Global": pure UI residue that
+	// reads like content. The command itself is a <code>, so it survives.
+	'select', 'option', 'input', 'label',
 ]);
+
+/**
+ * Tailwind classes that lay children out as a row. Such a parent separates its
+ * children visually (gap-*), never with text, so once the boxes are gone the
+ * labels arrive glued: "Skill-Based AssignmentService Catalog Authoring".
+ * Nothing downstream can recover a boundary that was only ever CSS.
+ */
+const LAYOUT_ROW = new Set(['flex', 'inline-flex', 'grid', 'inline-grid']);
+
+/** Concatenated text of a hast subtree. */
+function textOf(node: any): string {
+	if (node.type === 'text') return node.value ?? '';
+	return (node.children ?? []).map(textOf).join('');
+}
 // Mirrors pagefindIndex()'s excludeSelectors in astro.config.mjs.
 const DROP_CLASS = /(^|\s)heading-anchor(\s|$)/;
 
@@ -183,6 +239,39 @@ function mainContentOnly() {
 				return [SKIP, index];
 			}
 		});
+
+		// Put the CSS-only boundaries back as real whitespace (see LAYOUT_ROW).
+		visit(tree, 'element', (node: any) => {
+			const classes = ([] as string[]).concat((node.properties?.className as string[]) ?? []);
+			if (!classes.some((c) => LAYOUT_ROW.has(c))) return;
+
+			const spaced: any[] = [];
+			for (const child of node.children ?? []) {
+				const previous = spaced[spaced.length - 1];
+				const before = previous ? textOf(previous) : '';
+				const after = textOf(child);
+				const joined = before !== '' && after !== '';
+				if (joined && !/\s$/.test(before) && !/^\s/.test(after)) {
+					spaced.push({ type: 'text', value: ' ' });
+				}
+				spaced.push(child);
+			}
+			node.children = spaced;
+		});
+
+		// An icon-only link is an empty shell once its svg is dropped, and prints
+		// as "[](https://github.com/...)": noise that an agent may still follow.
+		visit(tree, 'element', (node: any, index: number | undefined, parent: any) => {
+			if (index === undefined || !parent || node.tagName !== 'a') return;
+			if (textOf(node).trim() !== '') return;
+			let hasImage = false;
+			visit(node, 'element', (n: any) => {
+				if (n.tagName === 'img') hasImage = true;
+			});
+			if (hasImage) return;
+			parent.children.splice(index, 1);
+			return [SKIP, index];
+		});
 	};
 }
 
@@ -203,11 +292,21 @@ function mainContentOnly() {
  */
 function absolutiseLinks(siteUrl: string) {
 	return (tree: any) => {
-		visit(tree, (node: any) => {
+		visit(tree, (node: any, index: number | undefined, parent: any) => {
 			// `image` included: a relative asset URL is useless in a document whose
 			// whole premise is being readable in isolation.
 			if (node.type !== 'link' && node.type !== 'definition' && node.type !== 'image') return;
 			const url: string = node.url ?? '';
+
+			// "#" is a placeholder the page uses for a control, not a destination.
+			// Left alone it ships as "[Contact Sales](#)": a link to nowhere that
+			// an agent may still follow. Keep the label, drop the link.
+			if (node.type === 'link' && (url === '' || url === '#')) {
+				if (index === undefined || !parent) return;
+				parent.children.splice(index, 1, ...(node.children ?? []));
+				return [SKIP, index];
+			}
+
 			if (!url.startsWith('/') || url.startsWith('//')) return;
 
 			const hashAt = url.indexOf('#');

@@ -117,8 +117,20 @@ export function listingBody(
 	items: ListingItem[],
 	groupBy?: (item: ListingItem) => string,
 ): string {
-	const line = (i: ListingItem) =>
-		i.description ? `- [${i.title}](${i.href}): ${i.description}` : `- [${i.title}](${i.href})`;
+	// A description containing a blank line would dedent to column 0, which ENDS
+	// the list in CommonMark: the paragraph then reads as prose belonging to the
+	// NEXT item, which is misattribution rather than mere ugliness (25 of 56
+	// blueprint descriptions do this). Continuation lines are indented to the
+	// item's content column instead. docHeader solves the same problem with "> ".
+	const line = (i: ListingItem) => {
+		const head = `- [${i.title}](${i.href})`;
+		if (!i.description) return head;
+		const [first, ...rest] = i.description.trim().split('\n');
+		return [
+			`${head}: ${first.trim()}`,
+			...rest.map((l) => (l.trim() === '' ? '' : `  ${l.trim()}`)),
+		].join('\n');
+	};
 
 	if (!groupBy) return normalizeUnicode(items.map(line).join('\n'));
 

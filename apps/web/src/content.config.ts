@@ -9,7 +9,7 @@ import {
 	extractSubsetMarkdown,
 	renderSubsetHtml,
 } from './lib/models-extract';
-import { sourceToMarkdown, sourceKindFor } from './lib/dualmark/source';
+import { sourceToMarkdown, sourceKindFor, mdxNeedsExtraction } from './lib/dualmark/source';
 import { SITE_PLACEHOLDER } from './lib/dualmark/paths';
 
 // The loader CANNOT know the real site origin: Vite merges apps/web/.env
@@ -43,10 +43,16 @@ function withMarkdownTwin(base: ReturnType<typeof glob>) {
 					rendered?: unknown;
 					deferredRender?: boolean;
 				};
-				const markdownTwin = sourceToMarkdown(
-					{ kind: sourceKindFor(e.filePath ?? id), text: e.body ?? '' },
-					{ siteUrl: SITE_PLACEHOLDER },
-				);
+				// Left undefined when the source cannot express what the page shows
+				// (see mdxNeedsExtraction). manifest.ts then declines to claim the
+				// page, and astro:build:done extracts the twin from the rendered
+				// HTML instead - the only place that content exists.
+				const kind = sourceKindFor(e.filePath ?? id);
+				const body = e.body ?? '';
+				const markdownTwin =
+					kind === 'mdx' && mdxNeedsExtraction(body)
+						? undefined
+						: sourceToMarkdown({ kind, text: body }, { siteUrl: SITE_PLACEHOLDER });
 				const newData = await ctx.parseData({
 					id,
 					data: { ...e.data, markdownTwin },

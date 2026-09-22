@@ -34,12 +34,17 @@ Until now, a team whose business data has to be usable by both people and AI age
 
 ## Machine-readable formats
 
-Every page on this site is also published as markdown, at the same path with
-".md" appended:
+Almost every page on this site is also published as markdown, at the same path
+with ".md" appended:
 
-    https://www.semantius.com/pricing         ->  https://www.semantius.com/pricing.md
     https://www.semantius.com/docs/cli        ->  https://www.semantius.com/docs/cli.md
+    https://www.semantius.com/about           ->  https://www.semantius.com/about.md
     https://www.semantius.com/                ->  https://www.semantius.com/index.md
+
+/pricing is the one deliberate exception and has no twin. Rather than guessing
+a URL, follow the links below or read the page's own
+`<link rel="alternate" type="text/markdown">`: both only ever name twins that
+exist.
 
 Each HTML page advertises its own twin with
 `<link rel="alternate" type="text/markdown" href="...">`. Every link below

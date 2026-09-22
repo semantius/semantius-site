@@ -53,7 +53,7 @@ import ScrollProgress from '~/components/layout/ScrollProgress.astro';
     <div class="mb-12 text-left">
         {heroImage && !youtubeId && (
             <div class="rounded-2xl overflow-hidden mb-8 border border-black/10 dark:border-white/10 shadow-2xl">
-                <Image src={heroImage} alt="" class="w-full object-cover aspect-video" />
+                <Image src={heroImage} alt={title} class="w-full object-cover aspect-video" />
             </div>
         )}
 

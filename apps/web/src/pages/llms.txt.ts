@@ -67,12 +67,20 @@ export const GET: APIRoute = async ({ site }) => {
 	}
 	section('Documentation index', [`- [All documentation](${md(DOCS_INDEX_PATH)})`]);
 
+	// Hand-enumerated, so anything added to the site has to be added here too.
+	// Four twins (design, privacy, showcase, terms) were published and linked
+	// from nothing at all until they were listed.
 	section('Product', [
 		`- [Features](${md('/features')}): what the platform does.`,
 		`- [Pricing](${md('/pricing')}): open source and managed plans.`,
 		`- [About](${md('/about')}): why Semantius exists.`,
+		`- [Showcase](${md('/showcase')}): what the platform looks like in use.`,
+		`- [Contact](${md('/contact')}): how to reach the team.`,
 		`- [License](${md('/license')}): MIT.`,
 		`- [Changelog](${md(CHANGELOG_PATH)}): version history.`,
+		`- [Design system](${md('/design')}): typography, colour and component reference.`,
+		`- [Privacy](${md('/privacy')}): how data is handled.`,
+		`- [Terms](${md('/terms')}): terms of service.`,
 	]);
 
 	// Blueprints grouped by owning domain. 56 entries is a lot for one list, so
@@ -83,15 +91,29 @@ export const GET: APIRoute = async ({ site }) => {
 	}
 	const byDomain = new Map<string, string[]>();
 	for (const bp of blueprints) {
-		const group = domainByModule.get(bp.data.system_name) ?? 'Other';
+		// Keyed by module code; system_slug is that code lowercased. Using
+		// system_name (the label) matched nothing, so all 56 blueprints were
+		// filed under one "Other" heading and the grouping did no work at all.
+		const group = domainByModule.get(bp.data.system_slug.toUpperCase()) ?? 'Other';
 		const desc = bp.data.system_description ?? bp.data.description;
 		const line = `- [${bp.data.system_name}](${md(blueprintPath(bp))})${desc ? `: ${desc}` : ''}`;
 		const existing = byDomain.get(group);
 		if (existing) existing.push(line);
 		else byDomain.set(group, [line]);
 	}
+	// Domain landings carry the buyer-facing copy for a whole domain and were
+	// reachable from no index at all. A domain whose code collides with a
+	// blueprint slug has no landing page (see blueprints/[slug]/index.astro).
+	const blueprintSlugs = new Set(blueprints.map((b) => b.data.system_slug));
 	section('Semantic blueprints', [
 		`- [All blueprints](${md(BLUEPRINTS_INDEX_PATH)}): the full catalog.`,
+		...domains
+			.filter((d) => !blueprintSlugs.has(d.data.code.toLowerCase()))
+			.map((d) => {
+				const desc = d.data.catalog_description ?? d.data.description;
+				const path = `/blueprints/${d.data.code.toLowerCase()}`;
+				return `- [${d.data.name}](${md(path)})${desc ? `: ${desc}` : ''}`;
+			}),
 	]);
 	for (const [domain, lines] of byDomain) section(`Blueprints: ${domain}`, lines);
 
