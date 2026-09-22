@@ -267,11 +267,15 @@ that the file's own comments repeat:
   emit both values, which produced two conflicting `rel="canonical"` links on
   `/index.md`.
 
-`/blueprints/:s1.md` is the one path left on `noindex`: it mixes 68 real twins
-with 56 verbatim source downloads that have no HTML page, and `_headers`
-matches whole segments, so no rule separates them. Giving the 68 a canonical
-would point the other 56 at a 404. The fix, if it matters, is to emit the
-verbatim sources under their own path prefix.
+**Nothing markdown is suppressed.** The verbatim blueprint source downloads
+live at `/blueprints/source/<file-id>.md` for exactly this reason: while they
+sat at `/blueprints/<file-id>.md` they shared a path segment with the 68 real
+twins at `/blueprints/<slug>.md`, and since `_headers` matches whole segments
+no rule could separate them. The whole segment had to be parked on `noindex`.
+One level down makes both addressable, so the twins get a canonical and the
+sources stay indexable. Build source URLs only via `blueprintSourcePath()` in
+`src/lib/routes.ts`; two pages used to interpolate that path by hand and broke
+silently when it moved.
 
 ### Canonical URLs carry no trailing slash
 
