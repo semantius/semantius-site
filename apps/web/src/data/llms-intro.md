@@ -28,27 +28,25 @@ Until now, a team whose business data has to be usable by both people and AI age
 ## Getting started
 
 1. Self-host the stack, or create a platform at https://app.semantius.com
-2. Install the MCP servers so any MCP compatible client can reach your platform: https://www.semantius.com/docs/reference/mcp-connectors/installation
-3. Install the CLI and the agent skills in your coding agent: https://www.semantius.com/docs/reference/agent-skills/installation
-4. Deploy a blueprint from the catalog, or build a model from scratch with the Business Analyst skill: https://www.semantius.com/docs/reference/models/create
+2. Install the MCP servers so any MCP compatible client can reach your platform: https://www.semantius.com/docs/mcp-connectors/installation.md
+3. Install the CLI and the agent skills in your coding agent: https://www.semantius.com/docs/agent-skills/installation.md
+4. Deploy a blueprint from the catalog, or build a model from scratch with the Business Analyst skill: https://www.semantius.com/docs/models/create.md
 
-## Documentation
+## Machine-readable formats
 
-- [Overview](https://www.semantius.com/docs/reference/overview): what the platform is and how the pieces fit together.
-- [Semantic models](https://www.semantius.com/docs/reference/models): entities, fields, relationships and RBAC, and how to create, deploy and optimize a model.
-- [Model structure](https://www.semantius.com/docs/reference/models/structure): the anatomy of a model specification.
-- [Business logic](https://www.semantius.com/docs/reference/business-logic): JsonLogic computed fields, validation rules and row level select rules.
-- [MCP connectors](https://www.semantius.com/docs/reference/mcp-connectors): the MCP servers and the clients they work with.
-- [Agent skills](https://www.semantius.com/docs/reference/agent-skills): the skills agents use to build and deploy models.
-- [CLI](https://www.semantius.com/docs/reference/cli): the headless interface for agents and scripts.
-- [Docs home](https://www.semantius.com/docs): guides and reference.
+Every page on this site is also published as markdown, at the same path with
+".md" appended:
 
-## Product
+    https://www.semantius.com/pricing         ->  https://www.semantius.com/pricing.md
+    https://www.semantius.com/docs/cli        ->  https://www.semantius.com/docs/cli.md
+    https://www.semantius.com/                ->  https://www.semantius.com/index.md
 
-- [Features](https://www.semantius.com/features): semantic models, the PostgreSQL core, MCP connectors, the CLI, agent skills, UI, automation and the blueprint catalog.
-- [Blueprint catalog](https://www.semantius.com/blueprints): ready to deploy semantic blueprints for domains such as CRM, ITSM, HRIS, ATS and CLM. Each blueprint is also available as raw markdown at `/blueprints/<id>.md`.
-- [Skill library](https://www.semantius.com/skills): agent skills grouped by domain.
-- [Pricing](https://www.semantius.com/pricing): open source and managed plans.
-- [Blog](https://www.semantius.com/blog): articles on semantic models, SaaS sprawl and agentic architecture.
-- [Changelog](https://www.semantius.com/changelog): version history.
-- [License](https://www.semantius.com/license): MIT.
+Each HTML page advertises its own twin with
+`<link rel="alternate" type="text/markdown" href="...">`. Every link below
+points at the markdown form, so you can follow them without leaving markdown.
+
+An index of the documentation, blog and blueprint twins is at
+https://www.semantius.com/llms-full.txt
+
+Blueprints additionally publish their complete source specification, YAML
+frontmatter included, at https://www.semantius.com/blueprints/<file-id>.md

@@ -13,6 +13,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sirv from 'sirv';
 import matter from 'gray-matter';
+import { markdownTwins } from './src/lib/dualmark/integration';
+// Imported statically rather than with `await import('pagefind')` inside the
+// astro:build:done hook. That dynamic import resolves through Vite's module
+// runner, which can already be closed by the time trailing build hooks run,
+// producing "Vite module runner has been closed".
+import * as pagefind from 'pagefind';
 
 /**
  * Remark plugin that injects a "Use <Skill>" heading and install command box
@@ -201,7 +207,6 @@ function pagefindIndex() {
       },
       'astro:build:done': async ({ dir, logger }) => {
         const out = fileURLToPath(dir);
-        const pagefind = await import('pagefind');
         const { index, errors } = await pagefind.createIndex({
           // Sidebars, breadcrumbs, TOC, heading permalinks and anything marked
           // data-pagefind-ignore never reach the index.
@@ -212,6 +217,46 @@ function pagefindIndex() {
         await index.writeFiles({ outputPath: path.join(out, 'pagefind') });
         await pagefind.close();
         logger.info(`Pagefind indexed ${page_count} pages into ${path.join(out, 'pagefind')}`);
+      },
+    },
+  };
+}
+
+/**
+ * Appends the catch-all trailing-slash redirect, and appends it LAST.
+ *
+ * Why the rule exists: html_handling 'drop-trailing-slash' only redirects when
+ * an asset actually exists at the slash-less path. Redirect-only routes have no
+ * HTML file, so /models/ fell through to the 404 page instead of reaching the
+ * /models -> /blueprints rule. This catches every slashed request, and issues a
+ * cacheable 301 instead of html_handling's 307.
+ *
+ * Why it must be last, and why this is an integration rather than a line in
+ * public/_redirects: Cloudflare allows 2,000 static redirect rules but only 100
+ * dynamic (wildcard) ones, and it counts every rule FOLLOWING the first dynamic
+ * rule as dynamic as well. Put this line at the top and a 112-rule file is
+ * rejected at upload with "Maximum number of dynamic _redirects rules limit of
+ * 100 exceeded". A public/_redirects file is copied in before the Cloudflare
+ * adapter appends its generated rules, so it can only ever land first.
+ * Static rules first, wildcard last, which is also the matching order we want.
+ */
+function trailingSlashRedirect() {
+  // Spaces, not tabs: _redirects accepts either, and a tab here is invisible.
+  const RULE = '/*/  /:splat  301';
+  let clientDir;
+  return {
+    name: 'trailing-slash-redirect',
+    hooks: {
+      'astro:config:setup': ({ config }) => {
+        if (config.adapter) clientDir = fileURLToPath(config.build.client);
+      },
+      'astro:build:done': ({ dir, logger }) => {
+        const file = path.join(clientDir ?? fileURLToPath(dir), '_redirects');
+        const existing = fs.existsSync(file)
+          ? fs.readFileSync(file, 'utf8').replace(/\s*$/, '') + '\n'
+          : '';
+        fs.writeFileSync(file, existing + RULE + '\n');
+        logger.info('catch-all trailing-slash rule appended to _redirects');
       },
     },
   };
@@ -329,7 +374,7 @@ import process from "node:process";
 
 // Adapter selection strategy
 function getAdapter() {
-  const adapter = process.env.ADAPTER || 'node';
+  const adapter = process.env.ADAPTER || 'cloudflare';
 
   switch (adapter) {
     case 'vercel':
@@ -366,6 +411,24 @@ function getAdapter() {
 //
 // Scheme 2 has no entries any more: the move back to top-level folders restored
 // exactly those URLs, so they are live pages again and must not be redirected.
+/**
+ * Turn a map of HTML redirects into the same map for their markdown twins:
+ *   "/docs/models-overview" -> "/docs/models"
+ * becomes
+ *   "/docs/models-overview.md" -> "/docs/models.md"
+ *
+ * Targets that are already a file (the blueprint source downloads) or external
+ * are skipped, since they have no twin.
+ */
+function markdownRedirects(map) {
+  const out = {};
+  for (const [from, to] of Object.entries(map)) {
+    if (typeof to !== 'string' || !to.startsWith('/') || /\.[a-z0-9]{2,4}$/i.test(to)) continue;
+    out[`${from.replace(/\/$/, '')}.md`] = `${to.replace(/\/$/, '')}.md`;
+  }
+  return out;
+}
+
 const docsLegacyRedirects = {
   // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
   '/docs/models-overview': '/docs/models',
@@ -432,7 +495,23 @@ const blueprintLegacyRedirects = {
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
   output: 'static',
-  redirects: { ...docsLegacyRedirects, ...blueprintLegacyRedirects },
+  // Canonical URLs carry no trailing slash. With build.format left at its
+  // 'directory' default the output layout is unchanged (docs/cli/index.html);
+  // only Astro.url.pathname changes, which is what the canonical, og:url and
+  // the markdown twins are built from. Cloudflare's html_handling matches this
+  // in workplace/wrangler.jsonc. Do NOT "simplify" this with
+  // build.format: 'file' — that sets ending='.html' unconditionally and makes
+  // the canonical /docs/cli.html.
+  trailingSlash: 'never',
+  redirects: {
+    ...docsLegacyRedirects,
+    ...blueprintLegacyRedirects,
+    // Markdown twins of every legacy path. Without these, an agent that was
+    // given an old URL and appends ".md" gets a 404, because Astro's redirects
+    // only cover the HTML form. Derived from the same maps so the two can
+    // never disagree about where a legacy path now lives.
+    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects }),
+  },
   fonts: [
     {
       provider: fontProviders.google(),
@@ -497,7 +576,16 @@ export default defineConfig({
     // whole site to its mobile layout (desktop nav and multi-column grids gone).
     (await import("astro-compress")).default({ Image: false, JavaScript: true, HTML: false, CSS: false }),
     // Keep last (see pagefindIndex docblock).
+    // Tier B markdown twins: extract from the rendered HTML of any page the
+    // .md route did not already emit from source. Must run BEFORE
+    // pagefindIndex(), which has to stay last; Pagefind globs **/*.html so the
+    // .md files it writes are never indexed.
+    // siteUrl is read from the resolved Astro config inside the integration,
+    // not from process.env: Vite merges apps/web/.env (SITE_URL=localhost:4321)
+    // into process.env after this file is evaluated.
+    markdownTwins(),
     pagefindIndex(),
+    trailingSlashRedirect(),
   ],
   vite: {
     plugins: [tailwindcss()],

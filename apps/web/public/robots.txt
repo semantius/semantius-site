@@ -1,2 +1,17 @@
+# Everything here is crawlable, including by AI crawlers.
+#
+# Machine-readable twins: every page is also published as markdown at the same
+# path with ".md" appended, for example
+# https://www.semantius.com/pricing -> https://www.semantius.com/pricing.md
+# Each HTML page advertises its own twin with
+#   <link rel="alternate" type="text/markdown" href="...">
+#
+# Curated index for agents and LLMs: https://www.semantius.com/llms.txt
+# Index of doc, blog and blueprint twins: https://www.semantius.com/llms-full.txt
+#
+# Do not add "Disallow: /*.md" here. It would block the exact resource this
+# site publishes for agents.
 User-agent: *
 Disallow:
+
+Sitemap: https://www.semantius.com/sitemap-index.xml

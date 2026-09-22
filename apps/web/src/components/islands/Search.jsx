@@ -3,14 +3,29 @@ import { Search as SearchIcon, X, Book, Zap, BookOpen, FileText, CornerDownRight
 import DevSearchModal from "./DevSearchModal";
 
 const POPULAR_LINKS = [
-  { label: "Overview", href: "/docs/overview/", icon: Book },
-  { label: "Features", href: "/features/", icon: Zap },
-  { label: "Guides", href: "/docs/guide/", icon: BookOpen },
-  { label: "Blog", href: "/blog/", icon: FileText },
+  { label: "Overview", href: "/docs/overview", icon: Book },
+  { label: "Features", href: "/features", icon: Zap },
+  { label: "Guides", href: "/docs/guide", icon: BookOpen },
+  { label: "Blog", href: "/blog", icon: FileText },
 ];
 
 const MAX_RESULTS = 10;
 const MAX_SUB_RESULTS = 3;
+
+/**
+ * Pagefind derives a result URL from the indexed file's location, so every hit
+ * comes back in the directory form ("/features/", "/docs/cli/"). Canonical URLs
+ * on this site carry no trailing slash (trailingSlash:'never'), so linking to
+ * the raw value would make every search click pay a 307. Pagefind has no
+ * trailing-slash option, so normalise here. The root must survive as "/".
+ */
+const canonicalHref = (url) => {
+  // Sub-results carry an anchor ("/docs/cli/#install"), so the slash to strip
+  // is not always the last character. Split it off first. The root stays "/".
+  const [path, hash] = url.split("#");
+  const trimmed = path.length > 1 ? path.replace(/\/+$/, "") : path;
+  return hash === undefined ? trimmed : `${trimmed}#${hash}`;
+};
 
 /**
  * Loads the Pagefind runtime lazily and exposes a debounced search.
@@ -60,14 +75,15 @@ function usePagefind(active) {
     if (!res) return null;
     const data = await Promise.all(res.results.slice(0, MAX_RESULTS).map((r) => r.data()));
     return data.map((d) => ({
-      url: d.url,
+      url: canonicalHref(d.url),
       title: d.meta?.title || d.url,
       description: d.meta?.description || "",
       excerpt: d.excerpt,
       subResults: (d.sub_results || [])
         // The first sub result is usually the page itself; keep heading hits only.
         .filter((s) => s.anchor && s.url !== d.url)
-        .slice(0, MAX_SUB_RESULTS),
+        .slice(0, MAX_SUB_RESULTS)
+        .map((s) => ({ ...s, url: canonicalHref(s.url) })),
     }));
   }, []);
 

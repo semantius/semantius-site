@@ -1,11 +1,100 @@
 # RFC 8288 Link response headers for agent / machine discovery.
-# A single source honored by BOTH deploy targets: Astro copies this file from
-# public/ into the published output (dist/client for the Cloudflare adapter,
-# dist root for the Netlify adapter), and each platform's static asset handler
-# applies it. Keep this as the only place these headers are defined so the two
-# targets never drift.
+# Astro copies this file from public/ into dist/client and Cloudflare's static
+# asset handler applies it. Cloudflare is the only deploy target; the file was
+# previously kept platform-neutral for Netlify, which is no longer in the
+# request path.
 # Relation types are IANA-registered and point to resources that exist:
 #   describedby -> /llms.txt   (LLM-readable description of this site, RFC 8288)
 #   service-doc -> /docs       (human-oriented documentation, RFC 8631)
 /*
   Link: </llms.txt>; rel="describedby"; type="text/plain", </docs>; rel="service-doc"; type="text/html"
+
+# Markdown twins. Every page is also published as agent-facing markdown at the
+# same path with ".md" appended:
+#   /about    -> /about.md
+#   /docs/cli -> /docs/cli.md
+#   /         -> /index.md
+#
+# Content-Type is pinned because Cloudflare serves .md as bare "text/markdown"
+# with NO charset, and markdown has no in-band way to declare its encoding. The
+# docs bodies contain real UTF-8 (arrows, typographic quotes), so without this a
+# browser decodes them as Latin-1 and renders mojibake.
+#
+# Measured trade-off, not a guess: with this line, a request for a .md that does
+# not exist returns HTTP 404 with an HTML body still labelled text/markdown,
+# because Cloudflare matches these rules against the REQUEST path and applies
+# them after resolving the 404 asset. That was verified on a preview deploy.
+# Accepted, because the 404 status code is the primary signal and stays correct,
+# whereas dropping this line mis-decodes all 232 valid markdown files. The clean
+# fix for both is a markdown-aware 404, which needs a Worker.
+#
+# Cache-Control is safe under /*.md but must NEVER appear under /*: the
+# Cloudflare adapter probes /_astro/probe against this file and skips injecting
+# its own immutable cache block if any matching rule sets Cache-Control.
+#
+# NOTE there is no X-Robots-Tag here. It used to be a blanket noindex that the
+# twin rules below lifted with "! X-Robots-Tag". That does not work: measured on
+# a preview deploy, the unset is ignored and every twin kept the noindex, which
+# left canonical and noindex on the same response, the one combination Google
+# calls contradictory. Rules here ADD, they do not override. So noindex is now
+# set only where it is actually wanted, further down.
+/*.md
+  Content-Type: text/markdown; charset=utf-8
+  X-Content-Type-Options: nosniff
+  Cache-Control: public, max-age=3600
+  Vary: Accept
+
+# Twins point at their HTML page with rel="canonical".
+#
+# This is the "consolidate" strategy rather than "suppress", and the choice
+# matters for an AEO site: noindex tells the answer engines we are trying to
+# reach to skip the cleanest version of our own content, while a canonical
+# resolves the duplicate without suppressing anything. Measured across the
+# field: Vercel and Svelte send rel="canonical" and no noindex; Stripe and
+# Firecrawl send noindex and no canonical; Cloudflare sends neither. Nobody
+# sends both.
+#
+# Safe where the page-side rules were not: ".md" is itself the discriminator.
+# No asset on this site ends in .md, so none of these can match /logo.png or
+# /_astro/hash.css.
+#
+# Do not add a /index.md rule to make the root's canonical "/" instead of
+# "/index". Rules add rather than override, so it produces TWO canonicals and
+# Google discards both. "/index" 307s to "/", which resolves correctly.
+/:s1.md
+  Link: </:s1>; rel="canonical"
+/docs/:s1.md
+  Link: </docs/:s1>; rel="canonical"
+/docs/:s1/:s2.md
+  Link: </docs/:s1/:s2>; rel="canonical"
+/blog/:s1.md
+  Link: </blog/:s1>; rel="canonical"
+/skills/:s1.md
+  Link: </skills/:s1>; rel="canonical"
+/blueprints/:s1/blueprint.md
+  Link: </blueprints/:s1/blueprint>; rel="canonical"
+
+# The one path that cannot be canonicalised, so it is suppressed instead.
+# /blueprints/:s1.md mixes 68 real twins with 56 verbatim source downloads
+# (<file-id>-semantic-blueprint.md) that have no HTML page at all, and _headers
+# matches whole segments, so no rule can separate them. Handing all 124 a
+# canonical would point 56 of them at a 404. The fix, if the 68 turn out to
+# matter, is to emit the verbatim sources under their own path prefix.
+/blueprints/:s1.md
+  X-Robots-Tag: noindex
+
+# There is deliberately NO per-page "Link: rel=alternate" rule here.
+#
+# An earlier revision carried /:s1/, /:s1/:s2/ and /:s1/:s2/:s3/ rules that
+# advertised each page's markdown twin as an HTTP header. They depended on the
+# trailing slash as the only thing separating a page URL from an asset URL:
+# every page ended in "/", no asset did. Canonical URLs are now slash-less
+# (trailingSlash:'never' in astro.config.mjs), so those patterns would match
+# /logo.png and /_astro/hash.css, and the slashed forms they did match no longer
+# resolve. A scoped rewrite (per-section prefixes plus an enumerated list of
+# root-level pages) was rejected: it fails silently the first time someone adds
+# a top-level page.
+#
+# Nothing is lost by this. The <link rel="alternate" type="text/markdown"> in
+# SEO.astro reaches every page, applies the same hasMarkdownTwin() guard these
+# rules could not express, and is the form crawlers actually parse.

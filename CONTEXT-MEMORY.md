@@ -61,6 +61,62 @@ and used directly. Do not run a shadcn generator or assume a Radix primitive exi
 always reports success. `@astrojs/check` is installed but not wired to a script either.
 Never cite `pnpm lint` as evidence that a change is clean; run `pnpm build`.
 
+### Every page is published twice: HTML and markdown
+
+The site serves an agent-facing markdown twin of every page at `<page-url>.md`
+(`/about/` → `/about.md`, `/` → `/index.md`). This is the AEO layer, ported from
+[dualmark](https://github.com/dodopayments/dualmark) (Apache-2.0) and inlined under
+`src/lib/dualmark/` rather than depended on. Keep the `NOTICE` and the per-file
+"Adapted from dualmark" headers: they are the licence obligation.
+
+Three tiers, in priority order. **Nothing here ever fails the build, and no page ever
+requires a hand-written twin**; those two properties are the design, not an accident.
+
+| Tier | Source | Written by |
+| ---- | ------ | ---------- |
+| A | content collections, via a unified AST pipeline | `src/pages/[...twin].md.ts` + `src/lib/dualmark/manifest.ts` |
+| B | the page's own rendered HTML, the universal fallback | `markdownTwins()` in `src/lib/dualmark/integration.ts` |
+| C | a hand-written file in `src/data/twin-overrides/<path>.md` | the route writer, presence is the whole mechanism |
+
+Things that are non-obvious and easy to break:
+
+- **There are two writers, and there have to be.** Tier B reads built HTML, which does
+  not exist until every route has rendered, so it cannot live in a `getStaticPaths`
+  route. The integration writes a twin for any page the route did not claim during
+  *this* build (compared by mtime against build start, so a rebuild over a dirty `dist`
+  does not silently skip extraction).
+- **Tier B reuses the Pagefind content contract.** `<main data-pagefind-body>` in
+  `Layout.astro` plus `excludeSelectors` in `astro.config.mjs` define what counts as
+  content, for both the search index and the twins. Marking a region
+  `data-pagefind-ignore` improves both at once, which is the reason not to invent a
+  second selector list.
+- **The MDX branch must stay an AST walk, never regex.** `docs/cli/command.mdx` has a
+  bash heredoc (`<<EOF`) inside a code fence; any tag-stripping regex mangles it. The
+  visitor never enters `code` nodes.
+- **`normalizeUnicode` is only for strings we compose**, never for verbatim bodies.
+  Blueprint bodies carry mermaid fences where `-->` and `->` are syntax.
+- **`joinLines` keeps empty strings** on purpose: they are how callers request a blank
+  line, and markdown is whitespace-significant.
+- **`/blueprints/<file-id>.md` is not a twin.** It is the verbatim source download,
+  frontmatter included, and its URL is interpolated into a copyable command on the
+  detail page, so those URLs are already in users' agent transcripts. The bytes and the
+  path shape are frozen. Its namespace (file ids, all ending `-semantic-blueprint`) must
+  stay disjoint from page slugs; `getStaticPaths` throws if they ever collide, which is
+  the one deliberate hard failure in the feature because it guards data loss.
+- **`_headers` carries a per-page `Link: rel="alternate"`** via four `:placeholder`
+  rules. Verified working on Cloudflare, which interpolates the matched segment into the
+  header value. Netlify does not, so those rules only make sense on a Cloudflare-only
+  deploy.
+
+### All content URLs come from `src/lib/routes.ts`
+
+Slug derivation lives in exactly one module, imported by the `.astro` pages, the twin
+writers, `llms.txt` and `rss.xml.js`. This is not tidiness. Before it existed,
+`rss.xml.js` derived blog links from `post.slug`, which the Astro content layer stopped
+providing, and every item in the live feed pointed at `/blog/undefined` for an unknown
+length of time. Deriving the same URL in two places is how that happens. Add a helper
+here rather than inlining a second expression.
+
 ### React islands: what they cost and how to add one
 
 React is not load-bearing. There is no router, no form library and no React component
@@ -136,14 +192,113 @@ Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`)
 
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
-The site deploys to **both Cloudflare (Workers static assets) and Netlify**. Both
-honor a `_headers` file in their published asset root, so `apps/web/public/_headers`
+The site is served by **Cloudflare Workers static assets** (Worker
+`semantius-site`, config `workplace/wrangler.jsonc`). `apps/web/public/_headers`
 is the single source of truth for custom response headers (e.g. RFC 8288 `Link`
-headers for agent discovery). Astro copies it to `dist/client/_headers` for the
-Cloudflare adapter and `dist/_headers` for the Netlify adapter; each adapter also
-prepends its own auto-generated entries (cache rules, redirects) without clobbering
-ours. Do **not** add `[[headers]]` to `netlify.toml` or a Worker middleware for this:
-that would duplicate the header on one platform and let the two targets drift.
+headers for agent discovery). Astro copies it to `dist/client/_headers`, and the
+adapter prepends its own auto-generated entries (cache rules, redirects) without
+clobbering ours. Do **not** express these as Worker middleware: the Worker is
+assets-only by design and a header belongs in `_headers`.
+
+The file deliberately carries **no** per-page `Link: rel="alternate"` rules.
+They existed briefly and used the trailing slash as the only discriminator
+between a page URL and an asset URL; canonical URLs no longer have one, so the
+patterns would match `/logo.png`. The `<link rel="alternate">` in `SEO.astro`
+covers every page and applies the `hasMarkdownTwin()` guard the header rules
+could not express. Netlify config remains in the tree as a rollback path but
+nothing deploys to it.
+
+**Hosting shape**, so nobody re-derives it:
+
+| | |
+| --- | --- |
+| `www.semantius.com` | Workers Custom Domain on `semantius-site`. Serves the site. |
+| `semantius.com` | Proxied `A` to `192.0.2.1` (RFC 5737, a deliberate black hole) plus a zone **Redirect Rule** wildcard `https://semantius.com/*` to `https://www.semantius.com/${1}`, 301, preserve query string. |
+
+The apex record's content is never reached: a proxied record does not publish
+its content, and the Redirect Rule fires at the edge. **Order matters when
+changing this: create the Redirect Rule first, repoint the A record second.**
+The reverse leaves the apex resolving to Cloudflare with a dead origin, which
+times out rather than erroring cleanly.
+
+Do not attach the apex to the Worker as a second Custom Domain. That makes it
+*serve* the site at both hostnames instead of redirecting, and apex-scoped
+cookies would then be sent to `app.`, `pay.` and `copilot.semantius.com`.
+
+Redirect Rules are **not** reachable from wrangler (no rules/DNS/zone commands)
+and **not** expressible in `_redirects`, which Cloudflare documents as having no
+domain-level redirect support. They are zone config: dashboard, or the Rulesets
+API with a token carrying `Zone > Config Rules > Edit`. The deploy token has
+Workers scope only.
+
+### `workers.dev` previews inject `X-Robots-Tag: noindex` on every response
+
+Measured: `/`, `/pricing`, `/docs/cli` and even `/logo.png` on a preview
+deployment all carry `X-Robots-Tag: noindex`, and it is absent from the built
+`_headers`. Cloudflare adds it so preview URLs cannot be indexed.
+
+**Consequence: indexing behaviour cannot be verified on a preview deploy.** Any
+`X-Robots-Tag` rule in `public/_headers` is indistinguishable from the platform
+header there, and a rule that does nothing looks identical to a rule that
+works. Verify those against `www.semantius.com` after a production deploy.
+
+This is the same family of trap as the zone-level AI crawler block in
+`aeo-followup.md`: the preview host is not in the `semantius.com` zone and does
+not behave like production for anything a crawler cares about.
+
+### Markdown twins are canonicalised, not noindexed
+
+Each `.md` twin sends `Link: <...>; rel="canonical"` to its HTML page, and no
+`noindex`. The reasoning, so it is not quietly reverted: `noindex` tells the
+answer engines this site exists to reach that they should skip the cleanest
+version of its own content, while a canonical resolves the duplicate without
+suppressing anything. Surveyed in the field: Vercel and Svelte send
+`rel="canonical"` and no `noindex`; Stripe and Firecrawl send `noindex` and no
+canonical; Cloudflare sends neither. **Nobody sends both**, because Google
+treats them as contradictory signals.
+
+Two measured properties of Cloudflare's `_headers` that shaped the rules, and
+that the file's own comments repeat:
+
+- **`! Header` does not unset.** A blanket `noindex` under `/*.md` plus
+  `! X-Robots-Tag` on the twin rules left the noindex in place on every twin.
+  Set a header only where it is wanted.
+- **Matching rules ADD, they do not override.** Two rules matching one path
+  emit both values, which produced two conflicting `rel="canonical"` links on
+  `/index.md`.
+
+`/blueprints/:s1.md` is the one path left on `noindex`: it mixes 68 real twins
+with 56 verbatim source downloads that have no HTML page, and `_headers`
+matches whole segments, so no rule separates them. Giving the 68 a canonical
+would point the other 56 at a 404. The fix, if it matters, is to emit the
+verbatim sources under their own path prefix.
+
+### Canonical URLs carry no trailing slash
+
+`/docs/cli`, never `/docs/cli/`. This is configured in **two places that must
+agree**, and a change to either alone breaks the site:
+
+| | |
+| --- | --- |
+| `apps/web/astro.config.mjs` | `trailingSlash: 'never'`. Travels inside the build artifact: canonicals, `og:url`, sitemap, and every markdown twin's `- **URL**:` line. |
+| `workplace/wrangler.jsonc` | `html_handling: 'drop-trailing-slash'`. Host config, one Worker. |
+
+`build.format` stays at its `directory` default, so the output layout
+(`docs/cli/index.html`) is unchanged and only `Astro.url.pathname` moves.
+**Never "simplify" this with `build.format: 'file'`**: Astro's `getUrlForPath`
+sets `ending = '.html'` unconditionally for that format and ignores
+`trailingSlash`, which makes the canonical `/docs/cli.html`, makes the twin
+`/docs/cli.html.md`, and breaks active-nav matching in `DocsLayout`.
+
+A third piece closes a gap the first two leave: `trailingSlashRedirect()` in
+`astro.config.mjs` appends a catch-all `/*/  /:splat  301` to `_redirects`.
+`html_handling` only redirects when an asset exists at the slash-less path, so
+redirect-only routes (`/models/`) 404ed without it. Its docblock records why the
+rule must be the file's last line and why it cannot live in `public/_redirects`;
+both constraints cost a failed deploy to find.
+
+Consequence worth knowing: `astro dev` and `astro preview` have no host-level
+redirect, so a hand-typed slashed URL 404s locally. That is expected.
 
 ### nodejs_compat required (RESOLVED)
 
@@ -159,17 +314,47 @@ that would duplicate the header on one platform and let the two targets drift.
 There are no `prerender = false` routes, so Astro builds in `static` mode. Consequences a future session must not undo by accident:
 
 - `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
-- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/blueprints/[id].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`.
+- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/lib/dualmark/manifest.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`. The failure mode is a **zero-byte file, not an error**, so check sizes: `find dist/client -name '*.md' -size -100c` must print nothing.
+- That rule is narrower than it looks, and treating it as a blanket ban costs work:
+  - **`entry.body` from `getCollection()` is safe in workerd.** The content-layer store is bundled as a Vite virtual module, not read from disk at prerender time. Only reach for `import.meta.glob` when you need a repo file *verbatim including frontmatter*, or a file that is in no collection at all.
+  - **`astro:build:done` runs in Node under every adapter.** Anything needing the filesystem, or a heavy dependency you would rather not bundle into workerd, belongs in an integration hook rather than a route. `markdownTwins()` and `pagefindIndex()` both rely on this.
+  - Heavy parsers are better run in a **content loader** than in a route: the loaders run in Node, and a derived field on the entry is then free at render time. `docs` and `blog` derive `markdownTwin` this way, mirroring how `blueprints` derives `overview` and `subsetHtml`.
 
-### Verifying adapter-specific output: bypass turbo, build in `apps/web`
+### Prerendered endpoint response headers are discarded
 
-`ADAPTER` decides what the build emits, but it is **not part of turbo's cache key**. Running `ADAPTER=cloudflare pnpm build` from the repo root happily replays a cached node-adapter build, so the output you inspect is not the output you asked for. Build directly instead:
+An `APIRoute` that returns `new Response(body, { headers })` in a static build contributes **only the body**. Astro writes the bytes to disk and drops the headers, because the Cloudflare adapter declares no `staticHeaders` feature. The tell is live and observable: the same `.md` file is served as `text/markdown; charset=UTF-8` by Netlify and `text/markdown` by Cloudflare, so the type is coming from each platform's extension table, not from the endpoint.
+
+So **`public/_headers` is the only header surface**. Setting a content type on an endpoint is still worth doing because it is correct in `astro dev`, but nothing may depend on it reaching production.
+
+One trap in `_headers` itself: Cloudflare matches rules against the **request** path and applies them **after** resolving the 404 asset. A `Content-Type` under `/*.md` therefore labels the HTML 404 page as markdown on every missing `.md` URL. Set `nosniff`, `X-Robots-Tag`, `Cache-Control` and `Vary` there, never `Content-Type`.
+
+### A `public/` file silently shadows a route with the same output path
+
+`public/` is copied verbatim into the output, and a collision is resolved in its favour with only a log line: `Skipping src/pages/llms.txt.ts because a file with the same name exists in the public folder`. The route then emits nothing. When converting a static `public/` file into a generated route, delete the original **in the same commit**. Prose partials for such routes belong in `src/data/`, not `src/content/`, because `getNoIndexUrls()` in `astro.config.mjs` walks all of `src/content` looking for frontmatter.
+
+### Dynamic `import()` inside `astro:build:done` races Vite's module runner
+
+`await import('pagefind')` inside a build-done hook resolves through Vite's module runner, which can already be closed by the time trailing hooks run, producing `Vite module runner has been closed`. It is timing-dependent, so it can survive for a long time and then break when another integration is added ahead of it. Import such modules statically at the top of `astro.config.mjs` instead.
+
+### One build, and it is the one that ships
+
+`getAdapter()` in `astro.config.mjs` defaults to **`cloudflare`**, so a plain `pnpm build` produces exactly what `pnpm deploy:wrangler` deploys. `deploy-wrangler.sh` calls `pnpm run build` with no `ADAPTER` override. Keep it that way, and resist reintroducing a per-target build script.
+
+This is deliberate and fixes two failure modes that existed while the default was `node`:
+
+- **The node adapter hid workerd-only bugs.** Prerendering runs inside workerd under the Cloudflare adapter and in Node under the node adapter, so a `node:fs` read of a repo file produces a **zero-byte file, not an error**, only on the real target. A green node-adapter build proved nothing about the markdown twins.
+- **`ADAPTER` was an env var, and env vars are not part of turbo's cache key.** `ADAPTER=cloudflare pnpm build` could replay a cached node build, so the output you inspected was not the output you asked for. Now the adapter lives in `astro.config.mjs`, which *is* hashed, so turbo caching is correct.
+
+The `redirects` map in `astro.config.mjs` materialises only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
 
 ```bash
-cd apps/web && ADAPTER=cloudflare npx astro build
+find apps/web/dist/client -name '*.md' -size -100c   # must print nothing
+ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 ```
 
-The plain `pnpm build` (node adapter, server mode) is fine for catching compile errors but cannot verify anything the static targets generate. In particular the `redirects` map in `astro.config.mjs` materializes **only** in the adapter builds: `dist/client/_redirects` for Cloudflare, the Netlify equivalent for Netlify. A node-adapter build emits no redirect artifacts at all, which makes a broken redirect look like a missing one and vice versa.
+`dist/server/` is created but stays empty in static mode. That is expected; it is not a sign SSR crept in.
+
+The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
 
 ### `markdown.processor` is the only place remark/rehype plugins are registered
 

@@ -26,7 +26,7 @@ CF_SUBDOMAIN=$(curl -s "https://api.cloudflare.com/client/v4/accounts/$ACCOUNT_I
 echo "Workers subdomain: $CF_SUBDOMAIN"
 
 # 3. Build
-ADAPTER=cloudflare pnpm run build
+pnpm run build
 
 # 4. wrangler fails to publish when running in Copilot sandbox, the GitHub GoProxy seems to be non standard compliant
 #    Load a GoProxy compatibility fix so wrangler/undici sends Title-Case

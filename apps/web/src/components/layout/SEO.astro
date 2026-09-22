@@ -1,4 +1,6 @@
 ---
+import { toMarkdownPath } from '~/lib/dualmark/paths';
+import { hasMarkdownTwin } from '~/lib/dualmark/excluded';
 interface Props {
   title: string;
   description: string;
@@ -12,7 +14,18 @@ const { title, description, image, article = false, noindex = false, nofollow = 
 import { siteConfig } from '~/site.config';
 const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
 
-const path = Astro.url.pathname.replace(/\/$/, '') || '/home';
+// Markdown twin discovery. Every page is also published as agent-facing
+// markdown at <page-url>.md, and this link is how a crawler finds it without
+// guessing. Canonical pathnames are slash-less ("/about"), so appending ".md"
+// is the whole convention; toMarkdownPath still strips a slash defensively.
+//
+// Skipped when the page has no twin (the 404, the /blueprints/page/N stubs) and
+// when it is noindex, so we never advertise a file that is not emitted.
+const twinURL =
+    hasMarkdownTwin(Astro.url.pathname) && !noindex
+        ? new URL(toMarkdownPath(Astro.url.pathname), Astro.site).toString()
+        : undefined;
+
 const ogImageUrl = image || siteConfig.ogImage;
 
 const robots = [
@@ -34,6 +47,7 @@ const robots = [
 
 <!-- Canonical URL -->
 <link rel="canonical" href={canonicalURL} />
+{twinURL && <link rel="alternate" type="text/markdown" href={twinURL} />}
 
 <!-- Primary Meta Tags -->
 <title>{title}</title>

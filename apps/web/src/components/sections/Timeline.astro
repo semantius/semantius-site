@@ -20,7 +20,11 @@ const { items } = Astro.props;
     <div class={`mb-8 flex justify-between items-center w-full ${index % 2 === 0 ? 'flex-row-reverse left-timeline' : 'right-timeline'}`}>
       <div class="order-1 w-5/12"></div>
       <div class="z-20 flex items-center order-1 bg-primary shadow-xl w-8 h-8 rounded-full">
-        <h1 class="mx-auto font-semibold text-lg text-white">{index + 1}</h1>
+        {/* A div, not a heading: this is a decorative step number in a circle.
+            As an <h1> it put four extra top-level headings on the page, which
+            broke the document outline for screen readers and leaked "# 1",
+            "# 2" into the page's markdown twin. */}
+        <div class="mx-auto font-semibold text-lg text-white" aria-hidden="true">{index + 1}</div>
       </div>
       <div class={`order-1 w-5/12 px-6 py-4 rounded-lg shadow-xl bg-white dark:bg-white/5 border border-black/5 dark:border-white/10 backdrop-blur-sm transition-all hover:-translate-y-1 hover:shadow-2xl`}>
         <span class="mb-3 font-bold text-primary text-sm">{item.date}</span>
