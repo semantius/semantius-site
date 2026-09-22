@@ -8,7 +8,20 @@ Three pieces of work, in strict order. Each is a prerequisite for the next.
 | **0c** | Production is four months stale | **Read this.** The Worker's last prod deploy is 2026-05-27, so `_headers` has never run in production. |
 | **0b** | Remove Netlify from the codebase | Gated, deliberately not done. It is the rollback path. |
 | **B** | Remove the trailing slash | **Done and verified on preview.** Ships *with* the twins, in one release: B lands before `aeo` merges. |
-| **A** | Markdown and copy actions in the docs header | After B. B changes URL shape, A builds UI that embeds URLs. |
+| **A** | Markdown and copy actions in the docs header | **Done and verified on preview.** |
+
+## Still open, after B and A landed
+
+1. **Merge `aeo` into `main` and `pnpm deploy:wrangler --prod`.** This is the
+   release. Production is still the 2026-05-27 build (section 0c), so this
+   deploy moves it forward by 57 commits *and* changes the URL scheme. Nothing
+   in B or A reaches a real user until it runs.
+2. **Unblock `GPTBot` and `ClaudeBot`** at the zone. Dashboard only, not
+   reachable from code. Still 403.
+3. **Section 0b, removing Netlify.** Deliberately still gated, and the gate has
+   not opened: it is the rollback path, and a rollback is still plausible until
+   the production release in item 1 has landed and held.
+4. **Decide whether the Worker gets deploy-on-push** (section 0c).
 
 Background on the markdown twins is in `CONTEXT-MEMORY.md` under "Every page is
 published twice: HTML and markdown". Open items from that work are in
@@ -656,6 +669,26 @@ goal.
 
 # A. Markdown and copy actions in the docs page header
 
+> **Built. `src/components/docs/PageActions.astro`, rendered by `DocsLayout`
+> directly under the `<h1>`.** Verified on preview `aeo-20260922140646`:
+> the menu opens, "Copy as Markdown" fetches the twin and the label flips to
+> "Copied", the menu closes, no console errors. The Ask links carry
+> `https://www.semantius.com/docs/<page>.md` in the prompt. The component is
+> `data-pagefind-ignore`, and the twins are clean: `docs/cli.md` contains
+> neither "View as Markdown" nor "Copy page".
+>
+> Two notes for whoever touches it next:
+>
+> - The `noindex` guard is **inert today** — no docs page sets `noindex` — so it
+>   is correct but untested. Same status as `hasMarkdownTwin()` here.
+> - A bare `<summary>` exposes no ref to `agent-browser`'s accessibility
+>   snapshot, so drive it with the CSS selector `.page-actions summary`. It is
+>   keyboard-accessible regardless; this is a tooling limitation, not an a11y
+>   defect.
+>
+> Screenshots: `screenshots/20260922141000-docs-header-actions.png` (closed),
+> `screenshots/20260922141500-docs-header-menu-open.png` (menu open).
+
 ## What to build
 
 Under the `<h1>` in `DocsLayout`, a visible link plus a small menu:
@@ -766,7 +799,8 @@ be the differentiating version. Separate decision, larger than this task.
 - [ ] `CONTEXT-MEMORY.md`: add the trailing-slash decision and the
       `build.format: 'file'` trap, so nobody re-proposes it.
 - [ ] `CONTEXT-MEMORY.md`: record the AI crawler-block decision from section 0.
-- [ ] `aeo-followup.md`: close item 2 if the crawler block was resolved.
+- [ ] `aeo-followup.md`: close item 2 if the crawler block was resolved. **Still
+      open**: re-measured 2026-09-22, GPTBot 403, ClaudeBot 403, Googlebot 200.
 - [ ] `CONTEXT-MEMORY.md`, "Custom response headers": record that the Worker has
       no deploy-on-push, so `_headers` changes are not live until someone runs
       `pnpm deploy:wrangler --prod` by hand. That is what section 0c is about
