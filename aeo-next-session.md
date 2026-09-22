@@ -571,9 +571,60 @@ curl -sS "$U/docs/cli" | grep -o 'rel="alternate" type="text/markdown"[^>]*'
 |---|---|
 | Ranking wobble while Google consolidates 189 changed canonicals | Normal migration. `drop-trailing-slash` issues the redirects automatically, at 307. See step 2. |
 | Per-page `Link` header is lost | Not a loss: it was never live. See step 4 and section 0c. |
-| Legacy slashed paths double-hop | Verified, not a risk to watch: `getTrailingSlashPaths` in `@astrojs/underscore-redirects@1.0.4` returns `[withoutSlash]` under `never` against `[withoutSlash, withSlash]` under `ignore`, so `_redirects` drops from 223 lines to ~112 and `/models/` becomes 307 then 301. Only affects legacy forms that are canonical nowhere. |
+| **Legacy slashed paths 404** | **Open. Measured on a preview deploy, not predicted.** See "The one thing that broke" below. |
 | Netlify disagreeing | Eliminated by section 0. Do not start B before it is done. |
 | `Astro.url.pathname` shape | Resolved and verified. See step 1. |
+
+## The one thing that broke
+
+**Measured on preview `aeo-20260922125409`, after the change was actually
+deployed. An earlier draft of this plan predicted a harmless double hop here
+and was wrong.**
+
+```
+/docs/models-overview      301 -> /docs/models      correct
+/docs/models-overview/     404                      REGRESSION (today: 301 -> /docs/models)
+/models                    301 -> /blueprints       correct
+/models/                   404                      REGRESSION
+/docs/models-overview.md   301 -> /docs/models.md   correct
+```
+
+Two facts combine:
+
+1. `getTrailingSlashPaths` in `@astrojs/underscore-redirects@1.0.4` returns
+   `[withoutSlash]` under `trailingSlash: 'never'` against
+   `[withoutSlash, withSlash]` under `ignore`. So `dist/client/_redirects`
+   drops from 223 lines to 111 and the slashed source form is gone.
+2. **`drop-trailing-slash` only issues its 307 when an asset exists at the
+   slash-less path.** A redirect-only route has no HTML file, so there is
+   nothing for it to resolve, and the request falls through to
+   `not_found_handling: "404-page"`.
+
+So the slashed form of every legacy path is now a hard 404. That is roughly 110
+URLs, and they are exactly the population the redirect map exists to protect:
+the old schemes were live under Netlify Pretty URLs, so anything Google still
+holds from them is held in **slashed** form.
+
+### Fixing it
+
+The rules must carry both source forms again. Ruled out: adding slashed keys to
+the `redirects` map in `astro.config.mjs`. `getTrailingSlashPaths` strips them
+under `never`, so they collapse into duplicates of the rules already there.
+
+That leaves writing the slashed variants into `_redirects` directly, and the
+only hard part is **ordering against the Cloudflare adapter, which appends its
+own generated rules to the same file** (`@astrojs/cloudflare@14.3.2`,
+`appendFile` in its `astro:build:done`). First match wins, so the variants have
+to land before that append, or at least not after a conflicting rule.
+
+- [ ] Decide between: a `public/_redirects` checked into the repo (copied to
+      `dist/client` before the adapter appends, so ordering is guaranteed, but
+      hand-maintained and free to drift from the maps in `astro.config.mjs`),
+      or a post-build hook that derives the variants from those same maps
+      (cannot drift, but its hook order against the adapter's must be proven on
+      a preview, not assumed).
+- [ ] Re-run the legacy matrix on preview afterwards. `/docs/models-overview/`
+      and `/models/` must 301, not 404.
 
 ## What NOT to do
 
