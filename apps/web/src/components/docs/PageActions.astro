@@ -1,23 +1,31 @@
 ---
 /**
- * "View as Markdown" plus a small actions menu, shown under the page <h1>.
+ * Markdown and assistant actions, shown as a quiet metadata row under the <h1>.
  *
- * Every affordance here is for a HUMAN reader. Agents already have the twin
- * via <link rel="alternate"> in SEO.astro and via /llms.txt, and never need a
- * button. The visible link is deliberately "View as Markdown" rather than
- * "Ask Claude", even though Ask has the higher per-click value: the link
- * teaches a convention (append .md), so a reader who learns it once uses it on
- * pages they never visit. Ask is self-contained and teaches nothing.
+ * Every affordance here is for a HUMAN reader. Agents already have the twin via
+ * <link rel="alternate"> in SEO.astro and via /llms.txt, and never need a
+ * button. "View as Markdown" leads because it teaches a convention (append
+ * .md), so a reader who learns it once uses it on pages they never visit. Ask
+ * is self-contained and teaches nothing.
  *
- * No React island. A <details>/<summary> pair gives a keyboard-accessible menu
- * with no hydration, matching the rest of the site chrome (static Astro plus
- * vanilla JS).
+ * Styling note, because an earlier revision got this wrong: these are NOT
+ * buttons. Bordered, filled controls read as primary actions and shout louder
+ * than the page title they sit under. This is a metadata row in the idiom
+ * Cloudflare's docs use, muted text with small icons and hairline separators,
+ * and it stays out of the way until you look for it. Keeping them visually
+ * quiet is also what let the menu go: four flat items fit the ~800px content
+ * column easily, where four bordered controls did not, so there is no
+ * <details> wrapper, no open/close state and no outside-click handling left.
+ *
+ * Semantics are still real controls: three links and one <button>, each with a
+ * visible focus ring. Do not swap the button for an <a>; it performs an action,
+ * it does not navigate.
  *
  * The copy action FETCHES the .md at click time rather than inlining it at
- * build time. entry.data.markdownTwin exists and would save the request, but
- * it costs up to 15KB of duplicated content per page and is the pre-composed
- * body without the twin's header and Related footer, so it is not what the
- * .md URL actually serves.
+ * build time. entry.data.markdownTwin exists and would save the request, but it
+ * costs up to 15KB of duplicated content per page and is the pre-composed body
+ * without the twin's header and Related footer, so it is not what the .md URL
+ * actually serves.
  */
 import { toMarkdownPath } from '~/lib/dualmark/paths';
 import { hasMarkdownTwin } from '~/lib/dualmark/excluded';
@@ -43,74 +51,106 @@ const mdUrl = new URL(mdPath, Astro.site).toString();
 // payoff: they read clean markdown instead of parsing our nav, cookie banner
 // and hydration scripts.
 const prompt = `Read ${mdUrl} and help me with: `;
-const askLinks = [
-	{ label: 'Ask Claude', href: `https://claude.ai/new?q=${encodeURIComponent(prompt)}` },
-	{ label: 'Ask ChatGPT', href: `https://chatgpt.com/?q=${encodeURIComponent(prompt)}` },
-];
 
 const itemClass =
-	'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground/80 hover:bg-foreground/5 hover:text-foreground transition-colors';
+	'inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2 focus-visible:ring-offset-background';
+const iconClass = 'opacity-60';
 ---
 
 {
 	show && (
 		<div
-			class="not-prose -mt-4 mb-8 flex flex-wrap items-center gap-3"
+			class="not-prose -mt-4 mb-8 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-foreground/10 pb-4 text-sm text-muted-foreground"
 			data-pagefind-ignore
 		>
-			<a
-				href={mdPath}
-				class="inline-flex items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.03] px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground"
-			>
+			<a href={mdPath} class={itemClass}>
 				<svg
-					width="15"
-					height="15"
+					class={iconClass}
+					width="14"
+					height="14"
 					viewBox="0 0 24 24"
 					fill="none"
 					stroke="currentColor"
-					stroke-width="2"
+					stroke-width="1.75"
 					stroke-linecap="round"
 					stroke-linejoin="round"
 					aria-hidden="true"
 				>
-					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-					<path d="M14 2v6h6" />
-					<path d="M9 13l2.5 3L14 13" />
-					<path d="M9 13v5" />
+					<rect x="2" y="5" width="20" height="14" rx="2" />
+					<path d="M6 15V9l3 3 3-3v6" />
+					<path d="M17 9v6" />
+					<path d="M15 13l2 2 2-2" />
 				</svg>
 				View as Markdown
 			</a>
 
-			<details class="page-actions relative">
-				<summary class="inline-flex cursor-pointer list-none items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.03] px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground [&::-webkit-details-marker]:hidden">
-					<span class="page-actions-label">Copy page</span>
-					<svg
-						class="page-actions-chevron"
-						width="14"
-						height="14"
-						viewBox="0 0 24 24"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="2"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-						aria-hidden="true"
-					>
-						<path d="M6 9l6 6 6-6" />
-					</svg>
-				</summary>
+			<span class="select-none text-foreground/15" aria-hidden="true">
+				|
+			</span>
 
-				<div class="absolute left-0 z-30 mt-2 w-56 rounded-lg border border-foreground/10 bg-background p-1 shadow-lg shadow-black/5">
-					<button type="button" class={`page-actions-copy ${itemClass}`} data-md={mdPath}>
-						Copy as Markdown
-					</button>
-					{askLinks.map((link) => (
-						<a href={link.href} target="_blank" rel="noopener noreferrer" class={itemClass}>
-							{link.label}
-						</a>
-					))}
-				</div>
-			</details>
+			<button type="button" class={`page-actions-copy ${itemClass}`} data-md={mdPath}>
+				<svg
+					class={iconClass}
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<rect x="9" y="9" width="13" height="13" rx="2" />
+					<path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+				</svg>
+				<span class="page-actions-label">Copy as Markdown</span>
+			</button>
+
+			<span class="select-none text-foreground/15" aria-hidden="true">
+				|
+			</span>
+
+			<a href={`https://claude.ai/new?q=${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" class={itemClass}>
+				<svg
+					class={iconClass}
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+				</svg>
+				Ask Claude
+			</a>
+
+			<span class="select-none text-foreground/15" aria-hidden="true">
+				|
+			</span>
+
+			<a href={`https://chatgpt.com/?q=${encodeURIComponent(prompt)}`} target="_blank" rel="noopener noreferrer" class={itemClass}>
+				<svg
+					class={iconClass}
+					width="14"
+					height="14"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.75"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+					<path d="M8 10h8M8 14h5" />
+				</svg>
+				Ask ChatGPT
+			</a>
 		</div>
 	)
 }
@@ -120,52 +160,43 @@ const itemClass =
 	// CopyButton.astro: that one queries every .copy-button on the page and
 	// would double-bind anything sharing the class.
 	function initPageActions() {
-		document.querySelectorAll<HTMLElement>('.page-actions').forEach((menu) => {
-			if (menu.dataset.bound) return;
-			menu.dataset.bound = 'true';
+		document
+			.querySelectorAll<HTMLButtonElement>('.page-actions-copy')
+			.forEach((button) => {
+				if (button.dataset.bound) return;
+				button.dataset.bound = 'true';
 
-			const details = menu as HTMLDetailsElement;
-			const label = menu.querySelector<HTMLElement>('.page-actions-label');
-			const copyButton = menu.querySelector<HTMLButtonElement>('.page-actions-copy');
-			const original = label?.textContent ?? 'Copy page';
-			let resetTimer: number | undefined;
+				const label = button.querySelector<HTMLElement>('.page-actions-label');
+				const original = label?.textContent ?? 'Copy as Markdown';
+				let resetTimer: number | undefined;
 
-			const flash = (text: string) => {
-				if (!label) return;
-				window.clearTimeout(resetTimer);
-				label.textContent = text;
-				resetTimer = window.setTimeout(() => {
-					label.textContent = original;
-				}, 2000);
-			};
+				const flash = (text: string) => {
+					if (!label) return;
+					window.clearTimeout(resetTimer);
+					label.textContent = text;
+					resetTimer = window.setTimeout(() => {
+						label.textContent = original;
+					}, 2000);
+				};
 
-			copyButton?.addEventListener('click', async () => {
-				const href = copyButton.dataset.md;
-				if (!href) return;
-				details.open = false;
-				try {
-					// A .md that 404s must never leave the button claiming success.
-					// _headers pins Content-Type on .md, so a missing file still
-					// answers 404 and res.ok is the only reliable signal here.
-					const res = await fetch(href, { headers: { Accept: 'text/markdown' } });
-					if (!res.ok) throw new Error(`${res.status} for ${href}`);
-					await navigator.clipboard.writeText(await res.text());
-					flash('Copied');
-				} catch (err) {
-					console.error('[page-actions] copy failed:', err);
-					flash('Copy failed');
-				}
+				button.addEventListener('click', async () => {
+					const href = button.dataset.md;
+					if (!href) return;
+					try {
+						// A .md that 404s must never leave the control claiming
+						// success. _headers pins Content-Type on .md, so a missing
+						// file still answers 404 and res.ok is the only reliable
+						// signal here.
+						const res = await fetch(href, { headers: { Accept: 'text/markdown' } });
+						if (!res.ok) throw new Error(`${res.status} for ${href}`);
+						await navigator.clipboard.writeText(await res.text());
+						flash('Copied');
+					} catch (err) {
+						console.error('[page-actions] copy failed:', err);
+						flash('Copy failed');
+					}
+				});
 			});
-
-			// A <details> stays open until something closes it. Close on an
-			// outside click and on Escape, which is what a menu is expected to do.
-			document.addEventListener('click', (event) => {
-				if (details.open && !details.contains(event.target as Node)) details.open = false;
-			});
-			menu.addEventListener('keydown', (event) => {
-				if ((event as KeyboardEvent).key === 'Escape') details.open = false;
-			});
-		});
 	}
 
 	initPageActions();
@@ -173,12 +204,3 @@ const itemClass =
 	// listens for this anyway, so adding one later cannot silently break them.
 	document.addEventListener('astro:page-load', initPageActions);
 </script>
-
-<style>
-	.page-actions[open] .page-actions-chevron {
-		transform: rotate(180deg);
-	}
-	.page-actions-chevron {
-		transition: transform 0.15s ease;
-	}
-</style>
