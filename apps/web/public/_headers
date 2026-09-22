@@ -36,8 +36,12 @@
 # twin rules below lifted with "! X-Robots-Tag". That does not work: measured on
 # a preview deploy, the unset is ignored and every twin kept the noindex, which
 # left canonical and noindex on the same response, the one combination Google
-# calls contradictory. Rules here ADD, they do not override. So noindex is now
-# set only where it is actually wanted, further down.
+# calls contradictory. Rules here ADD, they do not override.
+#
+# Nothing markdown is suppressed now. Twins are consolidated onto their HTML
+# page with rel="canonical"; the verbatim blueprint sources have no HTML page
+# and self-canonicalise. Suppressing either would work against the point of
+# publishing them.
 /*.md
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
@@ -73,15 +77,18 @@
   Link: </skills/:s1>; rel="canonical"
 /blueprints/:s1/blueprint.md
   Link: </blueprints/:s1/blueprint>; rel="canonical"
-
-# The one path that cannot be canonicalised, so it is suppressed instead.
-# /blueprints/:s1.md mixes 68 real twins with 56 verbatim source downloads
-# (<file-id>-semantic-blueprint.md) that have no HTML page at all, and _headers
-# matches whole segments, so no rule can separate them. Handing all 124 a
-# canonical would point 56 of them at a 404. The fix, if the 68 turn out to
-# matter, is to emit the verbatim sources under their own path prefix.
 /blueprints/:s1.md
-  X-Robots-Tag: noindex
+  Link: </blueprints/:s1>; rel="canonical"
+
+# There is deliberately NO rule for /blueprints/source/:s1.md, the 56 verbatim
+# specification downloads. They are unique content with no HTML page, so they
+# self-canonicalise and stay indexable, which is the point of publishing them.
+#
+# They only became addressable at all once they moved out of /blueprints/ into
+# /blueprints/source/. While both sets shared one segment, /blueprints/:s1.md
+# matched 68 real twins and 56 source files alike, and _headers matches whole
+# segments, so neither a canonical nor a noindex could be applied to one without
+# hitting the other. See blueprintSourcePath() in src/lib/routes.ts.
 
 # There is deliberately NO per-page "Link: rel=alternate" rule here.
 #

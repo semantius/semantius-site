@@ -49,4 +49,4 @@ An index of the documentation, blog and blueprint twins is at
 https://www.semantius.com/llms-full.txt
 
 Blueprints additionally publish their complete source specification, YAML
-frontmatter included, at https://www.semantius.com/blueprints/<file-id>.md
+frontmatter included, at https://www.semantius.com/blueprints/source/<file-id>.md

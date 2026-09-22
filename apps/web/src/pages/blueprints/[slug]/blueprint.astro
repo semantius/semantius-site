@@ -2,6 +2,7 @@
 export const prerender = true;
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import Layout from '~/layouts/Layout.astro';
+import { blueprintSourcePath } from '~/lib/routes';
 
 export async function getStaticPaths() {
 	const specs = await getCollection('blueprints');
@@ -49,7 +50,7 @@ const systemName = spec.data.system_name;
 						Review
 					</a>
 					<a
-						href={`/blueprints/${spec.id}.md`}
+						href={blueprintSourcePath(spec)}
 						download
 						class="inline-flex items-center gap-1.5 rounded-full border border-primary px-3 py-1.5 text-xs font-semibold text-foreground transition hover:bg-primary hover:text-white"
 					>

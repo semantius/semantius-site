@@ -65,11 +65,21 @@ export function blueprintBodyPath(bp: CollectionEntry<'blueprints'>): string {
 
 /**
  * The verbatim source download, keyed on the FILE id rather than the slug.
- * This is not a twin: no page exists at /blueprints/<file-id>. It is the
- * artifact users paste into an agent, so the URL shape is frozen.
+ * This is not a twin: no page exists at /blueprints/source/<file-id>. It is the
+ * artifact users paste into an agent.
+ *
+ * The `source/` segment is load-bearing, not decoration. These files used to sit
+ * at /blueprints/<file-id>.md, directly alongside the 68 real twins at
+ * /blueprints/<slug>.md. public/_headers matches whole path segments, so no rule
+ * could tell the two apart, and the twins could not be given a
+ * rel="canonical" without pointing the 56 source files at a page that does not
+ * exist. Moving them one level down makes both sets addressable.
+ *
+ * ALWAYS build source URLs from this function. Two pages used to interpolate the
+ * old path by hand and would have broken silently on this move.
  */
 export function blueprintSourcePath(bp: CollectionEntry<'blueprints'>): string {
-	return `/blueprints/${bp.id}.md`;
+	return `/blueprints/source/${bp.id}.md`;
 }
 
 export const BLUEPRINTS_INDEX_PATH = '/blueprints';

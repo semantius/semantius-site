@@ -2,6 +2,7 @@
 export const prerender = true;
 import { type CollectionEntry, getCollection } from 'astro:content';
 import Layout from '~/layouts/Layout.astro';
+import { blueprintSourcePath } from '~/lib/routes';
 import Command from '~/components/common/Command.astro';
 import DomainLanding from '~/components/blueprints/DomainLanding.astro';
 
@@ -77,7 +78,7 @@ if (props.kind === 'blueprint') {
 		month: 'long',
 		day: 'numeric',
 	});
-	blueprintFileUrl = new URL(`/blueprints/${blueprint.id}.md`, Astro.site ?? Astro.url).toString();
+	blueprintFileUrl = new URL(blueprintSourcePath(blueprint), Astro.site ?? Astro.url).toString();
 	// Prefer the human-readable system_description (e.g. "Candidate CRM") for the
 	// displayed title; system_name is an uppercase code/id (e.g. "ATS-CANDIDATE-CRM").
 	systemName = blueprint.data.system_description ?? blueprint.data.system_name;

@@ -200,7 +200,12 @@ export function markdownTwins() {
 				// The 56 verbatim blueprint sources are excluded from the 1:1 coverage
 				// comparison above, so without this a workerd regression that emptied
 				// them would be completely silent.
-				const sources = allMd.filter((f) => /-semantic-blueprint\.md$/.test(f));
+				// split/join rather than a regex: an earlier version used a character
+				// class for the separator, which collapsed to '/' only and matched
+				// nothing on Windows, reporting 0 sources on a build that emitted 56.
+				const sources = allMd.filter((f) =>
+					f.split(path.sep).join('/').includes('/blueprints/source/'),
+				);
 				logger.info(`${allMd.length} .md files total (${sources.length} verbatim blueprint sources)`);
 
 				// Reports, never throws. A missing or thin twin is a quality problem,

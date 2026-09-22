@@ -49,11 +49,10 @@ export async function getStaticPaths() {
 				? 'index'
 				: entry.path.slice(1);
 
-		// The blueprint source namespace (file ids, all ending -semantic-blueprint)
-		// and the twin namespace (system slugs) are disjoint today. If that ever
-		// stops being true one file would silently overwrite the other, so fail
-		// loudly here instead. This is the one hard failure in the feature, and it
-		// guards data loss rather than output quality.
+		// The blueprint source namespace and the twin namespace are now disjoint by
+		// construction: sources live under /blueprints/source/. This guard predates
+		// that and is kept anyway, because it costs nothing and what it catches is
+		// silent data loss rather than a quality regression.
 		if (seen.has(param)) {
 			throw new Error(
 				`Duplicate markdown output path: /${param}.md. The blueprint source ids and ` +
