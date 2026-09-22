@@ -48,7 +48,7 @@ then `pnpm deploy:netlify` from an earlier commit is still the escape hatch.
 
 | | |
 |---|---|
-| **Real pricing terms** | Blocks the release. See above. |
+| **Real pricing terms** | The release shipped with the twin held, so this no longer blocks anything — but the live HTML page still states a 14-day trial, PayPal/wire payment and a 30-day money-back guarantee. See the top of this file. |
 | **`Accept: text/markdown` handling** | Agents that content-negotiate instead of reading `rel="alternate"` currently get HTML. Two options: Cloudflare's "Markdown for Agents" toggle (machine conversion of the rendered page) or a zone Redirect Rule matching the Accept header and redirecting to our own twin. The second serves better content and still costs no Worker invocation; plan availability of `http.request.headers` in Redirect Rules is unconfirmed. Detail: `aeo-next-session.md`. |
 | **Training-crawler policy** | Resolved 2026-09-22: GPTBot and ClaudeBot unblocked. Recorded so it is not silently reverted — note that only the *Training* category was ever blocked, and AI-answer visibility never depended on it. |
 
