@@ -360,6 +360,30 @@ ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 
 The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
 
+### Build-time env vars: `apps/web/.env` wins locally, and CI has no such file
+
+Values reach `import.meta.env` through two channels: `apps/web/.env` (gitignored,
+dev machines only) and the process env, which `dotenvx run --` fills from the
+committed, encrypted root `.env`. The precedence between them is measured, and it
+is the **opposite** of Vite's documented `loadEnv` behaviour, where `process.env`
+wins:
+
+- **`apps/web/.env` present → the file wins.** Building with
+  `PUBLIC_POSTHOG_PROJECT_TOKEN` set only in the process env put it in 0 of 190
+  pages. Root `.env` therefore cannot override a local value; edit
+  `apps/web/.env` for that.
+- **`apps/web/.env` absent → the process env is used.** The same build with the
+  file moved aside inlined the process-env value into 177 pages.
+
+So any build-time var that must survive an automated build belongs in the root
+`.env` (`dotenvx set KEY value`), not only in `apps/web/.env`. A var that lives
+only in the untracked file disappears from CI builds **silently** — the page just
+ships without that snippet. `SITE_URL` is the exception that needs nothing:
+`astro.config.mjs` falls back to `https://www.semantius.com`.
+
+Encrypting the `PUBLIC_*` analytics values there buys tidiness, not secrecy: they
+are inlined into every page's HTML by `PostHog.astro` and are public by design.
+
 ### `markdown.processor` is the only place remark/rehype plugins are registered
 
 Both `.md` and `.mdx` render through the single `unified()` processor passed to

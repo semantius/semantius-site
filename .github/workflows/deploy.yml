@@ -34,11 +34,12 @@ jobs:
       # It must be the full 64-char hex key (see CONTEXT-MEMORY.md, Deployment):
       # a 63-char value leaves every secret undecrypted without failing loudly.
       DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
-      # apps/web/.env is untracked, so the build-time analytics vars
-      # (PUBLIC_POSTHOG_*) are absent on a CI checkout and PostHog silently drops
-      # off the deployed site. Store that file's contents as the WEB_ENV repo
-      # secret to make CI builds match local ones; until then this step no-ops.
-      WEB_ENV: ${{ secrets.WEB_ENV }}
+      # Build-time vars (PUBLIC_POSTHOG_*) live in that committed .env too, so
+      # there is nothing else to supply: apps/web/.env is untracked and absent on
+      # a CI checkout, and with no file present Astro takes those values from the
+      # process env dotenvx populates. Measured, not assumed - and it works only
+      # in that direction: when apps/web/.env DOES exist (a dev machine) the file
+      # wins over the process env, so root .env cannot override a local value.
     steps:
       - uses: actions/checkout@v4
 
@@ -51,10 +52,6 @@ jobs:
           cache: pnpm
 
       - run: pnpm install --frozen-lockfile
-
-      - name: Restore apps/web/.env
-        if: env.WEB_ENV != ''
-        run: printf '%s\n' "$WEB_ENV" > apps/web/.env
 
       - name: Deploy
         # `pnpm run <script>`, never `pnpm deploy:...` — pnpm has a built-in
