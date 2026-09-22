@@ -16,7 +16,6 @@
     "deploy": "wrangler deploy",
     "preview:worker": "wrangler dev",
     "astro": "astro",
-    "build:wrangler": "cross-env ADAPTER=cloudflare astro build",
     "preview:wrangler": "bash ../../workplace/deploy-wrangler.sh",
     "deploy:wrangler": "bash ../../workplace/deploy-wrangler.sh --prod",
     "deploy:netlify": "bash ../../workplace/deploy-netlify.sh"

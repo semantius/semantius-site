@@ -192,14 +192,40 @@ Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`)
 
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
-The site deploys to **both Cloudflare (Workers static assets) and Netlify**. Both
-honor a `_headers` file in their published asset root, so `apps/web/public/_headers`
+The site is served by **Cloudflare Workers static assets** (Worker
+`semantius-site`, config `workplace/wrangler.jsonc`). `apps/web/public/_headers`
 is the single source of truth for custom response headers (e.g. RFC 8288 `Link`
-headers for agent discovery). Astro copies it to `dist/client/_headers` for the
-Cloudflare adapter and `dist/_headers` for the Netlify adapter; each adapter also
-prepends its own auto-generated entries (cache rules, redirects) without clobbering
-ours. Do **not** add `[[headers]]` to `netlify.toml` or a Worker middleware for this:
-that would duplicate the header on one platform and let the two targets drift.
+headers for agent discovery). Astro copies it to `dist/client/_headers`, and the
+adapter prepends its own auto-generated entries (cache rules, redirects) without
+clobbering ours. Do **not** express these as Worker middleware: the Worker is
+assets-only by design and a header belongs in `_headers`.
+
+Because Cloudflare is now the only target, the `:placeholder` rules in that file
+(which Netlify would have emitted literally) do pay off. Netlify config remains
+in the tree as a rollback path but nothing deploys to it.
+
+**Hosting shape**, so nobody re-derives it:
+
+| | |
+| --- | --- |
+| `www.semantius.com` | Workers Custom Domain on `semantius-site`. Serves the site. |
+| `semantius.com` | Proxied `A` to `192.0.2.1` (RFC 5737, a deliberate black hole) plus a zone **Redirect Rule** wildcard `https://semantius.com/*` to `https://www.semantius.com/${1}`, 301, preserve query string. |
+
+The apex record's content is never reached: a proxied record does not publish
+its content, and the Redirect Rule fires at the edge. **Order matters when
+changing this: create the Redirect Rule first, repoint the A record second.**
+The reverse leaves the apex resolving to Cloudflare with a dead origin, which
+times out rather than erroring cleanly.
+
+Do not attach the apex to the Worker as a second Custom Domain. That makes it
+*serve* the site at both hostnames instead of redirecting, and apex-scoped
+cookies would then be sent to `app.`, `pay.` and `copilot.semantius.com`.
+
+Redirect Rules are **not** reachable from wrangler (no rules/DNS/zone commands)
+and **not** expressible in `_redirects`, which Cloudflare documents as having no
+domain-level redirect support. They are zone config: dashboard, or the Rulesets
+API with a token carrying `Zone > Config Rules > Edit`. The deploy token has
+Workers scope only.
 
 ### nodejs_compat required (RESOLVED)
 
@@ -237,15 +263,25 @@ One trap in `_headers` itself: Cloudflare matches rules against the **request** 
 
 `await import('pagefind')` inside a build-done hook resolves through Vite's module runner, which can already be closed by the time trailing hooks run, producing `Vite module runner has been closed`. It is timing-dependent, so it can survive for a long time and then break when another integration is added ahead of it. Import such modules statically at the top of `astro.config.mjs` instead.
 
-### Verifying adapter-specific output: bypass turbo, build in `apps/web`
+### One build, and it is the one that ships
 
-`ADAPTER` decides what the build emits, but it is **not part of turbo's cache key**. Running `ADAPTER=cloudflare pnpm build` from the repo root happily replays a cached node-adapter build, so the output you inspect is not the output you asked for. Build directly instead:
+`getAdapter()` in `astro.config.mjs` defaults to **`cloudflare`**, so a plain `pnpm build` produces exactly what `pnpm deploy:wrangler` deploys. `deploy-wrangler.sh` calls `pnpm run build` with no `ADAPTER` override. Keep it that way, and resist reintroducing a per-target build script.
+
+This is deliberate and fixes two failure modes that existed while the default was `node`:
+
+- **The node adapter hid workerd-only bugs.** Prerendering runs inside workerd under the Cloudflare adapter and in Node under the node adapter, so a `node:fs` read of a repo file produces a **zero-byte file, not an error**, only on the real target. A green node-adapter build proved nothing about the markdown twins.
+- **`ADAPTER` was an env var, and env vars are not part of turbo's cache key.** `ADAPTER=cloudflare pnpm build` could replay a cached node build, so the output you inspected was not the output you asked for. Now the adapter lives in `astro.config.mjs`, which *is* hashed, so turbo caching is correct.
+
+The `redirects` map in `astro.config.mjs` materialises only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
 
 ```bash
-cd apps/web && ADAPTER=cloudflare npx astro build
+find apps/web/dist/client -name '*.md' -size -100c   # must print nothing
+ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 ```
 
-The plain `pnpm build` (node adapter, server mode) is fine for catching compile errors but cannot verify anything the static targets generate. In particular the `redirects` map in `astro.config.mjs` materializes **only** in the adapter builds: `dist/client/_redirects` for Cloudflare, the Netlify equivalent for Netlify. A node-adapter build emits no redirect artifacts at all, which makes a broken redirect look like a missing one and vice versa.
+`dist/server/` is created but stays empty in static mode. That is expected; it is not a sign SSR crept in.
+
+The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
 
 ### `markdown.processor` is the only place remark/rehype plugins are registered
 

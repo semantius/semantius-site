@@ -37,10 +37,6 @@
     "build:netlify": {
       "dependsOn": ["^build"],
       "outputs": ["dist/**"]
-    },
-    "build:cloudflare": {
-      "dependsOn": ["^build"],
-      "outputs": ["dist/**"]
     }
   }
 }

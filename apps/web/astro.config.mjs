@@ -334,7 +334,7 @@ import process from "node:process";
 
 // Adapter selection strategy
 function getAdapter() {
-  const adapter = process.env.ADAPTER || 'node';
+  const adapter = process.env.ADAPTER || 'cloudflare';
 
   switch (adapter) {
     case 'vercel':
