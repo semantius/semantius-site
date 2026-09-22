@@ -1,0 +1,184 @@
+---
+/**
+ * "View as Markdown" plus a small actions menu, shown under the page <h1>.
+ *
+ * Every affordance here is for a HUMAN reader. Agents already have the twin
+ * via <link rel="alternate"> in SEO.astro and via /llms.txt, and never need a
+ * button. The visible link is deliberately "View as Markdown" rather than
+ * "Ask Claude", even though Ask has the higher per-click value: the link
+ * teaches a convention (append .md), so a reader who learns it once uses it on
+ * pages they never visit. Ask is self-contained and teaches nothing.
+ *
+ * No React island. A <details>/<summary> pair gives a keyboard-accessible menu
+ * with no hydration, matching the rest of the site chrome (static Astro plus
+ * vanilla JS).
+ *
+ * The copy action FETCHES the .md at click time rather than inlining it at
+ * build time. entry.data.markdownTwin exists and would save the request, but
+ * it costs up to 15KB of duplicated content per page and is the pre-composed
+ * body without the twin's header and Related footer, so it is not what the
+ * .md URL actually serves.
+ */
+import { toMarkdownPath } from '~/lib/dualmark/paths';
+import { hasMarkdownTwin } from '~/lib/dualmark/excluded';
+
+interface Props {
+	/** Page path, normally Astro.url.pathname. */
+	pathname: string;
+	/** Suppress entirely on noindex pages, matching the condition in SEO.astro. */
+	noindex?: boolean;
+}
+
+const { pathname, noindex = false } = Astro.props;
+
+// Twins are emitted for noindex pages too, so this is about consistency rather
+// than a 404: if <head> deliberately does not advertise a twin, the page header
+// must not either.
+const show = !noindex && hasMarkdownTwin(pathname);
+
+const mdPath = toMarkdownPath(pathname);
+const mdUrl = new URL(mdPath, Astro.site).toString();
+
+// Point the assistants at the twin, not the HTML page. That is the whole
+// payoff: they read clean markdown instead of parsing our nav, cookie banner
+// and hydration scripts.
+const prompt = `Read ${mdUrl} and help me with: `;
+const askLinks = [
+	{ label: 'Ask Claude', href: `https://claude.ai/new?q=${encodeURIComponent(prompt)}` },
+	{ label: 'Ask ChatGPT', href: `https://chatgpt.com/?q=${encodeURIComponent(prompt)}` },
+];
+
+const itemClass =
+	'flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground/80 hover:bg-foreground/5 hover:text-foreground transition-colors';
+---
+
+{
+	show && (
+		<div
+			class="not-prose -mt-4 mb-8 flex flex-wrap items-center gap-3"
+			data-pagefind-ignore
+		>
+			<a
+				href={mdPath}
+				class="inline-flex items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.03] px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground"
+			>
+				<svg
+					width="15"
+					height="15"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+					aria-hidden="true"
+				>
+					<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+					<path d="M14 2v6h6" />
+					<path d="M9 13l2.5 3L14 13" />
+					<path d="M9 13v5" />
+				</svg>
+				View as Markdown
+			</a>
+
+			<details class="page-actions relative">
+				<summary class="inline-flex cursor-pointer list-none items-center gap-2 rounded-lg border border-foreground/10 bg-foreground/[0.03] px-3 py-1.5 text-sm text-foreground/80 transition-colors hover:border-foreground/20 hover:bg-foreground/5 hover:text-foreground [&::-webkit-details-marker]:hidden">
+					<span class="page-actions-label">Copy page</span>
+					<svg
+						class="page-actions-chevron"
+						width="14"
+						height="14"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+						aria-hidden="true"
+					>
+						<path d="M6 9l6 6 6-6" />
+					</svg>
+				</summary>
+
+				<div class="absolute left-0 z-30 mt-2 w-56 rounded-lg border border-foreground/10 bg-background p-1 shadow-lg shadow-black/5">
+					<button type="button" class={`page-actions-copy ${itemClass}`} data-md={mdPath}>
+						Copy as Markdown
+					</button>
+					{askLinks.map((link) => (
+						<a href={link.href} target="_blank" rel="noopener noreferrer" class={itemClass}>
+							{link.label}
+						</a>
+					))}
+				</div>
+			</details>
+		</div>
+	)
+}
+
+<script>
+	// Bound to .page-actions-copy, NOT the global .copy-button hook in
+	// CopyButton.astro: that one queries every .copy-button on the page and
+	// would double-bind anything sharing the class.
+	function initPageActions() {
+		document.querySelectorAll<HTMLElement>('.page-actions').forEach((menu) => {
+			if (menu.dataset.bound) return;
+			menu.dataset.bound = 'true';
+
+			const details = menu as HTMLDetailsElement;
+			const label = menu.querySelector<HTMLElement>('.page-actions-label');
+			const copyButton = menu.querySelector<HTMLButtonElement>('.page-actions-copy');
+			const original = label?.textContent ?? 'Copy page';
+			let resetTimer: number | undefined;
+
+			const flash = (text: string) => {
+				if (!label) return;
+				window.clearTimeout(resetTimer);
+				label.textContent = text;
+				resetTimer = window.setTimeout(() => {
+					label.textContent = original;
+				}, 2000);
+			};
+
+			copyButton?.addEventListener('click', async () => {
+				const href = copyButton.dataset.md;
+				if (!href) return;
+				details.open = false;
+				try {
+					// A .md that 404s must never leave the button claiming success.
+					// _headers pins Content-Type on .md, so a missing file still
+					// answers 404 and res.ok is the only reliable signal here.
+					const res = await fetch(href, { headers: { Accept: 'text/markdown' } });
+					if (!res.ok) throw new Error(`${res.status} for ${href}`);
+					await navigator.clipboard.writeText(await res.text());
+					flash('Copied');
+				} catch (err) {
+					console.error('[page-actions] copy failed:', err);
+					flash('Copy failed');
+				}
+			});
+
+			// A <details> stays open until something closes it. Close on an
+			// outside click and on Escape, which is what a menu is expected to do.
+			document.addEventListener('click', (event) => {
+				if (details.open && !details.contains(event.target as Node)) details.open = false;
+			});
+			menu.addEventListener('keydown', (event) => {
+				if ((event as KeyboardEvent).key === 'Escape') details.open = false;
+			});
+		});
+	}
+
+	initPageActions();
+	// The site does not use <ClientRouter />, but every other inline script here
+	// listens for this anyway, so adding one later cannot silently break them.
+	document.addEventListener('astro:page-load', initPageActions);
+</script>
+
+<style>
+	.page-actions[open] .page-actions-chevron {
+		transform: rotate(180deg);
+	}
+	.page-actions-chevron {
+		transition: transform 0.15s ease;
+	}
+</style>
