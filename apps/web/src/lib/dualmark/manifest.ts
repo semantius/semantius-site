@@ -24,6 +24,7 @@ import {
 import { extractOverview, extractSubsetMarkdown } from '../models-extract';
 import { docHeader, docFooter, listingBody, type RelatedLink, type ListingItem } from './compose';
 import { canonicalUrl, relatedLink, twinUrl } from './nav';
+import { hasMarkdownTwin } from './excluded';
 import { fmtDate } from './text';
 import { toMarkdownPath, resolveSite } from './paths';
 
@@ -69,7 +70,16 @@ type GroupedItem = ListingItem & { group?: string };
 export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 	const indexUrl = new URL('/llms.txt', siteUrl).toString();
 	const out: TwinPage[] = [];
-	const push = (path: string, markdown: string) => out.push({ path, markdown });
+	// The exclusion list is enforced HERE, not only at the call sites that
+	// remember to check. excluded.ts names three consumers that must never
+	// disagree, but this one silently did not check: adding /pricing to EXCLUDED
+	// suppressed its <link rel="alternate"> and its Tier B extraction while this
+	// writer kept emitting the file from source, so the twin stayed published
+	// with nothing pointing at it.
+	const push = (path: string, markdown: string) => {
+		if (!hasMarkdownTwin(path)) return;
+		out.push({ path, markdown });
+	};
 
 	/* -- blog ----------------------------------------------------------- */
 
