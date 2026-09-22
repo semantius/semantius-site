@@ -31,12 +31,62 @@
 # Cache-Control is safe under /*.md but must NEVER appear under /*: the
 # Cloudflare adapter probes /_astro/probe against this file and skips injecting
 # its own immutable cache block if any matching rule sets Cache-Control.
+#
+# X-Robots-Tag here is the DEFAULT, and the rules below lift it for every .md
+# that is a twin of a real HTML page. See the block after this one.
 /*.md
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
   X-Robots-Tag: noindex
   Cache-Control: public, max-age=3600
   Vary: Accept
+
+# Twins point at their HTML page with rel="canonical", and drop the blanket
+# noindex above.
+#
+# This is the "consolidate" strategy, not the "suppress" one, and the choice
+# matters for an AEO site: noindex tells the answer engines we are trying to
+# reach to skip the cleanest version of our own content, while a canonical
+# resolves the duplicate without suppressing anything. Measured across the
+# field: Vercel and Svelte send rel="canonical" and no noindex; Stripe and
+# Firecrawl send noindex and no canonical; Cloudflare sends neither. Nobody
+# sends both, because Google treats them as contradictory. We are in the first
+# camp deliberately.
+#
+# Safe where the page-side rules were not: ".md" is itself the discriminator.
+# No asset on this site ends in .md, so none of these can match /logo.png or
+# /_astro/hash.css.
+#
+# NOT covered: /blueprints/:s1.md . That one path mixes 68 real twins with 56
+# verbatim source downloads (<file-id>-semantic-blueprint.md) that have no HTML
+# page at all, and _headers matches whole segments, so a rule cannot tell them
+# apart. They keep the default noindex rather than being handed a canonical
+# that 404s for 56 of them. The fix, if the 68 turn out to matter, is to emit
+# the verbatim sources under their own prefix so the two become addressable.
+/:s1.md
+  Link: </:s1>; rel="canonical"
+  ! X-Robots-Tag
+/docs/:s1.md
+  Link: </docs/:s1>; rel="canonical"
+  ! X-Robots-Tag
+/docs/:s1/:s2.md
+  Link: </docs/:s1/:s2>; rel="canonical"
+  ! X-Robots-Tag
+/blog/:s1.md
+  Link: </blog/:s1>; rel="canonical"
+  ! X-Robots-Tag
+/skills/:s1.md
+  Link: </skills/:s1>; rel="canonical"
+  ! X-Robots-Tag
+/blueprints/:s1/blueprint.md
+  Link: </blueprints/:s1/blueprint>; rel="canonical"
+  ! X-Robots-Tag
+
+# The root's twin is /index.md, whose canonical is "/" and not "/index".
+# Placed after /:s1.md so that whichever rule Cloudflare resolves last wins.
+/index.md
+  Link: </>; rel="canonical"
+  ! X-Robots-Tag
 
 # There is deliberately NO per-page "Link: rel=alternate" rule here.
 #
