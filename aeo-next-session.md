@@ -670,24 +670,34 @@ goal.
 # A. Markdown and copy actions in the docs page header
 
 > **Built. `src/components/docs/PageActions.astro`, rendered by `DocsLayout`
-> directly under the `<h1>`.** Verified on preview `aeo-20260922140646`:
-> the menu opens, "Copy as Markdown" fetches the twin and the label flips to
-> "Copied", the menu closes, no console errors. The Ask links carry
+> directly under the `<h1>`.** Verified on preview `aeo-20260922145943`: the
+> copy action fetches the twin and the label flips to "Copied", no console
+> errors, and the Ask links carry
 > `https://www.semantius.com/docs/<page>.md` in the prompt. The component is
-> `data-pagefind-ignore`, and the twins are clean: `docs/cli.md` contains
-> neither "View as Markdown" nor "Copy page".
+> `data-pagefind-ignore` and the twins stay clean: `docs/cli.md` contains
+> neither "View as Markdown" nor "Copy as Markdown".
 >
-> Two notes for whoever touches it next:
+> **Shipped shape differs from the mockup below, deliberately.** There is no
+> `<details>` menu. Built as specified first, and bordered controls under the
+> `<h1>` read as primary actions and shouted louder than the page title. Restyled
+> as a quiet metadata row (muted text, 14px icons, hairline separators, a rule
+> underneath) in the idiom Cloudflare's docs use, and at that weight four flat
+> items fit the ~800px column easily. So the menu, its open/close state and its
+> outside-click handling are all gone.
 >
+> Two things that fell out of it:
+>
+> - **Accessibility improved.** A bare `<summary>` exposed no ref to
+>   `agent-browser`'s snapshot; the flat row exposes all four controls. Still
+>   three links plus one real `<button>`, each with a visible focus ring.
 > - The `noindex` guard is **inert today** — no docs page sets `noindex` — so it
 >   is correct but untested. Same status as `hasMarkdownTwin()` here.
-> - A bare `<summary>` exposes no ref to `agent-browser`'s accessibility
->   snapshot, so drive it with the CSS selector `.page-actions summary`. It is
->   keyboard-accessible regardless; this is a tooling limitation, not an a11y
->   defect.
 >
-> Screenshots: `screenshots/20260922141000-docs-header-actions.png` (closed),
-> `screenshots/20260922141500-docs-header-menu-open.png` (menu open).
+> Screenshot: `screenshots/20260922150000-docs-header-actions-subtle.png`.
+>
+> **Layout budget, corrected.** The note under "Implementation notes" says four
+> inline items would not fit. That is true of bordered controls and false of
+> flat ones. Do not use it to argue the menu back.
 
 ## What to build
 
