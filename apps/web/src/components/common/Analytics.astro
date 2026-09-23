@@ -2,53 +2,81 @@
 import { siteConfig } from '~/site.config';
 
 const { vendors, alwaysLoad } = siteConfig.analytics;
----
 
-<script is:inline define:vars={{ vendors, alwaysLoad }}>
+/**
+ * Vendor selection happens here, at build time, not in the browser.
+ *
+ * Every `*_ENABLED` flag is a build-time env var, so a vendor that is off when
+ * the site is built can never turn on in a visitor's browser. Emitting all
+ * three loaders plus the serialised `analytics` config on every page was
+ * therefore dead code that also published the config shape (placeholder hosts
+ * included) to anyone reading view-source. Each vendor below contributes its
+ * snippet only when it is enabled AND has an id, and when none qualify this
+ * component renders nothing at all.
+ *
+ * Ids are interpolated with JSON.stringify rather than pasted raw: they come
+ * from env vars, and a stray quote would otherwise break out of the literal.
+ */
+const loaders: string[] = [];
+
+if (vendors.googleAnalytics?.enabled && vendors.googleAnalytics.id) {
+  const id = JSON.stringify(vendors.googleAnalytics.id);
+  loaders.push(`
+    // Google Analytics 4
+    const gaScript = document.createElement('script');
+    gaScript.async = true;
+    gaScript.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(${id});
+    document.head.appendChild(gaScript);
+
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { window.dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', ${id});`);
+}
+
+if (vendors.rybbit?.enabled && vendors.rybbit.id) {
+  const id = JSON.stringify(vendors.rybbit.id);
+  const src = JSON.stringify(vendors.rybbit.src || 'https://app.rybbit.io/api/script.js');
+  loaders.push(`
+    // Rybbit Analytics
+    const rybbitScript = document.createElement('script');
+    rybbitScript.defer = true;
+    rybbitScript.setAttribute('data-site-id', ${id});
+    rybbitScript.src = ${src};
+    document.head.appendChild(rybbitScript);`);
+}
+
+if (vendors.umami?.enabled && vendors.umami.id) {
+  const id = JSON.stringify(vendors.umami.id);
+  const src = JSON.stringify(vendors.umami.src || 'https://analytics.umami.is/script.js');
+  loaders.push(`
+    // Umami Analytics
+    const umamiScript = document.createElement('script');
+    umamiScript.defer = true;
+    umamiScript.setAttribute('data-website-id', ${id});
+    umamiScript.src = ${src};
+    document.head.appendChild(umamiScript);`);
+}
+
+// `alwaysLoad` is a build-time flag too, so the consent check it bypasses is
+// resolved here rather than shipped as a branch the browser re-evaluates.
+const entry = alwaysLoad
+  ? 'loadScripts();'
+  : "if (localStorage.getItem('cookie_consent') === 'accepted') loadScripts();";
+
+const script = `(function () {
   const loadScripts = () => {
     // Prevent duplicate loading
     if (window.analyticsLoaded) return;
     window.analyticsLoaded = true;
-
-    // Google Analytics 4
-    if (vendors.googleAnalytics?.enabled && vendors.googleAnalytics?.id) {
-        const gaScript = document.createElement('script');
-        gaScript.async = true;
-        gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${vendors.googleAnalytics.id}`;
-        document.head.appendChild(gaScript);
-
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', vendors.googleAnalytics.id);
-    }
-
-    // Rybbit Analytics
-    if (vendors.rybbit?.enabled && vendors.rybbit?.id) {
-        const rybbitScript = document.createElement('script');
-        rybbitScript.defer = true;
-        rybbitScript.setAttribute('data-site-id', vendors.rybbit.id);
-        rybbitScript.src = vendors.rybbit.src || 'https://app.rybbit.io/api/script.js';
-        document.head.appendChild(rybbitScript);
-    }
-
-    // Umami Analytics
-    if (vendors.umami?.enabled && vendors.umami?.id) {
-        const umamiScript = document.createElement('script');
-        umamiScript.defer = true;
-        umamiScript.setAttribute('data-website-id', vendors.umami.id);
-        umamiScript.src = vendors.umami.src || 'https://analytics.umami.is/script.js';
-        document.head.appendChild(umamiScript);
-    }
+${loaders.join('\n')}
   };
 
-  // Check for force load or existing consent
-  if (alwaysLoad || localStorage.getItem('cookie_consent') === 'accepted') {
-    loadScripts();
-  }
+  ${entry}
 
-  // Listen for new consent
-  window.addEventListener('consent:granted', () => {
-    loadScripts();
-  });
-</script>
+  // A visitor who accepts later gets the scripts without a reload.
+  window.addEventListener('consent:granted', loadScripts);
+})();`;
+---
+
+{loaders.length > 0 && <script is:inline set:html={script} />}
