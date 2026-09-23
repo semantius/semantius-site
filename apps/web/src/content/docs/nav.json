@@ -13,7 +13,8 @@
         "business-logic",
         "mcp-connectors",
         "agent-skills",
-        "cli"
+        "cli",
+        "self-hosted"
       ]
     }
   ]

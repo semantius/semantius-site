@@ -1,0 +1,104 @@
+---
+title: 'Running Your Stack'
+navTitle: 'Running Your Stack'
+description: 'Everyday commands for a self-hosted Semantius platform: starting, stopping, updating, adding users, and reaching the API from scripts.'
+order: 2
+---
+
+import Command from '~/components/common/Command.astro';
+
+Once your stack is up, day-to-day work is a handful of commands plus a few addresses worth bookmarking. This page covers both. Every command here is run **from inside your variant folder**, the one holding `docker-compose.yml` and `.env`.
+
+Every command exists twice: a `.sh` version for macOS, Linux, and Git Bash, and a `.cmd` version for the Windows command prompt. The examples below show the `.sh` form. On Windows, swap the extension.
+
+## The Everyday Commands
+
+| Command | What it does | Your data |
+| --- | --- | --- |
+| `./status.sh` | Shows what is running and whether each part is healthy | Untouched |
+| `./stop.sh` | Stops everything, leaves it ready to resume | Kept |
+| `./start.sh` | Starts it again after a stop | Kept |
+| `./up.sh` | Applies changes you made to `.env` or the other settings files | Kept |
+| `./create.sh` | Rebuilds everything from scratch, including a brand new database | **Deleted** |
+| `./destroy.sh` | Removes the containers and the database entirely | **Deleted** |
+
+The two that delete your data both ask for confirmation first when there is a database to lose.
+
+On Windows, `start` is a built-in command, so type `.\start.cmd` rather than `start.cmd` or you will open a new window instead of starting your stack.
+
+## Changed a Setting? Use `up`, Not `create`
+
+This is the one distinction worth learning, because getting it backward costs you your data.
+
+**`./up.sh` keeps your database.** Use it whenever you have edited `.env` or one of the settings files next to it. It applies the change to the running system and leaves everything you have built alone.
+
+**`./create.sh` wipes your database and starts over.** Use it on a first install, or when you deliberately want a clean slate.
+
+The reason they are separate commands rather than one command with a flag is that the database only sets itself up once, on the very first start. Restarting or even fully recreating the containers keeps the existing database exactly as it was. So if you change something that only applies at database creation time and then wonder why nothing happened, that is the rule you are seeing, not a bug.
+
+## Adding People
+
+Sign in as the administrator and go to `http://localhost:3000/idp/admin`. That is where users are created and managed.
+
+By default the stack does not send email. That is deliberate: a local install with no mail service configured would otherwise offer password reset links that never arrive. The practical consequence is that **an administrator creates accounts and sets passwords directly**, and there is no self-service password reset.
+
+To turn email on for a real deployment, add a [Resend](https://resend.com) API key to `.env` as `RESEND_API_KEY` and run `./up.sh`. Password resets, email verification, and notifications switch on together.
+
+## Reaching the API From a Script
+
+Browsers sign in interactively, but scripts and scheduled jobs cannot. For those, create an **API key**.
+
+1. Sign in and open `http://localhost:3000/idp/account/api-keys`.
+2. Create a key and copy it. You only see it once.
+3. Send it with every request, as the `x-api-key` header, to the `/gateway/rest/` address:
+
+```bash
+curl -H "x-api-key: YOUR_KEY_HERE" \
+  "http://localhost:3000/gateway/rest/customers?limit=5"
+```
+
+That address is the same API as `/rest/`, with the key exchange handled for you. The key belongs to your user account, so it can see exactly what you can see and nothing more. Treat it like a password: anyone holding it can act as you.
+
+## Browsing the API
+
+`http://localhost:3000/api-docs/` lists every endpoint your model generates, with request and response shapes and a **Test Request** button on each one. When you are signed in to the app in the same browser, those test requests are authenticated automatically, so you can explore the whole API without pasting a credential anywhere.
+
+The documentation is generated from your live model. Change the model and the docs change with it.
+
+## Connecting the CLI
+
+The [Semantius CLI](/docs/cli) works against a self-hosted stack the same way it works against a hosted one. Point it at your front door address, `http://localhost:3000` or whatever domain you deployed to, and it configures itself from there: every stack publishes a small description of itself at `/.well-known/semantius.json` that tells the CLI where to sign in and where the API lives. Nothing has to be passed by hand.
+
+You can read that document yourself to check a deployment is answering correctly:
+
+<Command command="curl http://localhost:3000/.well-known/semantius.json" />
+
+## Connecting a Database Client
+
+Sometimes you want SQL directly. The database is reachable on **port 5434** with the username `postgres` and the `POSTGRES_PASSWORD` value from your `.env`. The database is named `semantius`.
+
+There is also a pooled connection on **port 6432**, which is the one your own applications should use if they talk SQL rather than HTTP. It handles many short-lived connections far better than connecting to the database directly.
+
+If you just want to look at some data and do not want to install a client at all, administrators have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
+
+## Choosing a Version
+
+By default the stack runs the latest published version of every piece and re-downloads it each time you run `./create.sh` or `./up.sh`. That is convenient while you are trying things out, and the wrong default for a server you depend on.
+
+To pin a version for one run, pass the tag:
+
+<Command command="./up.sh 0.4.0-pg18" />
+
+To make it permanent, set `SEMANTIUS_DB_VERSION` in `.env`. There are matching `SEMANTIUS_APP_VERSION` and `SEMANTIUS_IDP_VERSION` settings for the web app and the sign-in service. Pin all three before you put a stack into real use, so an update happens when you choose rather than on the next restart.
+
+## When Sign-In Suddenly Stops Working
+
+The sign-in system periodically replaces the keys it uses to sign your login tokens, and the API reads those keys once, when it starts. If people are signed in fine but every API call is rejected, the API is most likely holding the previous set.
+
+<Command command="./jwks-refresh.sh" />
+
+That fetches the current keys and restarts the API, which takes about a second. Your database stays up and nobody is signed out. Most providers rotate slowly enough that running this when you hit the problem is fine. If yours rotates often, put it on a daily schedule.
+
+## What Comes Next
+
+Running the stack on a real server, behind your own domain and with HTTPS, needs a few more settings than a local install does, and pointing it at your organization's own identity provider is a separate setup rather than a switch. Both are covered in detail in the [repository README](https://github.com/semantius/semantius-self-hosted), along with the full list of settings, the Dokploy one-click deployment, and the Microsoft Entra ID walkthrough.

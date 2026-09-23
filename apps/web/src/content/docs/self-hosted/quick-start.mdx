@@ -1,0 +1,75 @@
+---
+title: 'Self-Hosting Quick Start'
+navTitle: 'Quick Start'
+description: 'Get a complete Semantius platform running on your own machine in about five minutes.'
+order: 1
+---
+
+import Command from '~/components/common/Command.astro';
+
+This page takes you from nothing to a working Semantius platform on your own machine. It uses the built-in sign-in system, so there is nothing to register anywhere and no accounts to create first. Budget about five minutes, most of which is Docker downloading images.
+
+Before you start, make sure Docker is installed and running. On Windows and macOS that means Docker Desktop is open; on Linux it means the Docker service is running and you can run `docker ps` without an error.
+
+## 1. Get the Files
+
+<Command command="git clone https://github.com/semantius/semantius-self-hosted" />
+
+Then move into the setup you want to run. For a first install, that is the local one with the built-in sign-in system:
+
+<Command command="cd semantius-self-hosted/variants/local-semantius-idp" />
+
+Everything from here on happens **inside that folder**. The commands act on the files sitting next to them, so running them from anywhere else will not work.
+
+## 2. Create Your Settings File
+
+<Command command="./setup-env.sh" />
+
+On Windows, run `setup-env.cmd` instead.
+
+This writes a file called `.env` next to the others. It is your copy of the settings, it is never sent anywhere, and it is the only file in the folder you are meant to edit.
+
+The important part is what it puts in there. Three values are unique to your installation: the database password, the password the API logs in with, and the key that protects your sign-in sessions. The script generates fresh random values for all three. The example file ships with obvious placeholder values, and copying that file by hand instead of running this script would leave you running on passwords that are published on the internet.
+
+You can open `.env` and look it over now. For a local install you do not need to change anything in it.
+
+## 3. Start Everything
+
+<Command command="./create.sh" />
+
+On Windows, run `create.cmd`.
+
+This downloads the images, creates a fresh database, and starts everything. The first run takes a few minutes because of the downloads. Later runs are much faster.
+
+If you skipped step 2, this command runs it for you, so a settings file always exists before anything starts.
+
+While it runs you will see each piece report itself as healthy. The database takes the longest on a first run, because it is installing itself from scratch.
+
+## 4. Sign In and Create Your Account
+
+Open `http://localhost:3000` in a browser.
+
+The app sends you to a sign-in page. Because the user list is still empty, this page doubles as the first-run setup page: fill it in, and the account you create becomes **the administrator**. You are then returned to the app, signed in.
+
+There is no default account and no password hidden in a config file. Whoever sets up the account first is the owner of the installation, which is why you should do this step right after starting the stack rather than leaving it open on a shared network.
+
+## 5. Look Around
+
+You now have a complete platform running. A few places worth visiting:
+
+- `http://localhost:3000` is the app itself. The Northwind sample dataset is loaded by default, so there is real data to click through from the start.
+- `http://localhost:3000/api-docs/` lists every API endpoint your model generates, with a **Test Request** button on each one. Because you are already signed in, those test calls just work, with no key to paste.
+- `http://localhost:3000/idp/account` is your own account: password, sessions, and API keys.
+
+If you would rather start with an empty database, open `.env`, remove the `NWIND=TRUE` line, and run `./create.sh` again. Sample data is only ever loaded when the database is created, so this has to happen before there is anything you care about in it.
+
+## If Something Does Not Start
+
+- **Check what is running** with `./status.sh` (`status.cmd` on Windows). Each piece reports its own health, so this usually points straight at the one that failed.
+- **Port already in use.** Something else on your machine is already on port 3000, 5434, or 6432. Open `.env`, change `WEB_PORT`, `POSTGRES_PORT`, or `PGBOUNCER_PORT`, then run `./up.sh`.
+- **Start over cleanly.** `./create.sh` always rebuilds from scratch, so running it again is a valid fix rather than a last resort. It does delete the database, which on a fresh install costs you nothing.
+
+## Next Steps
+
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, how to update, and how to reach the API from scripts.
+- **[Models](/docs/models)**: build out the semantic model that drives the app and the API.

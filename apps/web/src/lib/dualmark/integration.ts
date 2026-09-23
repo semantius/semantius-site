@@ -395,9 +395,20 @@ export function markdownTwins() {
 				};
 				walk(outDir);
 
+				// Only two origins are ever WRONG here: the placeholder a writer
+				// failed to swap, and the dev site origin baked in at load time
+				// (the bug above). A twin's BODY may legitimately name a localhost
+				// address - the self-hosting docs are about a stack you reach at
+				// http://localhost:3000 - so matching any `localhost:` made this
+				// guard warn on every build, which is how a real leak gets ignored.
+				const devOrigin = (process.env.SITE_URL ?? 'http://localhost:4321').replace(/\/+$/, '');
+				const badOrigins = ['site.invalid'];
+				if (devOrigin !== siteUrl && /^https?:\/\/localhost(:\d+)?$/.test(devOrigin)) {
+					badOrigins.push(devOrigin);
+				}
 				const leaked = allMd.filter((f) => {
 					const t = fs.readFileSync(f, 'utf8');
-					return t.includes('localhost:') || t.includes('site.invalid');
+					return badOrigins.some((o) => t.includes(o));
 				});
 				if (leaked.length) {
 					const names = leaked.slice(0, 10).map((f) => path.relative(outDir, f));
