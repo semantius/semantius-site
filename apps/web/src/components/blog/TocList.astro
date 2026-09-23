@@ -1,0 +1,34 @@
+---
+import { clsx } from 'clsx';
+import type { MarkdownHeading } from 'astro';
+
+/**
+ * The link list shared by both TableOfContents variants. It is its own file
+ * because Astro frontmatter is TypeScript, not JSX, so the markup cannot be
+ * assigned to a local const and reused across the two branches.
+ */
+interface Props {
+  headings: MarkdownHeading[];
+}
+
+const { headings } = Astro.props;
+
+// Drop h1 (the page title) and anything deeper than h3.
+const toc = headings.filter((h) => h.depth > 1 && h.depth <= 3);
+---
+
+<ul class="text-sm space-y-2.5 border-l border-foreground/10 pl-4">
+  {toc.length === 0 && (
+    <li class="pl-2 text-foreground/50 italic text-xs">No subheadings</li>
+  )}
+  {toc.map((heading) => (
+    <li class={clsx('transition-colors duration-200', heading.depth === 3 && 'pl-4')}>
+      <a
+        href={`#${heading.slug}`}
+        class="block text-foreground/60 hover:text-primary transition-colors"
+      >
+        {heading.text}
+      </a>
+    </li>
+  ))}
+</ul>

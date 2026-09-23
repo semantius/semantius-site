@@ -1,55 +1,71 @@
 ---
-import { clsx } from 'clsx';
 import type { MarkdownHeading } from 'astro';
+import TocList from './TocList.astro';
 
 interface Props {
   headings: MarkdownHeading[];
+  /**
+   * `sidebar` is the sticky right-hand column, shown from xl up.
+   * `inline` is the collapsed disclosure that stands in for it below xl,
+   * rendered above the article body. Same links, same active highlighting.
+   */
+  variant?: 'sidebar' | 'inline';
 }
 
-const { headings } = Astro.props;
-
-// Filter out h1 (usually the title) and limit depth
-const toc = headings.filter((h) => h.depth > 1 && h.depth <= 3);
+const { headings, variant = 'sidebar' } = Astro.props;
 ---
 
-<nav class="sticky top-24 max-h-[calc(100vh-6rem)] overflow-auto pb-10">
-  <h4 class="font-bold text-sm mb-4 text-foreground">On this page</h4>
-  <ul class="text-sm space-y-2.5 border-l border-foreground/10 pl-4">
-    {toc.length === 0 && (
-      <li class="pl-2 text-foreground/50 italic text-xs">No subheadings</li>
-    )}
-    {toc.map((heading) => (
-      <li class={clsx(
-        "transition-colors duration-200",
-        heading.depth === 3 && "pl-4"
-      )}>
-        <a 
-          href={`#${heading.slug}`}
-          class="block text-foreground/60 hover:text-primary transition-colors"
-        >
-          {heading.text}
-        </a>
-      </li>
-    ))}
-  </ul>
-</nav>
+{variant === 'sidebar' ? (
+  <nav data-toc="sidebar" class="sticky top-24 max-h-[calc(100vh-6rem)] overflow-auto pb-10">
+    <h4 class="font-bold text-sm mb-4 text-foreground">On this page</h4>
+    <TocList headings={headings} />
+  </nav>
+) : (
+  /* Closed by default: below xl the reader came for the article, and an
+     expanded list would push it under the fold on exactly the screens with
+     the least room to spare. A native <details> so it works without JS. */
+  <details data-toc="inline" class="not-prose mb-8 rounded-xl border border-foreground/10 bg-foreground/2">
+    <summary class="cursor-pointer list-none px-4 py-3 text-sm font-bold text-foreground flex items-center justify-between gap-2">
+      On this page
+      <svg class="toc-chevron h-4 w-4 shrink-0 text-foreground/40 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <polyline points="6 9 12 15 18 9" />
+      </svg>
+    </summary>
+    <div class="px-4 pb-4">
+      <TocList headings={headings} />
+    </div>
+  </details>
+)}
+
+<style>
+  details[data-toc] > summary::-webkit-details-marker { display: none; }
+  details[data-toc][open] .toc-chevron { transform: rotate(180deg); }
+</style>
 
 <script>
-    // Simple active state highlighter
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            const id = entry.target.getAttribute('id');
-            const link = document.querySelector(`nav ul li a[href="#${id}"]`);
-            if (entry.isIntersecting) {
-                document.querySelectorAll('nav ul li a').forEach(a => {
+    // Scoped to [data-toc] on purpose. The selector used to be `nav ul li a`,
+    // which also matched the docs sidebar's own links (NavTree renders ul/li/a
+    // inside a <nav>), so scrolling an article stripped `text-primary` off the
+    // current page in the left-hand navigation. Scoping also lets the sidebar
+    // and the inline disclosure highlight together, since both carry data-toc.
+    const tocLinks = document.querySelectorAll('[data-toc] a[href^="#"]');
+
+    if (tocLinks.length) {
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                const id = entry.target.getAttribute('id');
+                if (!entry.isIntersecting || !id) return;
+                tocLinks.forEach(a => {
                     a.classList.remove('text-primary', 'font-medium');
                     a.classList.add('text-foreground/60');
                 });
-                link?.classList.remove('text-foreground/60');
-                link?.classList.add('text-primary', 'font-medium');
-            }
-        });
-    }, { rootMargin: '0px 0px -80% 0px' });
+                document.querySelectorAll(`[data-toc] a[href="#${CSS.escape(id)}"]`).forEach(link => {
+                    link.classList.remove('text-foreground/60');
+                    link.classList.add('text-primary', 'font-medium');
+                });
+            });
+        }, { rootMargin: '0px 0px -80% 0px' });
 
-    document.querySelectorAll('h2, h3').forEach(h => observer.observe(h));
+        document.querySelectorAll('h2, h3').forEach(h => observer.observe(h));
+    }
 </script>

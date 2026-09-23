@@ -140,6 +140,14 @@ if (currentSectionLabel && topAncestor) {
             <div class="prose prose-lg max-w-none prose-headings:font-bold prose-headings:scroll-mt-24 prose-a:text-primary hover:prose-a:text-primary/80 dark:prose-invert text-foreground prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-code:text-primary prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-white/10 prose-pre:bg-black/80">
                 <h1 class="text-4xl font-bold mb-8 text-foreground" data-pagefind-meta="title">{title}</h1>
                 <PageActions pathname={Astro.url.pathname} noindex={noindex} />
+                {/* Stands in for the right-hand column below xl, where that
+                    column is not rendered. data-pagefind-ignore so the heading
+                    list is not indexed twice as page content. */}
+                {headings.length > 0 && (
+                  <div class="xl:hidden" data-pagefind-ignore>
+                    <TableOfContents headings={headings} variant="inline" />
+                  </div>
+                )}
                 <slot />
             </div>
 
@@ -163,7 +171,7 @@ if (currentSectionLabel && topAncestor) {
         </div>
 
         {/* Right Sidebar: Table of Contents */}
-        <aside class="hidden xl:block min-w-[240px]">
+        <aside class="hidden xl:block min-w-60">
             {headings.length > 0 && (
                 <TableOfContents headings={headings} />
             )}
