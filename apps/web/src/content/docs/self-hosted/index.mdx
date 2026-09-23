@@ -1,7 +1,7 @@
 ---
 title: 'Self-Hosting'
 description: 'Run the complete Semantius platform on your own machine or your own server, using Docker.'
-order: 6
+order: 7
 ---
 
 Semantius runs as a managed service at [app.semantius.com](https://app.semantius.com), and it also runs **on hardware you control**. The self-hosting stack is one Docker setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and a built-in sign-in system.
@@ -26,7 +26,7 @@ You run one command and get a small set of programs running side by side in Dock
 | `http://localhost:3000/rest/` | The HTTP API itself, generated from your model. |
 | `http://localhost:3000/idp/` | The built-in sign-in system: your account, your users, your API keys. |
 
-Behind those addresses sit a PostgreSQL 18 database carrying the Semantius extension, the API server, the documentation viewer, the web app, and the sign-in service. You do not have to install or configure any of them individually. They are described once in a Docker Compose file and started together.
+Behind those addresses sit a PostgreSQL 18 database carrying the [`pg_semantius` extension](/docs/pg-semantius), the API server, the documentation viewer, the web app, and the sign-in service. You do not have to install or configure any of them individually. They are described once in a Docker Compose file and started together.
 
 ## Sign-In Is Included
 

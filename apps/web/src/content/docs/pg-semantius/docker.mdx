@@ -1,0 +1,82 @@
+---
+title: 'Run the Docker Image'
+navTitle: 'Docker Image'
+description: 'Start a PostgreSQL 18 database with pg_semantius already installed, using one docker run command.'
+order: 2
+---
+
+import Command from '~/components/common/Command.astro';
+
+`ghcr.io/semantius/postgres` is PostgreSQL 18 with `pg_semantius` already installed. There is nothing to download from a release page, nothing to compile, and no SQL to run yourself. This is the quickest way to a working database, and it is what the self-hosting stack uses underneath.
+
+You need Docker, and nothing else.
+
+## Start It
+
+```bash
+docker run -d --name semantius-postgres \
+  -e POSTGRES_PASSWORD=choose-a-password \
+  -e POSTGRES_DB=semantius \
+  -e SEMANTIUS_AUTHENTICATOR_PASSWORD=choose-another-password \
+  -e NWIND=TRUE \
+  -v semantius-data:/var/lib/postgresql \
+  -p 5432:5432 \
+  ghcr.io/semantius/postgres:latest
+```
+
+The first run takes a minute or two, mostly downloading. Watch it set itself up with `docker logs -f semantius-postgres`.
+
+**Keep the `-v` line.** It puts the database in a named Docker volume that outlives the container. Without it, removing the container deletes everything in the database, which is a surprising way to learn how Docker storage works.
+
+If something already uses port 5432 on your machine, change the left half of the `-p` value, for example `-p 5433:5432`.
+
+## Connect To It
+
+The administrator connection is `postgresql://postgres:choose-a-password@localhost:5432/semantius`, using whatever you set `POSTGRES_PASSWORD` to.
+
+That account is a superuser, so use it for migrations, backups, and looking around. **Applications should connect as `semantius_authenticator` instead.** A superuser bypasses row-level security without saying so, and an application on that connection quietly returns every row to everyone.
+
+## Settings
+
+Every value below applies **only when the database is first created**. Changing one later has no effect until you delete the volume and start over.
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `POSTGRES_PASSWORD` | none, required | Password for the `postgres` administrator account |
+| `POSTGRES_DB` | `postgres` | Name of the database that gets created |
+| `POSTGRES_USER` | `postgres` | Name of the administrator account |
+| `SEMANTIUS_AUTHENTICATOR_PASSWORD` | `devpassword` | Password for the account your API connects as. Change it for anything reachable by other people. |
+| `NWIND` | not set | Set it to any value to load the Northwind sample dataset, so there is something to look at |
+
+## What Happens on First Start
+
+| Step | What it does |
+| --- | --- |
+| Installs the extension | Runs `CREATE EXTENSION pg_semantius` and then `SELECT semantius.migrate()`, with no `CASCADE` |
+| Enables the application account | Gives `semantius_authenticator` the ability to log in, with the password you supplied |
+| Adds the API's anonymous role | Creates the `anon` role that PostgREST uses before anybody signs in |
+| Loads sample data | Only when `NWIND` is set |
+
+The first step is exactly what you would type yourself on a server of your own. The other three are the parts an extension cannot do for you, because passwords and deployment choices are not properties of a schema.
+
+## Choosing a Version
+
+Three kinds of tag are published:
+
+| Tag | Means |
+| --- | --- |
+| `0.5.0-beta1-pg18` | One exact build. It never changes, so this is what to pin in anything you rely on. |
+| `latest-pg18` | The newest build for PostgreSQL 18 |
+| `latest` | The newest build, on the default PostgreSQL version |
+
+Every tag names a PostgreSQL major version, and there is deliberately no bare `0.5.0-beta1` tag. One release can ship the same extension for more than one PostgreSQL version, so a tag without the suffix would be ambiguous, and worse, could quietly change which PostgreSQL you were running.
+
+## The Rest of the Platform
+
+This image is a database and nothing more. If you also want the HTTP API, the web app, sign-in, and browsable API documentation, the [self-hosting stack](/docs/self-hosted) starts all of it together and uses this image for the database tier.
+
+## Next Steps
+
+- **[The pg_semantius CLI](/docs/pg-semantius/cli)**: deploy your own modules into the database you just started.
+- **[Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)**: moving to a newer image without losing data.
+- **[Self-Hosting](/docs/self-hosted)**: the whole platform, in one command.

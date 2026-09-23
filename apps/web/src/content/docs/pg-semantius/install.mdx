@@ -1,0 +1,92 @@
+---
+title: 'Install the Extension'
+navTitle: 'Install'
+description: 'Put pg_semantius on a PostgreSQL 18 server you administer yourself, in two statements.'
+order: 1
+---
+
+import Command from '~/components/common/Command.astro';
+
+This page installs `pg_semantius` on a PostgreSQL 18 server you run and administer. At the end you have a database with the full Semantius model in it, ready for the API or for your own code.
+
+If you would rather not do this by hand, [the Docker image](/docs/pg-semantius/docker) arrives with the extension already installed. If your database is hosted by Neon, Supabase, Amazon RDS, or Google Cloud SQL, none of this will work, because those providers do not allow custom extensions. Use [the CLI](/docs/pg-semantius/cli) there instead.
+
+## What You Need
+
+- **PostgreSQL 18**, running on a machine you can copy files onto. This is the only version the extension is tested against.
+- **Superuser access** to that server, because the install creates roles and event triggers.
+- **A UTF8 database.** Encoding is checked at install time, and `LATIN1` and `SQL_ASCII` are refused.
+- **`make` and the PostgreSQL development files**, which is what provides the `pg_config` command.
+
+One thing to check before you start: the standalone `pgmq` extension must **not** be installed in the target database. `pg_semantius` carries its own copy of that queue code, and it refuses to install rather than overwrite yours.
+
+## 1. Get the Files
+
+Download `pg_semantius-<version>.zip` from the [latest release](https://github.com/semantius/semantius/releases/latest), then unpack it:
+
+<Command command="unzip pg_semantius-0.5.0-beta1.zip" />
+
+Move into the folder it created and install it:
+
+<Command command="cd pg_semantius-0.5.0-beta1 && sudo make install" />
+
+This copies two files into the place PostgreSQL keeps its extensions. It compiles nothing, because `pg_semantius` is written in SQL rather than C. `sudo` is usually needed because that directory belongs to root.
+
+## 2. Install It in Your Database
+
+Connect to the target database as a superuser and run exactly these two statements:
+
+```sql
+CREATE EXTENSION pg_semantius;
+SELECT semantius.migrate();
+```
+
+**Do not add `CASCADE`.** It looks harmless and it is not. `pg_semantius` needs the `pgcrypto` extension, and `CASCADE` would install it into whichever schema your session happens to be creating things in. The API key code expects to find it in `public`, which is where `semantius.migrate()` puts it. Leaving `CASCADE` off is what keeps the two in agreement.
+
+The second statement does the real work and takes a few seconds. It runs as one transaction, so if anything goes wrong you are left exactly where you started.
+
+## 3. Check It Worked
+
+```sql
+SELECT * FROM semantius.status();
+```
+
+You want `pending` at `0` and `unknown_versions` and `changed_versions` both empty.
+
+Reach for this rather than `\dx`. That command reports the version of the installer you copied in step 1, which is not necessarily the state of the schema inside the database. `semantius.status()` reads the database itself.
+
+## 4. Give a Role a Password
+
+The install creates four roles, and every one of them arrives unable to log in and without a password. That is on purpose: passwords belong to an environment, not to a SQL script that anyone can read.
+
+The one your application needs is `semantius_authenticator`. It is the account your API tier connects as, and it deliberately has no privileges of its own beyond the ability to become the `authenticated` role:
+
+```sql
+ALTER ROLE semantius_authenticator LOGIN PASSWORD 'a long random value';
+```
+
+**Never point an application at the `postgres` superuser.** A superuser bypasses row-level security silently, so every query returns every row and nothing warns you. This is the single most common way to end up with a database that looks like it is enforcing permissions and is not.
+
+The other three roles are described in the [reference](/docs/pg-semantius/reference).
+
+## If the Install Refuses
+
+Every refusal below is the install protecting the database, so the fix is always to change the condition rather than to force it through.
+
+| What you see | What to do |
+| --- | --- |
+| `Must be superuser to create this extension` | Reconnect as a superuser. |
+| `extension "pg_semantius" must be installed in schema "public"` | Drop the `SCHEMA` clause. The extension pins its own schema. |
+| `pg_semantius requires a UTF8 database` | Create a new database with `ENCODING 'UTF8'` and install there. Encoding cannot be changed in place. |
+| `the pgmq extension is installed` | Run `DROP EXTENSION pgmq`, or use a different database. |
+| `pgcrypto must be installed in schema public` | Run `ALTER EXTENSION pgcrypto SET SCHEMA public`. This is what `CASCADE` causes. |
+| `existing role semantius_owner has unexpected attributes` | A role of that name already exists and is not the one expected. Rename or remove it. |
+| `semantius.migrate() must be run by a superuser` | You ran the second statement on a different connection than the first. Reconnect as a superuser. |
+
+A full list, with SQLSTATE codes, is in the [reference](/docs/pg-semantius/reference).
+
+## Next Steps
+
+- **[The pg_semantius CLI](/docs/pg-semantius/cli)**: deploy your own modules and run the test suite against what you just installed.
+- **[Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)**: what to do next week, and how to take a backup.
+- **[Models](/docs/models)**: describe your domain so the dictionary can build it.

@@ -1,0 +1,100 @@
+---
+title: 'Reference'
+navTitle: 'Reference'
+description: 'The functions, roles, schemas, session settings, and errors of the pg_semantius extension.'
+order: 5
+---
+
+Lookup material for `pg_semantius`. The pages before this one explain when you need any of it.
+
+## Functions
+
+Four functions live in the `semantius` schema. They are the only things the extension itself owns, along with the schema and the roles.
+
+| Function | What it does |
+| --- | --- |
+| `semantius.migrate()` | Installs or updates the core schema. Superuser only. Runs as one transaction, and is safe to run again. |
+| `semantius.pending()` | Lists what a `migrate()` would apply. Works before the first install. |
+| `semantius.version()` | The version of the installer, which is not always the version in the database. |
+| `semantius.status()` | The state of the installation. This is the one to trust. |
+
+`semantius.status()` returns a single row:
+
+| Column | Tells you |
+| --- | --- |
+| `extversion` | Version of the installer on the server |
+| `db_version` | Version actually installed in this database |
+| `applied`, `pending` | How many migrations have run, and how many are waiting |
+| `unknown_versions` | Migrations in the database that this build does not recognize |
+| `changed_versions` | Migrations whose source has changed since they were applied |
+| `unowned_objects` | Objects with unexpected ownership, usually after a restore |
+| `default_acls_ok` | Whether default privileges survived a restore |
+| `jwt_aud_set` | Whether the token audience check is switched on |
+
+## Roles
+
+`CREATE EXTENSION` creates these four. They belong to the whole PostgreSQL server rather than to one database, and `DROP EXTENSION` never removes them. All four arrive unable to log in and without a password, so granting those is part of setting up an environment.
+
+| Role | What it is for |
+| --- | --- |
+| `semantius_owner` | Owns the core objects. The data dictionary runs as this identity. Bypasses row-level security, so nothing should ever log in as it. |
+| `semantius_user` | The role requests actually run as. Fully subject to row-level security. |
+| `authenticated` | What a signed-in session becomes. Holds `semantius_user` and inherits its access. |
+| `semantius_authenticator` | The account your application connects as. Has no access of its own, and can do nothing except become `authenticated`. |
+
+If one of these names already exists with different properties, or if `semantius_owner` already has members, the install refuses rather than adopting it. That check exists so somebody who can create roles cannot pre-claim ownership of your tables.
+
+## What Gets Created
+
+`CREATE EXTENSION` creates the four roles, the `semantius` schema, and the four functions above. Everything else comes from `semantius.migrate()` and is created as ordinary database objects, which is what makes backups and `DROP EXTENSION` behave normally.
+
+| Schema | Holds |
+| --- | --- |
+| `public` | The model itself: entities, fields, modules, users, roles, permissions, audit logs, settings, and API keys |
+| `rbac` | The permission and identity functions that policies call |
+| `common` | Shared helpers, including a small cache |
+| `audit` | The machinery that records changes |
+| `pgmq` | The message queue |
+
+Also created: four event triggers, which record schema changes and tell the API to reload when the model changes. `pgcrypto` is installed into `public`, because the API key code expects it there.
+
+## Session Settings
+
+These are read from the session at runtime rather than set in a configuration file. In an ordinary deployment the API tier sets the first group and the extension manages the rest.
+
+| Setting | Set by |
+| --- | --- |
+| `request.jwt.claims` | Your API tier, once per request, holding the verified sign-in token |
+| `request.jwt.claim.sub`, `.email`, `.role`, `.name`, `.aud` and similar | The same, one setting per claim, which is the style Neon and Supabase use |
+| `app.current_user_id`, `app.user_permissions`, `app.oauth_scopes` and others in the `app.` group | The permission code itself, per transaction |
+| `dd.table_rename` | The data dictionary, while renaming a table |
+
+One row of `public._settings` is worth a deliberate decision. `jwt_aud` pins the audience a sign-in token must name. Set it, and a token for a different audience is rejected. Leave it unset, and the audience is not checked at all, so any token from your trusted issuer is accepted. Set it once you mint tokens for more than one audience from the same issuer.
+
+## Errors
+
+| SQLSTATE | Message | Cause |
+| --- | --- | --- |
+| | `Must be superuser to create this extension` | Not connected as a superuser |
+| | `extension "pg_semantius" must be installed in schema "public"` | A `SCHEMA` clause was given. The extension pins its own. |
+| `42501` | `permission denied for schema semantius` | A request role tried to reach the installer functions |
+| `42501` | `semantius.migrate() must be run by a superuser` | The second statement ran on a non-superuser connection |
+| `55000` | `pg_semantius requires a UTF8 database` | The database encoding is `LATIN1` or `SQL_ASCII` |
+| `55000` | `the pgmq extension is installed` | The standalone queue extension is present, and this one carries its own |
+| `55000` | `pgcrypto must be installed in schema public` | Usually caused by `CASCADE`. Fix with `ALTER EXTENSION pgcrypto SET SCHEMA public`. |
+| `55000` | `existing role semantius_owner has unexpected attributes` | A role of that name exists and is not the expected one |
+| `55000` | `semantius.migrate() cannot run inside a CREATE/ALTER EXTENSION script` | `migrate()` was called from within an extension script |
+
+## Requirements
+
+- **PostgreSQL 18**, the only tested version.
+- **A UTF8 database.** Checked at install time.
+- **Superuser rights** to install, and none to use.
+- **No standalone `pgmq` extension** in the same database.
+
+`semantius.migrate()` also fixes several session settings for the duration of the install, so an unusual connection cannot change what gets built. It will refuse to run in a read-only transaction, under a statement or lock timeout shorter than the install takes, or at an isolation level above read committed.
+
+## Next Steps
+
+- **[Install the Extension](/docs/pg-semantius/install)**: the install itself, step by step.
+- **[Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)**: what to do once it is running.

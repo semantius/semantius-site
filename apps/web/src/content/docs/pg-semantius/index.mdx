@@ -1,0 +1,68 @@
+---
+title: 'pg_semantius'
+description: 'The PostgreSQL extension at the core of Semantius: permissions, row-level security, a data dictionary, an audit trail, and a message queue, all enforced inside the database.'
+order: 6
+---
+
+`pg_semantius` is the core of Semantius, packaged as a PostgreSQL extension. You install it into a database you run yourself, and that database gains a permission system, a data dictionary that builds tables for you, an audit trail, and a message queue.
+
+All of it is enforced inside PostgreSQL rather than in an application sitting in front of it. Nothing can go around the rules. An agent, a script, a SQL client, and a second API all pass through the same checks.
+
+Everything lives in [semantius/semantius](https://github.com/semantius/semantius), under the MIT license.
+
+## What It Adds
+
+| What you get | What it does |
+| --- | --- |
+| A data dictionary | You describe an entity and its fields as ordinary rows. Triggers create the real table, its columns, its indexes, and its search. |
+| Permissions | Permissions, roles, and a permission hierarchy, with loop detection built in. |
+| Row-level security | Every generated table gets policies that ask the permission system who is reading before returning a row. |
+| Business rules | Validation, computed fields, and row visibility, written as JsonLogic and evaluated in the database. |
+| An audit trail | Every change to a record, and every change to the schema, recorded in a table. |
+| A message queue | Queues with topic routing, plus permission-checked functions to read and write them. |
+| API keys | Generate a key against a user, and validate it later. |
+
+## Three Ways To Get It
+
+Pick one. They all end with the same database, so this is a question of how much you want to do by hand.
+
+| Route | Best for |
+| --- | --- |
+| **[The Docker image](/docs/pg-semantius/docker)** | Trying it out, and most setups you run yourself. The extension is already installed when the database starts. |
+| **[Installing the extension](/docs/pg-semantius/install)** | A PostgreSQL 18 server you already run and administer. |
+| **[The `pg_semantius` CLI](/docs/pg-semantius/cli)** | Neon, Supabase, and other hosted databases, which do not allow custom extensions. |
+
+If you want the whole platform rather than just a database, the [self-hosting stack](/docs/self-hosted) starts the database, the HTTP API, the web app, and sign-in together in one command. It uses the same extension underneath, so nothing here is bypassed.
+
+## Why Two Statements
+
+Installing takes two statements rather than one, and that is deliberate:
+
+```sql
+CREATE EXTENSION pg_semantius;
+SELECT semantius.migrate();
+```
+
+`CREATE EXTENSION` does very little. It creates four roles, a schema called `semantius`, and four functions. `semantius.migrate()` then does the real work, and it creates everything it builds as **ordinary database objects** rather than as parts of the extension.
+
+That distinction sounds academic and is the most useful thing about it. Because your tables do not belong to the extension:
+
+- **Backing up is a plain `pg_dump`,** and restoring is a single pass with no special flags and no ordering rules.
+- **`DROP EXTENSION` is harmless.** It removes the `semantius` schema and its four functions, and touches no data.
+- **Custom fields you add to core tables survive a backup and restore,** because they are just columns on ordinary tables.
+
+Most extensions cannot offer any of that. It is worth knowing before you choose where to put your data.
+
+## What You Need
+
+- **PostgreSQL 18.** It is the only version the extension is tested against.
+- **A UTF8 database.** Other encodings are refused at install time rather than accepted and later regretted.
+- **Superuser rights**, to install it. Day-to-day use needs nothing of the sort.
+
+Hosted database providers such as Neon, Supabase, Amazon RDS, and Google Cloud SQL do not allow custom extensions, so this route is not open there. Use [the CLI](/docs/pg-semantius/cli) instead, which produces the same schema over an ordinary connection.
+
+## Next Steps
+
+- **[Run the Docker Image](/docs/pg-semantius/docker)**: the fastest way to a working database, with nothing to compile.
+- **[Install the Extension](/docs/pg-semantius/install)**: put it on a PostgreSQL 18 server of your own.
+- **[Reference](/docs/pg-semantius/reference)**: the functions, the roles, and every error the install can raise.

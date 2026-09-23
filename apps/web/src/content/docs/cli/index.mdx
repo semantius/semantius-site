@@ -15,6 +15,8 @@ Use the CLI whenever you need Semantius to run **without a human in the loop**:
 - **Recurring or scheduled jobs** that seed data, run nightly imports, or fan out an analytical query across many tables.
 - **One-off tasks** in the terminal: search tools, inspect a tool's schema, or call a tool with inline JSON.
 
+**There is a second program with a similar name, and it is not this one.** [`pg_semantius`](/docs/pg-semantius/cli) connects straight to a PostgreSQL database and changes its schema, which is a job for whoever administers that database. The `semantius` CLI described here talks to a running platform over HTTP and never touches SQL. Both can sit on your machine at once.
+
 The CLI works in two modes: `crud` for managing your model and reading or writing records, and `cube` for CubeJS-compatible analytics. Any tool you can call from Claude or ChatGPT through the [MCP connectors](/docs/mcp-connectors), you can call from a shell, with the same arguments.
 
 ## Why a CLI in Addition to MCP

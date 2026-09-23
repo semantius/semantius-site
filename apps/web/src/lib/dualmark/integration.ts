@@ -7,7 +7,7 @@
  * Tier B cannot live in the .md route: a getStaticPaths route runs before any
  * HTML has been written.
  *
- * Division of labour with the route writer:
+ * Division of labor with the route writer:
  *   route  -> Tier A (content collections) and Tier C (overrides)
  *   here   -> Tier B (extraction) for every page the route did not claim
  *
@@ -133,11 +133,11 @@ function restoreImages(
  * none listed, and every screenshot on the site shipped unnoticed.
  *
  * Compares sentences rather than words so a reworded line is not reported as a
- * loss, and normalises markdown punctuation so "**Bold**" matches "Bold".
+ * loss, and normalizes markdown punctuation so "**Bold**" matches "Bold".
  * Warning, never an error: some divergence is deliberate (dropped forms and
  * buttons), and a release must not hinge on a heuristic.
  */
-function normaliseForCompare(text: string): string {
+function normalizeForCompare(text: string): string {
 	return text
 		// The page keeps smart typography; Tier A twin bodies are ASCII-folded by
 		// text.ts. Comparing them without folding reported every sentence holding
@@ -154,7 +154,7 @@ function normaliseForCompare(text: string): string {
 }
 
 function missingFromTwin(pageMarkdown: string, twin: string): string[] {
-	const haystack = normaliseForCompare(twin);
+	const haystack = normalizeForCompare(twin);
 	const seen = new Set<string>();
 	const missing: string[] = [];
 
@@ -170,7 +170,7 @@ function missingFromTwin(pageMarkdown: string, twin: string): string[] {
 		if (/^[-*]?\s*\[[^\]]*\]\([^)]*\)$/.test(trimmed)) continue;
 
 		for (const sentence of block.split(/(?<=[.:!?])\s+/)) {
-			const needle = normaliseForCompare(sentence);
+			const needle = normalizeForCompare(sentence);
 			// Short fragments are labels, dates and button text: too noisy to be
 			// evidence of anything, and too likely to collide by accident.
 			if (needle.length < 40 || needle.split(' ').length < 6 || seen.has(needle)) continue;

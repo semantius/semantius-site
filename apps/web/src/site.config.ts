@@ -66,7 +66,7 @@ export const siteConfig = {
   dateOptions: {
     localeMapping: {
       'ar': 'ar-TN', // Force Maghreb Arabic date format (e.g., جانفي instead of يناير)
-      'en': 'en-GB', // Example: Force UK English date format
+      'en': 'en-US', // The site is American English: dates read "September 23, 2026"
     }
   }
 };

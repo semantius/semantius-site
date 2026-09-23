@@ -1,0 +1,89 @@
+---
+title: 'The pg_semantius CLI'
+navTitle: 'CLI'
+description: 'A single executable that deploys the Semantius schema into any PostgreSQL database, including hosted ones that cannot take an extension.'
+order: 3
+---
+
+import Command from '~/components/common/Command.astro';
+
+`pg_semantius` is a single self-contained program that talks to a PostgreSQL database and deploys the Semantius schema into it. It is how you install your own modules, and it is the only way to get the core onto a hosted database that does not allow extensions.
+
+**This is not the same program as the [Semantius CLI](/docs/cli).** The names are close and the jobs are not. `semantius` is the tool your agents and scripts use to work with a running platform over HTTP. `pg_semantius` connects straight to a database with SQL and changes its schema. They are separate downloads, and both can sit on your machine at once.
+
+## Install It
+
+On macOS, Linux, and Git Bash:
+
+<Command command="curl -fsSL https://raw.githubusercontent.com/semantius/semantius/main/install.sh | bash" />
+
+In PowerShell on Windows:
+
+<Command command="irm https://raw.githubusercontent.com/semantius/semantius/main/install.ps1 | iex" />
+
+The installer picks the right build for your machine, checks it against the published checksums, and puts it somewhere on your PATH. Open a fresh terminal afterwards, then check it:
+
+<Command command="pg_semantius --version" />
+
+Builds are published for Linux, Windows, and Apple Silicon Macs, on both Intel-style and ARM processors. There is no build for older Intel Macs. If you prefer to download one by hand, they are attached to every [release](https://github.com/semantius/semantius/releases/latest) with `-cli-` in the name, which is what separates them from the extension files on the same page.
+
+The program needs nothing else installed. No runtime, no package manager, no checkout of the source. It carries the core SQL of the release it came from, so it works in an empty folder.
+
+## Point It at a Database
+
+Every command needs a database to talk to. There are three ways to say which, and they are checked in this order:
+
+1. The `--database-url` option, which beats everything else.
+2. A `DATABASE_URL` environment variable.
+3. A file named `.env.local` in the folder you run it from.
+
+The option is the clearest for one-off work:
+
+<Command command="pg_semantius connect --database-url postgresql://postgres:password@localhost:5432/semantius" />
+
+`connect` does nothing but check that the database answers, so it is a safe first command. If you work with more than one database, put each in its own `.env.<name>` file and select it with `--env <name>`.
+
+## The Commands Worth Knowing
+
+| Command | What it does |
+| --- | --- |
+| `connect` | Checks the connection and reports the server it reached |
+| `migrate` | Applies SQL migrations. Takes `--apps <names>` to say which |
+| `test` | Runs the test suite against the database |
+| `docgen` | Writes a `schema.md` describing every entity in the model |
+
+`pg_semantius --help` lists the rest, including the tooling that generates type definitions for Drizzle and Kysely.
+
+`migrate` is the one you will use. `_core` is the Semantius core itself, and it is added automatically whenever you name anything else, so these two are the same:
+
+<Command command="pg_semantius migrate --apps _core" />
+
+To deploy your own module, name its folder instead. To see the SQL without running it, add `--script`, which writes a file rather than touching the database.
+
+`test` needs the pgTAP testing framework inside the target database. Install it with `pg_semantius migrate --apps test`, which is a normal thing to do on a development database and not something to run on a production one.
+
+## Three Commands That Delete Everything
+
+These exist because rebuilding a development database from scratch is a normal thing to do. They are also exactly what they sound like.
+
+| Command | What it destroys |
+| --- | --- |
+| `dropall` | Every object in the `public` schema. Tables, views, functions, the lot. |
+| `reset` | The same, then reinstalls a bare `_core` with no sample data |
+| `retest` | The same, then reinstalls `_core`, the sample module, and the tests, then runs them |
+
+**None of them can be undone, and none of them ask twice.** Each requires `--confirm` on the command line, which is the only safety catch there is. Check `--database-url` before you press enter, particularly if you keep several databases in `.env` files.
+
+## On Neon, Supabase, and Other Hosted Databases
+
+Hosted providers do not let you install custom extensions, so [the extension route](/docs/pg-semantius/install) is closed there. The CLI is the way in, and it produces an identical schema:
+
+<Command command="pg_semantius migrate --apps _core --database-url postgresql://..." />
+
+Use the project owner connection for this, because creating roles and event triggers needs those rights. Then switch your application to the `semantius_authenticator` account, and give that account a password of its own. **An application left on the owner connection bypasses row-level security entirely** and returns every row to every caller, with no error to warn you.
+
+## Next Steps
+
+- **[Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)**: keeping an installed database current, and backing it up.
+- **[Reference](/docs/pg-semantius/reference)**: the roles, the functions, and what the install creates.
+- **[Models](/docs/models)**: describe the domain you want the dictionary to build.

@@ -1,0 +1,90 @@
+---
+title: 'Upgrade, Back Up, Remove'
+navTitle: 'Upgrade and Backup'
+description: 'Moving an installed pg_semantius database to a newer version, taking backups that restore in one pass, and removing it completely.'
+order: 4
+---
+
+This page covers the three things you do to a database after it is working: move it to a newer version, back it up, and eventually take it apart.
+
+## Check What You Have
+
+```sql
+SELECT * FROM semantius.status();
+```
+
+This is the one to trust. It reads the database and reports what is actually installed, how much is pending, and whether anything has drifted since it was applied.
+
+`\dx` answers a different question. It reports the version of the installer sitting on the server, which after an upgrade is ahead of the database until you finish the job. To see what an upgrade would apply before running it:
+
+```sql
+SELECT * FROM semantius.pending();
+```
+
+## Upgrade
+
+Install the newer version of the files the same way you installed the first, then run two statements in each database that uses it:
+
+```sql
+ALTER EXTENSION pg_semantius UPDATE;
+SELECT semantius.migrate();
+```
+
+The first replaces the installer functions. The second applies whatever is new. Both are safe to run again, because `migrate()` keeps a record of what it has already applied and skips it.
+
+**On the Docker image, pulling a newer tag is only half an upgrade.** The setup steps in the image run once, on an empty database, so a container started on an existing volume has newer extension files and an unchanged schema. Run the two statements above yourself afterwards.
+
+Two things that surprise people:
+
+- **A rebuilt release of the same version number does not reach a database that already has it.** `migrate()` skips anything it has applied before, by name. If you re-download a version and expect something to change, compare `changed_versions` from `semantius.status()` against the build you think you have.
+- **Versions before 0.5.0 have no upgrade path.** The 0.1.0, 0.3.0, and 0.4.0 builds were development snapshots and their history was discarded. Moving off one of them means taking a copy of your data, installing 0.5.0 into a new database, and loading the data back.
+
+## Back Up
+
+Backup is a plain dump, and restore is a single pass. No flags to remember, no ordering rules, no environment variables:
+
+```bash
+pg_dump -Fc -d semantius -f semantius.dump
+createdb -T template0 restored
+pg_restore -d restored semantius.dump
+```
+
+This works because `semantius.migrate()` creates your tables as ordinary database objects rather than as parts of the extension. Plain text dumps piped through `psql` work too, as do parallel restores and single-transaction restores.
+
+Four things worth knowing before you need them:
+
+- **Restore into an empty database.** Do not run `migrate()` first. The dump carries its own `CREATE EXTENSION`, which puts the roles and functions back.
+- **Restore as a superuser with the same name as the one that installed it**, and do not use `--no-owner`. A differently named superuser still gets working data, but some ownership and default privileges are lost. `semantius.status()` reports it if this happens.
+- **On a brand new server, the four roles come back without passwords**, because the dump recreates them the way the install did. Set the login and password again afterwards.
+- **If the extension files are missing on the target server**, the `CREATE EXTENSION` line fails and everything else restores, so the database still works. Copy the files across and run `CREATE EXTENSION pg_semantius` to tidy up.
+
+Take the dump as a superuser, or as a role that is allowed to bypass row-level security. An ordinary account would back up only the rows it is permitted to see, which is a backup that looks fine until you restore it.
+
+## Remove It
+
+`DROP EXTENSION pg_semantius` is safe and almost certainly not what you want on its own. It removes the `semantius` schema and its four functions, and nothing else. Your tables, your data, and your roles all stay exactly where they are, which is the whole point of the design.
+
+To remove Semantius completely, run these in order. **The third statement deletes all of your data.**
+
+```sql
+DROP EXTENSION pg_semantius;
+DROP EVENT TRIGGER track_ddl_changes, track_ddl_drops, pgrst_ddl_watch, pgrst_drop_watch;
+DROP OWNED BY semantius_owner CASCADE;
+DROP SCHEMA IF EXISTS common, rbac, audit, pgmq CASCADE;
+DROP TABLE IF EXISTS public._versions;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
+DROP OWNED BY semantius_user, authenticated, semantius_authenticator;
+```
+
+The event triggers go second because they fire on every drop below them. The `ALTER DEFAULT PRIVILEGES` line near the end puts PostgreSQL's own default back, so functions you create later behave as they would in a database that never had any of this.
+
+The four roles belong to the whole server rather than to one database, so remove them only once nothing else on that server is using them:
+
+```sql
+DROP ROLE semantius_user, authenticated, semantius_authenticator, semantius_owner;
+```
+
+## Next Steps
+
+- **[Reference](/docs/pg-semantius/reference)**: what each function reports and what the roles are for.
+- **[Run the Docker Image](/docs/pg-semantius/docker)**: version tags and what to pin.

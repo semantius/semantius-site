@@ -78,7 +78,7 @@ export const GET: APIRoute = async ({ site }) => {
 		`- [Contact](${md('/contact')}): how to reach the team.`,
 		`- [License](${md('/license')}): MIT.`,
 		`- [Changelog](${md(CHANGELOG_PATH)}): version history.`,
-		`- [Design system](${md('/design')}): typography, colour and component reference.`,
+		`- [Design system](${md('/design')}): typography, color and component reference.`,
 		`- [Privacy](${md('/privacy')}): how data is handled.`,
 		`- [Terms](${md('/terms')}): terms of service.`,
 	]);

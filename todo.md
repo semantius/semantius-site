@@ -39,7 +39,7 @@ Needs a human decision on the actual trial, payment and refund terms.
 
 Every markdown copy opens with a one-line abstract of the page. Today that line
 is the page's meta description - the sentence written to sell the page in a
-Google result. Neon, whose markdown copies this site's format is modelled on,
+Google result. Neon, whose markdown copies this site's format is modeled on,
 puts something different in that slot: a summary written for a machine deciding
 whether the page is worth opening at all.
 
@@ -210,7 +210,7 @@ pointing at a form.
 
 - **Licence attribution.** `apps/web/README.md` does not mention that part of
   this code is adapted from the dualmark project under Apache-2.0. Everything
-  else that licence requires is already in place: the licence text is vendored,
+  else that license requires is already in place: the license text is vendored,
   `NOTICE` exists, the upstream commit is pinned, and the individual files carry
   headers. Only the README line is missing.
 - **Four exported functions that nothing calls.** `toHtmlPath`,

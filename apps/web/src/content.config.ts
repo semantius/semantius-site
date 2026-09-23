@@ -15,7 +15,7 @@ import { SITE_PLACEHOLDER } from './lib/dualmark/paths';
 // The loader CANNOT know the real site origin: Vite merges apps/web/.env
 // (SITE_URL=http://localhost:4321) into process.env after astro.config.mjs is
 // evaluated, so reading it here yields the dev URL even in a production build.
-// Links are absolutised against a reserved placeholder instead, and the twin
+// Links are absolutized against a reserved placeholder instead, and the twin
 // writers swap in the real origin from Astro's resolved `site`.
 
 /**

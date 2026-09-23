@@ -73,7 +73,7 @@ function codeNode(value: string, lang: string) {
 /**
  * Strip ESM imports and rewrite the four components our docs actually use.
  * Counted across all 19 .mdx files: Command 29, SkillInstall 2, Image 2,
- * ModelList 1. Anything else capitalised is unwrapped, keeping its children.
+ * ModelList 1. Anything else capitalized is unwrapped, keeping its children.
  *
  * This is an AST walk rather than regex specifically because regex is wrong
  * here: docs/cli/command.mdx has `semantius call crud create_field <<EOF`
@@ -230,7 +230,7 @@ function mainContentOnly() {
 				DROP_TAGS.has(node.tagName) ||
 				node.properties?.dataPagefindIgnore !== undefined ||
 				// Anything hidden from screen readers is decorative by definition,
-				// and the same judgement applies to an agent reading the text.
+				// and the same judgment applies to an agent reading the text.
 				node.properties?.ariaHidden === 'true' ||
 				node.properties?.ariaHidden === true ||
 				DROP_CLASS.test(classes);
@@ -290,7 +290,7 @@ function mainContentOnly() {
  * Fragments are preserved and reattached after the .md suffix. Links to pages
  * with no twin (the 404, the pagination stubs) stay as HTML URLs.
  */
-function absolutiseLinks(siteUrl: string) {
+function absolutizeLinks(siteUrl: string) {
 	return (tree: any) => {
 		visit(tree, (node: any, index: number | undefined, parent: any) => {
 			// `image` included: a relative asset URL is useless in a document whose
@@ -333,7 +333,7 @@ function buildMdx(siteUrl: string) {
 		.use(remarkMdx)
 		.use(remarkGfm)
 		.use(rewriteMdx)
-		.use(absolutiseLinks, siteUrl)
+		.use(absolutizeLinks, siteUrl)
 		.use(remarkStringify, STRINGIFY_OPTIONS);
 }
 
@@ -341,7 +341,7 @@ function buildMarkdown(siteUrl: string) {
 	return unified()
 		.use(remarkParse)
 		.use(remarkGfm)
-		.use(absolutiseLinks, siteUrl)
+		.use(absolutizeLinks, siteUrl)
 		.use(remarkStringify, STRINGIFY_OPTIONS);
 }
 
@@ -351,7 +351,7 @@ function buildHtml(siteUrl: string) {
 		.use(mainContentOnly)
 		.use(rehypeRemark)
 		.use(remarkGfm)
-		.use(absolutiseLinks, siteUrl)
+		.use(absolutizeLinks, siteUrl)
 		.use(remarkStringify, STRINGIFY_OPTIONS);
 }
 

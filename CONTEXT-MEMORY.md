@@ -17,6 +17,64 @@ The auto-memory directory at `~/.claude/projects/.../memory/` (and any equivalen
 
 Audit every file before saving. If existing content contains em/en dashes, fix them as part of the task.
 
+**American English everywhere, including settings.** Spelling and locale both:
+`optimize`, `customize`, `organization`, `behavior`, `license`, `center`, `catalog`,
+`modeling`, `analyze`, `initialized`, `labor`, `judgment`, `canceled`. Code
+identifiers too, which is why the repo carries `absolutizeLinks` and
+`normalizeForCompare`: a British identifier makes its own comment wrong. The one
+locale that matters is `dateOptions.localeMapping` in `apps/web/src/site.config.ts`,
+which must stay `en-US`. It sat at `en-GB` for a while and that was never intended.
+
+Four things a spelling sweep must **not** "fix":
+
+- `analyses` is the correct American plural of "analysis" (`root_cause_analyses`,
+  `skills_gap_analyses`).
+- `aria-labelledby` is a standard HTML attribute.
+- `apps/web/src/lib/dualmark/NOTICE` says `licence`. It is vendored third-party
+  attribution, so changing it is a license question rather than a spelling one.
+- Several hundred words are spelled `-ise` in both dialects: `promise`,
+  `enterprise`, `franchise`, `otherwise`, `improvise`, `surprising`, `exercising`.
+  A naive `-ise` regex hits every one of them, so always filter before editing.
+
+**Write for a reader with a light technical background, not for an expert.** Lead
+with what a thing is for, then how to use it. Explain a term the first time it
+appears, in a clause rather than a paragraph. Say what a warning costs, not merely
+that it exists.
+
+**The house voice**, measured from `src/content/docs/self-hosted/` and
+`src/content/docs/pg-semantius/`, which are the reference for anything new:
+
+- 15 to 17 words per sentence, 2 to 3 sentences per paragraph. A one-sentence
+  paragraph is how emphasis gets done.
+- Title Case `##` headings, 2 to 5 words. Keep them short: `DocsLayout` renders
+  every heading twice, in the sticky right column at `xl` and in an inline
+  `<details>` below it.
+- Second person. **No contractions anywhere** ("does not", never "doesn't"). No
+  "we". Other people are "people" or "an administrator", never "users".
+- Warnings are a **bold lead-in sentence** followed by the reason. The docs contain
+  no blockquotes and no admonition component, and there is no component to add one.
+- Close with `## Next Steps`, formatted
+  `- **[Link Text](/docs/path)**: lowercase gloss ending in a period.` The bold
+  wraps the whole link and the colon sits outside it.
+- Number headings `## 1. Thing` only when the entire page is one sequence.
+- Windows differences are one sentence after the command, never a second code block.
+- **Bold** for product and UI labels, `code spans` for filenames, settings and
+  commands. No `<h1>` in the body: the layout renders it from `title`.
+
+## Content that does not originate in this repo
+
+`blueprints/`, `skill-specs/` and `skills/` are **mirrors**. They are generated and
+maintained elsewhere and merely checked in here so the site can load them, so do not
+edit them in this repo: the next sync overwrites the change, and a spelling or
+wording fix applied here is lost silently. `skills/use-<x>/spec.json` is byte
+identical to `skill-specs/<X>/spec.json`, which is the clearest tell.
+
+That also rules them out of any site-wide prose pass. They carry British spellings
+and model identifiers such as `retail_labour_schedules`, and both have to be fixed
+upstream. A table or enum name in a blueprint is a published data model besides, so
+renaming one is a breaking change for anybody who already deployed it rather than a
+typo fix.
+
 ## Cloud Agent environment
 
 The workspace root is `/workspace`. Bootstrap lives at `workplace/setup.sh` (absolute: `/workspace/workplace/setup.sh`). Every existing caller already uses that relative path:
@@ -67,7 +125,7 @@ The site serves an agent-facing markdown twin of every page at `<page-url>.md`
 (`/about/` → `/about.md`, `/` → `/index.md`). This is the AEO layer, ported from
 [dualmark](https://github.com/dodopayments/dualmark) (Apache-2.0) and inlined under
 `src/lib/dualmark/` rather than depended on. Keep the `NOTICE` and the per-file
-"Adapted from dualmark" headers: they are the licence obligation.
+"Adapted from dualmark" headers: they are the license obligation.
 
 Three tiers, in priority order. **Nothing here ever fails the build, and no page ever
 requires a hand-written twin**; those two properties are the design, not an accident.
@@ -257,7 +315,7 @@ Measured: `/`, `/pricing`, `/docs/cli` and even `/logo.png` on a preview
 deployment all carry `X-Robots-Tag: noindex`, and it is absent from the built
 `_headers`. Cloudflare adds it so preview URLs cannot be indexed.
 
-**Consequence: indexing behaviour cannot be verified on a preview deploy.** Any
+**Consequence: indexing behavior cannot be verified on a preview deploy.** Any
 `X-Robots-Tag` rule in `public/_headers` is indistinguishable from the platform
 header there, and a rule that does nothing looks identical to a rule that
 works. Verify those against `www.semantius.com` after a production deploy.
@@ -266,7 +324,7 @@ This is the same family of trap as the zone-level AI crawler block was: the
 preview host is not in the `semantius.com` zone and does not behave like
 production for anything a crawler cares about.
 
-### Markdown twins are canonicalised, not noindexed
+### Markdown twins are canonicalized, not noindexed
 
 Each `.md` twin sends `Link: <...>; rel="canonical"` to its HTML page, and no
 `noindex`. The reasoning, so it is not quietly reverted: `noindex` tells the
@@ -354,7 +412,7 @@ One trap in `_headers` itself: Cloudflare matches rules against the **request** 
 
 ### A `public/` file silently shadows a route with the same output path
 
-`public/` is copied verbatim into the output, and a collision is resolved in its favour with only a log line: `Skipping src/pages/llms.txt.ts because a file with the same name exists in the public folder`. The route then emits nothing. When converting a static `public/` file into a generated route, delete the original **in the same commit**. Prose partials for such routes belong in `src/data/`, not `src/content/`, because `getNoIndexUrls()` in `astro.config.mjs` walks all of `src/content` looking for frontmatter.
+`public/` is copied verbatim into the output, and a collision is resolved in its favor with only a log line: `Skipping src/pages/llms.txt.ts because a file with the same name exists in the public folder`. The route then emits nothing. When converting a static `public/` file into a generated route, delete the original **in the same commit**. Prose partials for such routes belong in `src/data/`, not `src/content/`, because `getNoIndexUrls()` in `astro.config.mjs` walks all of `src/content` looking for frontmatter.
 
 ### Dynamic `import()` inside `astro:build:done` races Vite's module runner
 
@@ -369,7 +427,7 @@ This is deliberate and fixes two failure modes that existed while the default wa
 - **The node adapter hid workerd-only bugs.** Prerendering runs inside workerd under the Cloudflare adapter and in Node under the node adapter, so a `node:fs` read of a repo file produces a **zero-byte file, not an error**, only on the real target. A green node-adapter build proved nothing about the markdown twins.
 - **`ADAPTER` was an env var, and env vars are not part of turbo's cache key.** `ADAPTER=cloudflare pnpm build` could replay a cached node build, so the output you inspected was not the output you asked for. Now the adapter lives in `astro.config.mjs`, which *is* hashed, so turbo caching is correct.
 
-The `redirects` map in `astro.config.mjs` materialises only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
+The `redirects` map in `astro.config.mjs` materializes only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
 
 ```bash
 find apps/web/dist/client -name '*.md' -size -100c   # must print nothing
@@ -454,7 +512,7 @@ dropped a hero image whose alt contains `'Vibe Coding'`.
 Values reach `import.meta.env` through two channels: `apps/web/.env` (gitignored,
 dev machines only) and the process env, which `dotenvx run --` fills from the
 committed, encrypted root `.env`. Where a key exists in both, the precedence is
-measured, and it is the **opposite** of Vite's documented `loadEnv` behaviour,
+measured, and it is the **opposite** of Vite's documented `loadEnv` behavior,
 where `process.env` wins:
 
 - **Key present in `apps/web/.env` → that file wins.** Building with

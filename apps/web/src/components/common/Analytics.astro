@@ -8,7 +8,7 @@ const { vendors, alwaysLoad } = siteConfig.analytics;
  *
  * Every `*_ENABLED` flag is a build-time env var, so a vendor that is off when
  * the site is built can never turn on in a visitor's browser. Emitting all
- * three loaders plus the serialised `analytics` config on every page was
+ * three loaders plus the serialized `analytics` config on every page was
  * therefore dead code that also published the config shape (placeholder hosts
  * included) to anyone reading view-source. Each vendor below contributes its
  * snippet only when it is enabled AND has an id, and when none qualify this
