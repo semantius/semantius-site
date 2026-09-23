@@ -190,14 +190,25 @@ and then exits 2 without writing anything: the success line is not proof the fil
 Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`), and always
 `ls` the file afterwards before treating the verification step as done.
 
-Its **default viewport is 1243 CSS px wide**, which is below Tailwind's `xl`
-breakpoint (1280px). The docs table of contents is gated at `xl:block`, so a
-default screenshot shows no right-hand sidebar on any docs page and looks like
-a layout bug. Measured at a real 1280px window the query matches and the TOC
-renders (`innerWidth` 1280, `clientWidth` 1265: Chrome evaluates the media query
-against the viewport *including* the classic scrollbar, so the scrollbar does
-not eat the breakpoint). Run `agent-browser set viewport 1600 1000` before
-screenshotting anything whose layout depends on `xl:`.
+Its **default viewport is 1243 CSS px wide**, below Tailwind's `xl` (1280px),
+so a default screenshot lands in the band where the docs' right-hand column is
+not rendered. Set `agent-browser set viewport 1600 1000` before screenshotting
+anything whose layout depends on `xl:`.
+
+Worth knowing for the breakpoint itself: Chrome evaluates a `min-width` media
+query against the viewport **including** the classic scrollbar, while layout
+gets the narrower box. Measured at a 1280px window: `innerWidth` 1280,
+`clientWidth` 1265, `matchMedia('(min-width: 1280px)')` true. So a scrollbar
+never costs you a breakpoint, and a component that appears at `xl` really does
+appear on a 1280px screen.
+
+**A responsive column and what fills it must share one breakpoint.** The docs
+grid declared `lg:grid-cols-[280px_1fr_240px]` while the table of contents in
+that third column was `hidden xl:block`, so every viewport from 1024px to
+1279px reserved 240px plus a 40px gap for an invisible element: 280px of dead
+gutter, measured as a 421px content column at 1100px wide. The grid now steps
+`lg:grid-cols-[280px_1fr]` then `xl:grid-cols-[280px_1fr_240px]`, and below
+`xl` the contents list renders inline above the article instead of vanishing.
 
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
