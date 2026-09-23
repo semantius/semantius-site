@@ -405,6 +405,17 @@ and link-only lines are excluded because they differ by formatting alone, and
 both sides are typography-folded because Tier A bodies are ASCII while pages are
 not. Without those exclusions it reported 8485 differences, none of them real.
 
+**Writing prose that names a URL? Use a code span, not a bare URL.** The two
+renderers stringify a self-linking URL differently: the source pipeline emits
+`[url](url)`, the HTML extractor collapses it to `<url>`, and the guard reports
+every such sentence as drift. A code span round-trips identically through both.
+The same applies to the leaked-origin guard next to it, which exists to catch a
+dev origin baked in at load time and so matches only the unswapped placeholder
+and the dev site origin: a page may legitimately name `localhost` (the
+self-hosting docs are about a stack reached at `http://localhost:3000`), and
+matching any `localhost:` made it warn on every build, which is how a real leak
+gets ignored.
+
 Currently accepted (not a regression): the `/blog`, `/docs` and `/blueprints`
 index twins do not carry the page's marketing lede, because the composed twin
 writes its own description of the page. Anything else it reports is a bug.
