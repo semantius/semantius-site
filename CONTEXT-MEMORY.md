@@ -190,6 +190,15 @@ and then exits 2 without writing anything: the success line is not proof the fil
 Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`), and always
 `ls` the file afterwards before treating the verification step as done.
 
+Its **default viewport is 1243 CSS px wide**, which is below Tailwind's `xl`
+breakpoint (1280px). The docs table of contents is gated at `xl:block`, so a
+default screenshot shows no right-hand sidebar on any docs page and looks like
+a layout bug. Measured at a real 1280px window the query matches and the TOC
+renders (`innerWidth` 1280, `clientWidth` 1265: Chrome evaluates the media query
+against the viewport *including* the classic scrollbar, so the scrollbar does
+not eat the breakpoint). Run `agent-browser set viewport 1600 1000` before
+screenshotting anything whose layout depends on `xl:`.
+
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
 The site is served by **Cloudflare Workers static assets** (Worker
