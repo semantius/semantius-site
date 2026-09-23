@@ -87,7 +87,12 @@ if (currentSectionLabel && topAncestor) {
   <ScrollProgress />
   <div class="max-w-360 mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
     <DocsTabs tabs={tabs} />
-    <div class="flex w-full lg:grid lg:grid-cols-[280px_1fr_240px] gap-10">
+    {/* The third column must appear at the SAME breakpoint as the table of
+        contents it holds (xl, below). Declaring it at lg reserved 240px plus a
+        40px gap for an aside that is still display:none from 1024px to 1279px,
+        so every viewport in that band - including the 1280px laptop whose
+        scrollbar puts it there - lost 280px of content width to dead space. */}
+    <div class="flex w-full lg:grid lg:grid-cols-[280px_1fr] xl:grid-cols-[280px_1fr_240px] gap-10">
 
         {/* Sidebar Navigation */}
         {/* lg:overflow-visible matters: with overflow-y-auto the aside becomes

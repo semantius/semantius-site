@@ -1,0 +1,108 @@
+---
+title: 'Going Live on Your Own Server'
+navTitle: 'Going Live'
+description: 'Move a self-hosted Semantius stack from your laptop to a real server, with your own domain and HTTPS.'
+order: 3
+---
+
+import Command from '~/components/common/Command.astro';
+
+A local install and a real deployment run the same stack. What changes is that the stack now has a public address, so a handful of settings that pointed at `localhost` have to point at your domain instead, and the placeholder secrets have to be real.
+
+This page covers a plain server you administer yourself: a VPS, a cloud instance, a machine in your office. If you run [Dokploy](/docs/self-hosted/dokploy), use that page instead, because the blueprint handles most of this for you.
+
+## Before You Start
+
+You need a server with Docker installed, a domain name, and a DNS record pointing that domain at the server's IP address. Set the DNS record up first and let it propagate. Certificates are issued by proving you control the domain, so nothing below works until the name resolves.
+
+Then get the files onto the server and move into the variant folder, exactly as you would locally:
+
+<Command command="git clone https://github.com/semantius/semantius-self-hosted" />
+
+<Command command="cd semantius-self-hosted/variants/local-semantius-idp" />
+
+<Command command="./setup-env.sh" />
+
+Do not copy a `.env` from your laptop. The generated secrets are meant to be unique per installation, and the values in it are tied to the database that laptop created.
+
+## The Settings That Have To Change
+
+Open `.env` and set these four. Everything else in the file can stay at its default for a first deployment.
+
+| Setting | Set it to | Why |
+| --- | --- | --- |
+| `SITE_ADDRESS` | `yourdomain.com` | Tells the front door which name it is serving, and turns on automatic HTTPS |
+| `IDP_BASE_URL` | `https://yourdomain.com/idp` | The address the sign-in system considers its own, including the `/idp` part |
+| `PUBLIC_WEB_ORIGIN` | `https://yourdomain.com` | Where the app lives, used to check that sign-ins return to the right place |
+| `PUBLIC_API_URL` | `https://yourdomain.com/gateway/rest` | The address the API documentation tells people to call |
+
+`IDP_BASE_URL` keeps the `/idp` suffix and `PUBLIC_WEB_ORIGIN` has no path at all. That difference is not a typo. The first is the sign-in system's own address, the second is the app's.
+
+Also confirm your three secrets are the generated ones and not the placeholders from the example file. `setup-env` handles this, but it is worth a look before a machine goes on the public internet:
+
+<Command command="grep -E 'IDP_SECRET|POSTGRES_PASSWORD|SEMANTIUS_AUTHENTICATOR_PASSWORD' .env" />
+
+If any of them still reads `dev-only-...`, `postgres`, or `devpassword`, stop and fix that first. `IDP_SECRET` in particular has to be right **before the first start**: it encrypts the keys that sign everyone's logins, so changing it later signs everyone out and makes the stored keys unreadable.
+
+## Turning On HTTPS
+
+Setting `SITE_ADDRESS` to a bare domain makes the front door request a certificate automatically, for free, and renew it on its own. For that to work it has to be reachable on the standard web ports, which means publishing ports 80 and 443 rather than the local development port.
+
+Open `docker-compose.yml`, find the `semantius` service, and replace its `ports:` entry:
+
+```yaml
+  semantius:
+    ports:
+      - "80:80"
+      - "443:443"
+```
+
+Make sure your server's firewall allows both. Port 80 is not optional even though nothing is served on it: it is how the certificate authority checks that you control the domain, and how visitors who type a bare domain get redirected to the secure version.
+
+## Pin Your Versions
+
+By default the stack downloads the newest version of every piece each time it starts. On a server you depend on, that means an unattended restart can quietly move you to a new version. Pin all three in `.env` before you go live:
+
+```bash
+SEMANTIUS_DB_VERSION=0.4.0-pg18
+SEMANTIUS_APP_VERSION=1.2.0
+SEMANTIUS_IDP_VERSION=1.1.0
+```
+
+Use the actual released tags rather than the examples above. Updating then becomes something you do deliberately: change the tag, run `./up.sh`, and roll back by changing it again.
+
+## Turn On Email
+
+Without an email service the sign-in system runs in a reduced mode: no password resets, no address verification, no notifications. That is fine on a laptop where an administrator creates every account by hand. On a real deployment people will lock themselves out.
+
+Add a [Resend](https://resend.com) API key to `.env`:
+
+```bash
+RESEND_API_KEY=re_your_key_here
+```
+
+The features switch on together the next time the stack starts.
+
+## Start It
+
+<Command command="./create.sh" />
+
+Use `create` for a first deployment, because there is no data to lose and you want the database built from scratch. On every later change, use `./up.sh`, which applies the new settings and keeps your data.
+
+Then open `https://yourdomain.com` and complete the setup page. **The first person to finish it becomes the administrator**, so do this immediately. Until somebody does, that page is open to anyone who finds the address.
+
+## Checking It Worked
+
+<Command command="curl https://yourdomain.com/.well-known/semantius.json" />
+
+Every Semantius deployment publishes a short description of itself at that address. The values in it should carry your domain rather than `localhost`, which confirms the front door picked up the new settings. If they are empty or still local, the containers were restarted rather than recreated. Run `./up.sh`, which recreates them properly.
+
+## A Note on Serving Several Domains
+
+There is a setting called `IDP_DYNAMIC_ISSUER` that makes the stack follow whatever domain a request arrives on. It is useful, and it is **not** safe in the setup described on this page, because a front door configured with one domain still answers to any name pointed at the server. Leave it off here. It is designed for deployments that sit behind a router which only forwards known domains, which is exactly what [Dokploy](/docs/self-hosted/dokploy) provides.
+
+## Next Steps
+
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands and how to update.
+- **[Settings Reference](/docs/self-hosted/settings)**: every value in `.env`, grouped by what it does.
+- **[Dokploy](/docs/self-hosted/dokploy)**: if you would rather not administer a server by hand.

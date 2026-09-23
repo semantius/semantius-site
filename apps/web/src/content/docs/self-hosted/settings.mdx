@@ -1,0 +1,127 @@
+---
+title: 'Settings Reference'
+navTitle: 'Settings'
+description: 'Every value in the .env file of a self-hosted Semantius stack, grouped by what it is for.'
+order: 6
+---
+
+Your whole installation is configured by one file called `.env`, sitting next to `docker-compose.yml` in your variant folder. It is created for you by `./setup-env.sh`, it is never committed to version control, and it is the only file in that folder you are meant to edit.
+
+After changing anything here, apply it with `./up.sh`, which keeps your data. A plain restart is not enough: several of these values are read when a container is created, so a restarted container still carries the old ones.
+
+Most people never touch more than the first two groups below.
+
+## Secrets
+
+Three values are unique to your installation. `setup-env` generates all three when it creates the file, so a stack started the documented way already has good ones. You only need this section if you copied the example file by hand, or you are rotating something.
+
+| Setting | What it protects |
+| --- | --- |
+| `IDP_SECRET` | Signs everyone's sessions and encrypts the keys used to sign logins |
+| `POSTGRES_PASSWORD` | Full administrative access to the database |
+| `SEMANTIUS_AUTHENTICATOR_PASSWORD` | The account the API uses to reach the database |
+
+Generate replacements with `openssl rand -hex 24` for the two passwords and `openssl rand -base64 48` for `IDP_SECRET`.
+
+**Use hexadecimal for the two passwords specifically.** They are inserted into database connection addresses, where characters like `@`, `:`, `/` and `+` break parsing. `openssl rand -base64` produces some of those, so it is the wrong tool for these two. `IDP_SECRET` is never used that way, so base64 is fine there.
+
+**`IDP_SECRET` has to be right before the first start.** It encrypts the stored signing keys, so changing it afterward logs everyone out and leaves those keys unreadable. Treat a change to it as a key rotation rather than a settings tweak.
+
+The two passwords are written into the database when it is first created, so changing them on a running stack means changing them in the database too, or recreating with `./create.sh`.
+
+## Your Public Address
+
+These are the settings a real deployment has to change. On a laptop they all default to `localhost` and can be left alone. See [Going Live](/docs/self-hosted/deploy) for the full walkthrough.
+
+| Setting | Default | What it is |
+| --- | --- | --- |
+| `SITE_ADDRESS` | `:80` | The address the front door serves. Set it to your bare domain for automatic HTTPS, or leave it when something else handles certificates |
+| `IDP_BASE_URL` | `http://localhost:3000/idp` | The sign-in system's own address, **including** the `/idp` part. All email links are built from this |
+| `PUBLIC_WEB_ORIGIN` | `http://localhost:3000` | Where the app lives, with **no** path. Used to check that sign-ins return to the right place |
+| `PUBLIC_API_URL` | `http://localhost:3000/gateway/rest` | The address the API documentation tells people to call. Has to be absolute |
+| `WEB_PORT` | `3000` | The port the front door is published on locally. Ignored once you publish 80 and 443 for a real domain |
+
+`IDP_BASE_URL` keeps the `/idp` suffix and `PUBLIC_WEB_ORIGIN` has none. That is not a mistake in the defaults: one is the sign-in system's address, the other is the app's.
+
+## Versions
+
+Every piece runs the newest published version by default and re-downloads it on each start. Convenient while trying things out, wrong for a server you depend on. Pin all of these before going live.
+
+| Setting | Controls |
+| --- | --- |
+| `SEMANTIUS_DB_VERSION` | The database image |
+| `SEMANTIUS_APP_VERSION` | The web app |
+| `SEMANTIUS_IDP_VERSION` | The built-in sign-in system |
+
+You can also pin for a single run by passing the tag on the command line, for example `./up.sh 0.4.0-pg18`.
+
+## Email
+
+| Setting | Default | Effect |
+| --- | --- | --- |
+| `RESEND_API_KEY` | unset | Without it, password resets, address verification and notifications are switched off and hidden. Set it to a [Resend](https://resend.com) key to turn them on |
+
+Leaving it unset is reasonable on a laptop, where an administrator creates every account. On anything real, people lock themselves out.
+
+## Database and Sample Data
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `POSTGRES_DB` | `semantius` | Name of the database that is created and served |
+| `NWIND` | `TRUE` | Loads the Northwind sample dataset. Remove the line for an empty database |
+| `POSTGRES_PORT` | `5434` | Port for connecting a database client directly |
+| `PGBOUNCER_PORT` | `6432` | Port for the pooled connection your own applications should use |
+
+`NWIND` only takes effect when the database is **first created**. Changing it later does nothing, because sample data is loaded once at setup time. To change your mind, change the line and run `./create.sh`, which rebuilds the database from scratch and deletes what is in it.
+
+The ports default to unusual numbers deliberately, so they do not collide with a PostgreSQL you may already run on 5432.
+
+## Identity
+
+You can leave every one of these alone if you use the built-in sign-in system, which is what the defaults describe. They matter when you point the stack at a provider of your own, which is usually better done with the [Entra ID variant](/docs/self-hosted/entra-id) than by editing these.
+
+| Setting | Default | What it is |
+| --- | --- | --- |
+| `VITE_OAUTH_CONFIG` | the built-in system | Where the app discovers its sign-in addresses. Relative by default, so it follows whatever domain the app is opened on |
+| `VITE_OAUTH_CLIENT_ID` | `public-client` | Which registered application the web app signs in as |
+| `VITE_OAUTH_AUDIENCE` | `semantius://api` | What the app asks its logins to be valid for |
+| `IDP_JWT_AUDIENCE` | `semantius://api` | What the built-in system issues logins for. One setting moves both sides |
+| `JWKS_URL` | the built-in system | Where the API fetches the keys it checks logins against. Set it **empty** to derive them from your own provider instead |
+| `SEMANTIUS_IDP_TYPE` | `semantius` | Which provider is behind this deployment. Informational only, used in logs and support. Set it to `custom` if you repoint the stack |
+| `CLI_OAUTH_CLIENT_ID` | `semantius-cli` | Which registered application the command-line tool signs in as. Not the web app's |
+
+Two of these are easy to misread. `JWKS_URL` set to **empty** is meaningful and different from removing the line: empty means "work it out from the provider's discovery document," which is what an external provider wants. And `SEMANTIUS_IDP_TYPE` is not derived from anything, so a stack repointed at another provider keeps announcing the built-in one until you change it by hand.
+
+## Multiple Domains
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `IDP_DYNAMIC_ISSUER` | `false` | Makes sign-in follow whatever domain a request arrives on, instead of one fixed address |
+| `TRUSTED_PROXIES` | unset | Which networks are allowed to tell the stack who a visitor really is |
+
+`IDP_DYNAMIC_ISSUER` is what lets a domain attached after deployment work immediately, and it is the reason the Dokploy blueprint handles domains so gracefully. Turning it on is a **statement about your network**, not just a convenience: it is only safe when something in front of the stack forwards a closed set of known domains and nothing can bypass it. Dokploy's router satisfies that. A plain server running the front door directly does not, because it answers to any name pointed at it, so leave it off there.
+
+Email links deliberately do not follow the request, even with this on. They are always built from `IDP_BASE_URL`, which is what keeps a faked request from producing a password reset link pointing somewhere else. After attaching a real domain, update `IDP_BASE_URL` once.
+
+`TRUSTED_PROXIES` unset means nothing is trusted, which is correct when the front door is the edge. Behind another router it has to list that router's network, or every visitor appears to come from the same place and rate limits and audit records become useless.
+
+## Rarely Changed
+
+| Setting | Default | What it does |
+| --- | --- | --- |
+| `DOCS_SPEC_URL` | `/gateway/rest` | Where the documentation page loads the API description from |
+| `PGRST_DB_POOL_MAX_IDLETIME` | `1800` | Seconds an unused database connection is kept open |
+| `PGRST_JWT_ROLE_CLAIM_KEY` | `.role` | Which part of a login token names the permission level. Only changes with an external provider that cannot use the standard name |
+
+## Set in the Compose File, Not Here
+
+A few values are deliberately fixed in `docker-compose.yml` rather than exposed in `.env`, so that a stray setting cannot redirect the stack somewhere unexpected. You will see them if you read the compose file and wonder why they are not configurable:
+
+- The database administrator username, always `postgres`.
+- Where the sign-in system reads its configuration from, and which part of the database it uses.
+- The two settings that put the web app in self-hosted mode. These are pinned because this deployment **is** the self-hosted backend, and there is no case where one of its own containers should be asking a hosted service about itself.
+
+## Next Steps
+
+- **[Going Live](/docs/self-hosted/deploy)**: which of these to change for a real deployment.
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: applying changes and everyday commands.

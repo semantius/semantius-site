@@ -1,0 +1,135 @@
+---
+title: 'Sign In with Microsoft Entra ID'
+navTitle: 'Microsoft Entra ID'
+description: 'Run a self-hosted Semantius stack where your organization signs people in with Microsoft Entra ID instead of the built-in system.'
+order: 5
+---
+
+import Command from '~/components/common/Command.astro';
+
+If your organization already signs in with Microsoft, you probably want Semantius to use that rather than asking people to keep another password. The repository ships a variant for exactly this: the same stack, with the built-in sign-in system removed and Microsoft Entra ID handling logins instead.
+
+People then sign in with their work account, and access is granted or revoked in Entra along with everything else, rather than in a separate place somebody has to remember to update.
+
+This is a different folder rather than a setting, because the built-in sign-in system is genuinely absent from it. Running both at once would give you two competing sign-in systems on one address.
+
+## What You Need
+
+- **Docker**, as with any variant.
+- **An Entra tenant**, and someone allowed to register applications in it. That is the *Application Developer* role or higher, and it may well be someone else in your organization rather than you.
+- **For the setup script only:** PowerShell 7 and the Azure CLI. Everything it does can also be done by hand in the Entra admin center.
+
+Leave the version settings at their defaults unless you have a reason to pin. Entra needs reasonably recent images, and an old pin shows up as a confusing error at sign-in rather than as a clear version complaint.
+
+## 1. Get the Files
+
+<Command command="git clone https://github.com/semantius/semantius-self-hosted" />
+
+<Command command="cd semantius-self-hosted/variants/local-entra-idp" />
+
+<Command command="./setup-env.sh" />
+
+That creates `.env` with database passwords generated. Everything else gets filled in by the next step.
+
+Unlike the other variants, this one **will not start until it is configured**. That is on purpose: a stack with no working sign-in would boot into a broken state and look like a bug, so instead it stops and names the setting it is missing.
+
+## 2. Register Three Applications in Entra
+
+Semantius needs three registrations in your tenant: one for the **API** (what access is granted to), one for the **web app** (what people sign in to), and one for the **CLI**.
+
+### With the Script
+
+If you have rights in the tenant, the repository includes a PowerShell script that does the whole thing:
+
+```powershell
+az login --tenant yourcompany.onmicrosoft.com --allow-no-subscriptions
+./setup-entra.ps1
+```
+
+The `--allow-no-subscriptions` flag matters. A Microsoft 365 tenant usually has no Azure subscription attached, and without the flag the login ends with "No subscriptions found" and leaves you signed out. App registrations do not need a subscription.
+
+The script asks for your front door address, creates all three registrations, pre-approves them so nobody sees a consent prompt, assigns you access, turns on the gate that requires assignment, and writes every resulting value into `.env`.
+
+Re-running it is safe. It looks each registration up first and refuses to overwrite an `.env` that is already configured. Run it again on a configured stack and it prints what you have instead: the three application ids, who holds access, whether the gate is on, and a direct link to every page in the Entra admin center that owns one of those values. Add `-Verify` and it checks each one and exits with an error code if something is wrong, which makes it usable in a pipeline. Both of those modes only read, so they are safe to run against a stack people are using.
+
+### Without Rights in the Tenant
+
+If someone else administers Entra, they can run the script with `-NoWrite`. It creates the registrations and prints the values instead of writing them, so they can send you the results to paste into `.env` without giving you access to the tenant.
+
+Doing it entirely by hand in the Entra admin center is also fully documented, in [the variant's own README](https://github.com/semantius/semantius-self-hosted/blob/main/variants/local-entra-idp/README.md). There are a few settings in there that are easy to get subtly wrong, so the script is worth using when you can.
+
+### Running More Than One Semantius
+
+A CRM and an HR system, or production and test, each get their own set of registrations:
+
+```powershell
+./setup-entra.ps1 -NamePrefix "Semantius CRM"
+./setup-entra.ps1 -NamePrefix "Semantius HRM"
+```
+
+Each prefix gets its own access list and its own separate permission, so access to one does not grant access to the other. Note that a person ends up with a different internal identity on each one, which means user records do not carry across if you copy data between them.
+
+If you set up a second stack with the **same** prefix, it silently joins the first: one access list, and logins valid on both. The script refuses to do that by accident.
+
+## 3. Give People Access
+
+In the Entra admin center, go to **Enterprise applications**, then **Semantius API**, then **Users and groups**, and assign people to the **`authenticated`** role.
+
+This is the real gate. Because the script turns on **Assignment required**, somebody without that role is refused by Microsoft at the sign-in page and never reaches Semantius at all. Someone who somehow arrives without it lands with no permissions and can read nothing.
+
+Two practical notes:
+
+- Assigning **groups** requires an Entra ID P1 license. Assigning individual **users** works on the free tier.
+- A newly assigned person's first sign-in can still fail. The assignment takes about a minute to reach Microsoft's token service. Wait and try again before assuming something is broken.
+
+## 4. Start It
+
+<Command command="./create.sh" />
+
+Then open your front door address, `http://localhost:3000` by default, and sign in with your work account.
+
+**On an empty database, the first person to sign in becomes the administrator.** Everyone after that arrives with the default role and sees nothing until an administrator grants them access, under Administration, then Users.
+
+That is worth understanding clearly, because there are now two separate layers. Entra decides **who may sign in**. Semantius decides **what they can see** once they have. Assigning somebody in Entra lets them through the door. It does not give them data.
+
+## When Sign-In Goes Wrong
+
+Entra reports failures as codes, which are precise but not self-explanatory. The common ones:
+
+| What you see | What it means |
+| --- | --- |
+| `AADSTS50105` | The person is not assigned to the `authenticated` role. This is the intended refusal. Assign them under Users and groups. |
+| `AADSTS50011` | The address registered in Entra does not match the one people actually open. It is matched exactly, including the port. |
+| `AADSTS9002326` | The web app was registered as the wrong platform type. It has to be **Single-page application**. |
+| `AADSTS9010010` | Two settings in `.env` name different APIs. They have to point at the same one. |
+| Everything refused, no role in the token | Either the assignment was made less than a minute ago, or the assignment gate is off and the person was never assigned. |
+| `90002 JWT role claim must be authenticated` | The database image predates Entra support. Remove the version pin, or pin a newer release. |
+| `90005 JWT audience does not match` | The audience recorded in the database is not the one the token carries. |
+
+The variant's README carries the full list along with what fixes each one.
+
+## Keeping Keys Fresh
+
+Microsoft periodically replaces the keys used to sign logins, and this variant downloads them once when it starts. A stale copy eventually rejects everybody.
+
+```bash
+docker compose run --rm jwks-fetch
+docker compose restart postgrest
+```
+
+Run that after a rotation. Because Microsoft rotates on its own schedule rather than yours, a **daily scheduled run is the safe default** here, which is a real difference from the built-in sign-in system where running it on demand is usually enough.
+
+## Using a Different Provider
+
+Okta, Keycloak, Auth0 and similar are not shipped as ready-made variants, but they are generally **easier** to set up than Entra, because they can issue the permission claim Semantius expects in its simplest form, while Entra needs a workaround.
+
+The approach is to copy the Entra variant's definition file, change the handful of values that are Entra-specific, and rebuild. What any provider has to do is short:
+
+- Issue a login token carrying a role claim that says `authenticated`.
+- Carry a stable internal user id. The Semantius user record is created from it the first time somebody signs in, and their name and email fill in the rest.
+- Pin the audience, if the provider signs tokens for many customers with shared keys as Entra does. This is what ties a login to **your** registration rather than anyone else's on the same provider.
+
+## Next Steps
+
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: everyday commands and the API.
+- **[Going Live](/docs/self-hosted/deploy)**: putting it on a server with your own domain.

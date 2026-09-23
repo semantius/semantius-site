@@ -1,0 +1,105 @@
+---
+title: 'One-Click Deploy with Dokploy'
+navTitle: 'Dokploy'
+description: 'Deploy a complete Semantius platform to a server through Dokploy, without editing config files or touching a terminal.'
+order: 4
+---
+
+import Command from '~/components/common/Command.astro';
+
+[Dokploy](https://dokploy.com) is a self-hosted deployment platform: you install it once on a server, and after that you deploy applications through a web interface instead of over SSH. Semantius ships a **blueprint** for it, which is a single file describing the whole stack.
+
+This is the easiest way to get Semantius onto a real server. You do not edit a settings file, you do not generate secrets, and you do not configure HTTPS. Dokploy does all three.
+
+## What the Blueprint Handles For You
+
+| Job | How it is handled |
+| --- | --- |
+| Passwords and secrets | Generated per deployment, automatically |
+| HTTPS certificates | Dokploy's built-in router obtains and renews them |
+| Domain routing | Point a domain at the deployment in the interface |
+| Config files | Bundled inside the blueprint, so there is nothing to upload |
+| Sample data | The Northwind demo module is loaded, so there is data on first open |
+
+The one thing it cannot do is create your administrator account, because that is deliberately yours. Open the deployment once it is live and complete the setup page.
+
+## What You Need
+
+- A running Dokploy instance. Installing it is a single command on a fresh server, documented at [dokploy.com](https://dokploy.com).
+- **Docker Compose 2.23.1 or newer on that server.** The blueprint carries its configuration files inside itself, which older versions cannot read. Most current installs are well past this.
+- A domain name pointing at the server, though you can attach it after deploying.
+
+## Deploying It
+
+There are two routes. The import route works on any Dokploy instance and needs nothing set up in advance, so start there.
+
+### Route 1: Paste the Blueprint
+
+1. In the repository, open `variants/dokploy-semantius-idp/import.base64.txt` and copy its entire contents. It is one long line of text containing the whole stack.
+2. In Dokploy, go to **Create Service → Advanced → Import**.
+3. Paste it in.
+
+Dokploy shows you the resolved result before anything runs: the services it will start, the settings it generated, and the domain it will route. Read that screen, then press Deploy.
+
+### Route 2: Add It to a Template Gallery
+
+If you deploy Semantius often, put it in your own gallery instead of pasting it each time.
+
+1. Fork [github.com/Dokploy/templates](https://github.com/Dokploy/templates).
+2. Copy `variants/dokploy-semantius-idp/` into it as `blueprints/semantius/`.
+3. Point your Dokploy instance at your fork as a custom templates repository.
+
+Semantius then appears as a card in the gallery, deployable in one click like any other template.
+
+## Attaching Your Domain
+
+You can attach a domain before deploying or after. Attaching it afterward works properly here, which is unusual and worth knowing about, because most self-hosted software bakes its address in at install time and then misbehaves when you change it.
+
+Add the domain in Dokploy's interface and open it. Sign-in, the app, the API and the documentation all follow the new address immediately, with no settings to edit and no restart.
+
+**One thing does not follow: email links.** Password reset and address verification links are built from a fixed setting rather than from the incoming request, on purpose, because deriving them from the request would let someone send a password reset link pointing at a site they control. So after attaching your real domain, edit one value in the deployment's **Environment** tab:
+
+```bash
+IDP_BASE_URL=https://yourdomain.com/idp
+```
+
+Then redeploy. Everything else was already correct.
+
+## First Open
+
+Open your domain. The app sends you to sign in, and because no users exist yet, that page is the setup page. Complete it and you are the administrator.
+
+Do this right after the deploy finishes. Until somebody completes it, the page is available to anyone who has the address.
+
+## Removing the Sample Data
+
+The blueprint loads the Northwind demo module so the deployment has something to show. To start empty instead, delete the `NWIND=TRUE` line from the **Environment** tab **before your first deploy**. Sample data is only ever loaded when the database is first created, so removing it later has no effect on an existing deployment.
+
+## If You Use Raw or Git Instead of Import
+
+Dokploy can also run a compose file pasted as raw YAML or pulled from a Git repository. Those routes skip the blueprint's settings file entirely, which means **no secrets are generated for you**. The deploy then fails, because three values have no defaults.
+
+If you go that way, fill these in on the Environment tab yourself before deploying:
+
+- `POSTGRES_PASSWORD`
+- `SEMANTIUS_AUTHENTICATOR_PASSWORD`
+- `IDP_SECRET`
+
+Use long random values, and use hexadecimal characters only for the two passwords, because they are used inside connection addresses where punctuation causes trouble. `openssl rand -hex 24` produces a suitable value. `IDP_SECRET` has no such restriction; `openssl rand -base64 48` is fine for it.
+
+This is a real difference between the routes rather than a quirk, so prefer the Import route unless you have a reason not to.
+
+## Tightening the Trusted Network
+
+The blueprint trusts forwarded requests from Docker's default address range, which is what lets the sign-in system see real visitor addresses rather than the router's. It is a deliberately wide range so that the deploy works on any Dokploy install.
+
+Once your deployment is running, you can narrow it to just Dokploy's own network. Find the real range on the server:
+
+<Command command="docker network inspect dokploy-network" />
+
+Then set `TRUSTED_PROXIES` in the Environment tab to the subnet it reports and redeploy. This is optional hardening rather than a required step.
+
+## Next Steps
+
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: API keys, the CLI, and everyday use.
+- **[Settings Reference](/docs/self-hosted/settings)**: what every value in the Environment tab does.
