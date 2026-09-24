@@ -256,10 +256,26 @@ function trailingSlashRedirect() {
       },
       'astro:build:done': ({ dir, logger }) => {
         const file = path.join(clientDir ?? fileURLToPath(dir), '_redirects');
-        const existing = fs.existsSync(file)
-          ? fs.readFileSync(file, 'utf8').replace(/\s*$/, '') + '\n'
-          : '';
-        fs.writeFileSync(file, existing + RULE + '\n');
+        // A rebuild over an existing dist (`pnpm build`, then `pnpm
+        // preview:wrangler`, which builds again) finds the previous build's
+        // file: the adapter appends its rules to it and so did this hook, so
+        // every rule appeared twice. Cloudflare rejects the upload over the
+        // duplicates and over the second catch-all, which counts toward its
+        // limit of 100 dynamic rules. Deduplicating keeps the output the same
+        // however many builds ran over the directory.
+        const existing = fs.existsSync(file) ? fs.readFileSync(file, 'utf8').split('\n') : [];
+        const seen = new Set();
+        const lines = existing
+          .map((l) => l.trimEnd())
+          .filter((l) => {
+            if (l === RULE) return false;
+            if (!l.trim() || l.trimStart().startsWith('#')) return true;
+            if (seen.has(l)) return false;
+            seen.add(l);
+            return true;
+          });
+        const body = lines.join('\n').replace(/\s*$/, '');
+        fs.writeFileSync(file, (body ? body + '\n' : '') + RULE + '\n');
         logger.info('catch-all trailing-slash rule appended to _redirects');
       },
     },
