@@ -1,22 +1,22 @@
 ---
 /**
- * A link to a GitHub repository, shown as a card: name, license, one-line
- * description and the clone command. Used inline from MDX:
+ * A link to a GitHub repository, shown as a card: name, license and a one-line
+ * description. Used inline from MDX:
  *
  *   <RepoCard repo="semantius/semantius-self-hosted" license="MIT"
  *     description="The whole platform in one Docker Compose setup." />
  *
  * The markdown twin cannot run this component, so `rewriteMdx()` in
  * lib/dualmark/source.ts writes its markdown form from the same attributes.
- * Both take the URL and the clone command from lib/repo-card.ts.
+ * Both take the URL from lib/repo-card.ts.
  *
  * Styling is Tailwind utilities only. A scoped <style> would not load when the
  * component is rendered only from MDX (see "Astro component styles inside MDX
- * prose" in CONTEXT-MEMORY.md). The clone command is a font-mono <span>, not a
- * <code>: typography.css sizes `.prose :where(:not(pre)) > code` without
- * honoring not-prose, and that unlayered rule beats the text-xs utility.
+ * prose" in CONTEXT-MEMORY.md). Avoid <code> inside it: typography.css sizes
+ * `.prose :where(:not(pre)) > code` without honoring not-prose, and that
+ * unlayered rule beats any text-size utility.
  */
-import { repoCloneCommand, repoUrl } from '~/lib/repo-card';
+import { repoUrl } from '~/lib/repo-card';
 
 interface Props {
 	/** owner/name on GitHub, e.g. "semantius/semantius-self-hosted". */
@@ -43,6 +43,5 @@ const { repo, license, description } = Astro.props;
 			)}
 		</span>
 		{description && <span class="text-sm text-foreground/70">{description}</span>}
-		<span class="mt-1 break-all font-mono text-xs text-muted-foreground">{repoCloneCommand(repo)}</span>
 	</span>
 </a>

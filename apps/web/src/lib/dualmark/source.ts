@@ -24,7 +24,7 @@ import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
 import { visit, SKIP } from 'unist-util-visit';
 import { skillInstallCommand } from '../skill-install';
-import { repoCloneCommand, repoUrl } from '../repo-card';
+import { repoUrl } from '../repo-card';
 import { collapseBlankLines } from './text';
 import { toMarkdownPath } from './paths';
 import { hasMarkdownTwin } from './excluded';
@@ -154,8 +154,8 @@ function rewriteMdx() {
 			if (name === 'RepoCard') {
 				const repo = attr(node, 'repo');
 				if (repo) {
-					// A labeled line plus the clone command as a fence, which is what the
-					// card shows. Strings come from lib/repo-card.ts, like the component.
+					// One labeled line, which is what the card shows. The URL comes from
+					// lib/repo-card.ts, like the component.
 					const license = attr(node, 'license');
 					const description = attr(node, 'description');
 					const tail = [license && ` (${license} license)`, description && `: ${description}`]
@@ -170,7 +170,7 @@ function rewriteMdx() {
 							...(tail ? [{ type: 'text', value: tail }] : []),
 						],
 					};
-					parent.children.splice(index, 1, line, codeNode(repoCloneCommand(repo), 'bash'));
+					parent.children.splice(index, 1, line);
 					return [SKIP, index];
 				}
 			}
