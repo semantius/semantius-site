@@ -1,7 +1,8 @@
 ---
 title: 'Running Your Stack'
 navTitle: 'Running Your Stack'
-description: 'Everyday commands for a self-hosted Semantius platform: starting, stopping, updating, adding users, and reaching the API from scripts.'
+seoTitle: 'Running Your Stack · Self-Hosting Semantius'
+description: 'Everyday commands for a self-hosted Semantius platform: starting, stopping, backing up, updating, adding users, and reaching the API from scripts.'
 order: 2
 ---
 
@@ -65,9 +66,15 @@ That address is the same API as `/rest/`, with the key exchange handled for you.
 
 The documentation is generated from your live model. Change the model and the docs change with it.
 
-## Connecting the CLI
+## Connecting the `semantius` CLI
 
-The [Semantius CLI](/docs/cli) works against a self-hosted stack the same way it works against a hosted one. Point it at your front door address, `http://localhost:3000` or whatever domain you deployed to, and it configures itself from there: every stack publishes a small description of itself at `/.well-known/semantius.json` that tells the CLI where to sign in and where the API lives. Nothing has to be passed by hand.
+The [`semantius` CLI](/docs/cli), the one coding agents use, works against a self-hosted stack the same way it works against a hosted one. Point it at your front door address, `localhost:3000` or whatever domain you deployed to:
+
+<Command command="semantius use localhost:3000" />
+
+It configures itself from there: every stack publishes a small description of itself at `/.well-known/semantius.json` that tells the CLI where to sign in and where the API lives. Nothing has to be passed by hand.
+
+This is not the [`pg_semantius` CLI](/docs/pg-semantius/cli), which connects straight to the database for administration. You do not need that one to use a self-hosted stack.
 
 You can read that document yourself to check a deployment is answering correctly:
 
@@ -81,6 +88,20 @@ There is also a pooled connection on **port 6432**, which is the one your own ap
 
 If you just want to look at some data and do not want to install a client at all, administrators have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
 
+## Backing Up
+
+Your data lives in one PostgreSQL database, so a backup is a plain `pg_dump`. Run this from the variant folder while the stack is up:
+
+```bash
+docker exec semantius-postgres pg_dump -U postgres -Fc -d semantius > semantius.dump
+```
+
+That writes a single file you can copy anywhere. It runs as the `postgres` superuser on purpose: an ordinary account would only back up the rows it is allowed to see.
+
+**`./create.sh` and `./destroy.sh` delete the database, and there is no undo.** The data sits in a Docker volume called `semantius_pgdata`, and those two commands remove it. Take a dump before running either one on a stack you care about.
+
+For a server, put the command on a daily schedule and keep several days of files somewhere other than that server. Restoring follows the rules in [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain#back-up): restore into an empty database, as the `postgres` user, with no extra flags.
+
 ## Choosing a Version
 
 By default the stack runs the latest published version of every piece and re-downloads it each time you run `./create.sh` or `./up.sh`. That is convenient while you are trying things out, and the wrong default for a server you depend on.
@@ -91,6 +112,18 @@ To pin a version for one run, pass the tag:
 
 To make it permanent, set `SEMANTIUS_DB_VERSION` in `.env`. There are matching `SEMANTIUS_APP_VERSION` and `SEMANTIUS_IDP_VERSION` settings for the web app and the sign-in service. Pin all three before you put a stack into real use, so an update happens when you choose rather than on the next restart.
 
+## Updating to a New Version
+
+Updating the web app and the sign-in service is one step: change `SEMANTIUS_APP_VERSION` or `SEMANTIUS_IDP_VERSION` in `.env` and run `./up.sh`. Your data is kept.
+
+**Updating the database takes one more step.** The database sets itself up only once, when it is first created. A newer `SEMANTIUS_DB_VERSION` therefore brings newer extension files, but it does not change the schema of a database that already exists. Take a backup first, then change the tag and run `./up.sh`, then apply the update inside the database:
+
+```bash
+docker exec semantius-postgres psql -U postgres -d semantius   -c "ALTER EXTENSION pg_semantius UPDATE;"   -c "SELECT semantius.migrate();"
+```
+
+Both statements are safe to run again, because `migrate()` records what it has already applied and skips it. To see what is installed and whether anything is still pending, run `SELECT * FROM semantius.status();` the same way. [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain) explains both in more detail, including which old versions have no upgrade path.
+
 ## When Sign-In Suddenly Stops Working
 
 The sign-in system periodically replaces the keys it uses to sign your login tokens, and the API reads those keys once, when it starts. If people are signed in fine but every API call is rejected, the API is most likely holding the previous set.
@@ -99,6 +132,9 @@ The sign-in system periodically replaces the keys it uses to sign your login tok
 
 That fetches the current keys and restarts the API, which takes about a second. Your database stays up and nobody is signed out. Most providers rotate slowly enough that running this when you hit the problem is fine. If yours rotates often, put it on a daily schedule.
 
-## What Comes Next
+## Next Steps
 
-Running the stack on a real server, behind your own domain and with HTTPS, needs a few more settings than a local install does, and pointing it at your organization's own identity provider is a separate setup rather than a switch. Both are covered in detail in the [repository README](https://github.com/semantius/semantius-self-hosted), along with the full list of settings, the Dokploy one-click deployment, and the Microsoft Entra ID walkthrough.
+- **[Going Live](/docs/self-hosted/deploy)**: run the stack on a real server, behind your own domain and with HTTPS.
+- **[Settings Reference](/docs/self-hosted/settings)**: every value in `.env`, grouped by what it does.
+- **[Dokploy](/docs/self-hosted/dokploy)**: deploy through Dokploy without editing config files.
+- **[Microsoft Entra ID](/docs/self-hosted/entra-id)**: sign people in with their Microsoft work accounts instead of the bundled provider.

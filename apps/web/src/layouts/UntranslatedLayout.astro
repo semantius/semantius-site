@@ -8,6 +8,7 @@ interface Props {
     article?: boolean;
     noindex?: boolean;
     nofollow?: boolean;
+    breadcrumbs?: { name: string; href: string }[];
 }
 
 const props = Astro.props;

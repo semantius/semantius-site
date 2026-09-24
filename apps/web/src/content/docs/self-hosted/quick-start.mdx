@@ -1,5 +1,6 @@
 ---
 title: 'Self-Hosting Quick Start'
+seoTitle: 'Quick Start · Self-Hosting Semantius'
 navTitle: 'Quick Start'
 description: 'Get a complete Semantius platform running on your own machine in about five minutes.'
 order: 1
@@ -9,7 +10,9 @@ import Command from '~/components/common/Command.astro';
 
 This page takes you from nothing to a working Semantius platform on your own machine. It uses the built-in sign-in system, so there is nothing to register anywhere and no accounts to create first. Budget about five minutes, most of which is Docker downloading images.
 
-Before you start, make sure Docker is installed and running. On Windows and macOS that means Docker Desktop is open; on Linux it means the Docker service is running and you can run `docker ps` without an error.
+Before you start, make sure Docker and Git are installed and Docker is running. On Windows and macOS that means Docker Desktop is open; on Linux it means the Docker service is running and you can run `docker ps` without an error.
+
+**Running this with a coding agent?** It can do every step except step 4, which needs a person in a browser. The agent should stop there and hand the address to you.
 
 ## 1. Get the Files
 
@@ -45,7 +48,17 @@ If you skipped step 2, this command runs it for you, so a settings file always e
 
 While it runs you will see each piece report itself as healthy. The database takes the longest on a first run, because it is installing itself from scratch.
 
+**When a database already exists, `create` asks before deleting it.** Scripts, agents and CI runs cannot answer that prompt, so they pass `-y` (or set `ASSUME_YES=1` or `CI=true`) to skip it. A first install has nothing to delete, so it never asks.
+
+To check that everything came up, run these two commands. The first should list every service as healthy, and the second should print a short JSON document:
+
+<Command command="./status.sh" />
+
+<Command command="curl -s http://localhost:3000/.well-known/semantius.json" />
+
 ## 4. Sign In and Create Your Account
+
+**This step needs a person in a browser.** It cannot be scripted, because it creates the administrator account.
 
 Open `http://localhost:3000` in a browser.
 
@@ -63,6 +76,16 @@ You now have a complete platform running. A few places worth visiting:
 
 If you would rather start with an empty database, open `.env`, remove the `NWIND=TRUE` line, and run `./create.sh` again. Sample data is only ever loaded when the database is created, so this has to happen before there is anything you care about in it.
 
+## 6. Connect Your Coding Agent
+
+Semantius is built to be worked on by agents as well as people. The `semantius` CLI is how a coding agent such as Claude Code reads your model, changes it, and works with your data.
+
+Install it and its agent skills by following [Agent Skills Installation](/docs/agent-skills/installation). You can skip the API key and organization settings on that page, which are for the managed service. Instead, point the CLI at your stack:
+
+<Command command="semantius use localhost:3000" />
+
+The CLI reads `/.well-known/semantius.json` from your stack to find out where to sign in, then opens a browser so you can sign in once. After that, every command, and every agent using the CLI, works against your own installation.
+
 ## If Something Does Not Start
 
 - **Check what is running** with `./status.sh` (`status.cmd` on Windows). Each piece reports its own health, so this usually points straight at the one that failed.
@@ -71,5 +94,6 @@ If you would rather start with an empty database, open `.env`, remove the `NWIND
 
 ## Next Steps
 
-- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, how to update, and how to reach the API from scripts.
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, backups, how to update, and how to reach the API from scripts.
+- **[Going Live](/docs/self-hosted/deploy)**: move it to a real server with your own domain and HTTPS.
 - **[Models](/docs/models)**: build out the semantic model that drives the app and the API.

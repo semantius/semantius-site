@@ -1,18 +1,33 @@
 ---
 title: 'Self-Hosting'
-description: 'Run the complete Semantius platform on your own machine or your own server, using Docker.'
+seoTitle: 'Self-Hosting Semantius (Open Source, Docker)'
+description: 'Run the complete Semantius platform on your own machine or your own server, using Docker. Free and MIT licensed.'
 order: 7
+repository:
+  url: 'https://github.com/semantius/semantius-self-hosted'
+  license: 'MIT'
+  description: 'The whole Semantius platform in one Docker Compose setup: database, API, web app and sign-in.'
 ---
 
-Semantius runs as a managed service at [app.semantius.com](https://app.semantius.com), and it also runs **on hardware you control**. The self-hosting stack is one Docker setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and a built-in sign-in system.
+**Semantius Open Source** is the free, MIT-licensed, self-hosted edition of Semantius. It runs on hardware you control, as one Docker setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and sign-in.
 
-Everything lives in its own repository, [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted), under the MIT license.
+Everything lives in its own repository, [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted). The same platform also runs as a managed service at [app.semantius.com](https://app.semantius.com).
+
+## Which Setup Do You Need?
+
+There are three ways to get Semantius, and only one of them is this section:
+
+| You want | Use |
+| --- | --- |
+| The whole platform (app, API, sign-in, database) on your machine or server | **Self-Hosting**, this section. Start with the [Quick Start](/docs/self-hosted/quick-start). |
+| Only the database engine, in a PostgreSQL you already run | [pg_semantius: Install](/docs/pg-semantius/install) or [pg_semantius: Docker Image](/docs/pg-semantius/docker) |
+| Nothing to install or run at all | The managed service at [app.semantius.com](https://app.semantius.com) |
 
 ## Why Self-Host
 
 - **Your data stays with you.** The database runs on your machine or your server, and nothing has to leave it.
-- **It works offline.** Once the images are downloaded, the stack runs with no connection to us at all.
-- **It is a complete copy.** This is not a trimmed-down demo edition. The same semantic model, the same API, the same web app.
+- **It works offline.** Once the images are downloaded, the stack runs with no connection to Semantius at all.
+- **It is the full open-source platform.** The same semantic model, API, web app and permissions the managed service runs. This is not a trimmed-down demo edition.
 - **It is easy to throw away.** One command creates it, one command removes it, so it is a safe place to experiment.
 
 ## What Actually Starts
@@ -24,35 +39,46 @@ You run one command and get a small set of programs running side by side in Dock
 | `http://localhost:3000/` | The Semantius web app. This is where you sign in and work. |
 | `http://localhost:3000/api-docs/` | Browsable API documentation, with a button to try any call live. |
 | `http://localhost:3000/rest/` | The HTTP API itself, generated from your model. |
-| `http://localhost:3000/idp/` | The built-in sign-in system: your account, your users, your API keys. |
+| `http://localhost:3000/idp/` | The bundled sign-in service: accounts, users, and API keys. |
 
 Behind those addresses sit a PostgreSQL 18 database carrying the [`pg_semantius` extension](/docs/pg-semantius), the API server, the documentation viewer, the web app, and the sign-in service. You do not have to install or configure any of them individually. They are described once in a Docker Compose file and started together.
 
-## Sign-In Is Included
+## Sign-In: Standard OpenID Connect
 
-Most self-hosted software asks you to bring your own identity provider before anything works. This stack ships one. On first run there are no users at all, so the sign-in page doubles as the setup page: the first person to complete it becomes the administrator. There is no default password to look up and no account to register anywhere.
+Semantius has no login system of its own. The API and the database accept standard OpenID Connect access tokens, which are signed JWTs (JSON Web Tokens), and check each one against your identity provider's published signing keys. Your identity provider decides **who may sign in**. Semantius's roles and permissions, enforced inside PostgreSQL, decide **what they can see**.
 
-If your organization already has an identity provider, you can use that instead. Microsoft Entra ID is supported out of the box, and other providers need a small amount of configuration.
+That split is what IT teams usually ask for. Single sign-on, multi-factor authentication and offboarding stay in the identity provider your organization already runs, rather than in a second user list.
+
+- **Use the provider you already run.** Microsoft Entra ID has a ready-made variant, with a script that registers the web app, the API and the `semantius` CLI for you ([Microsoft Entra ID](/docs/self-hosted/entra-id)). Other OpenID Connect providers that issue JWT access tokens, such as Okta, Keycloak and Auth0, work by adapting that variant.
+- **No provider, or no time to set one up?** The default setup bundles [semantius-idp](https://github.com/semantius/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
+
+With the bundled provider, the user list is empty on first run, so the sign-in page doubles as the setup page: the first person to complete it becomes the administrator. There is no default password to look up and no account to register anywhere.
 
 ## Three Ways To Run It
 
 The repository ships three ready-made setups. Each folder is complete and self-contained, so you pick one and ignore the rest.
 
-| Setup | Best for | Sign-in handled by |
-| --- | --- | --- |
-| `variants/local-semantius-idp/` | Your laptop, a test box, or a plain server. **Start here.** | The built-in sign-in system |
-| `variants/local-entra-idp/` | Organizations that already sign in with Microsoft | Microsoft Entra ID |
-| `variants/dokploy-semantius-idp/` | One-click deployment on a [Dokploy](https://dokploy.com) server | The built-in sign-in system |
+| Setup | Best for | Sign-in handled by | Guide |
+| --- | --- | --- | --- |
+| `variants/local-semantius-idp/` | Your laptop, a test box, or a plain server. **Start here.** | The bundled semantius-idp | [Quick Start](/docs/self-hosted/quick-start), then [Going Live](/docs/self-hosted/deploy) |
+| `variants/local-entra-idp/` | Organizations that already sign in with Microsoft | Microsoft Entra ID | [Microsoft Entra ID](/docs/self-hosted/entra-id) |
+| `variants/dokploy-semantius-idp/` | One-click deployment on a Dokploy server | The bundled semantius-idp | [Dokploy](/docs/self-hosted/dokploy) |
 
 Unless you have a reason to do otherwise, use the first one. It needs no accounts, no registrations, and no configuration to start.
 
 ## What You Need
 
 - **Docker.** Docker Desktop on Windows or macOS, Docker Engine with the Compose plugin on Linux.
+- **Git**, to download the files. If you do not have it, download the repository as a ZIP from its GitHub page instead.
 - **About 5 GB of free disk space** for the downloaded images and the database.
-- **Nothing else.** Every piece is downloaded as a prebuilt image. There is no compiler to install, no Node.js, no separate PostgreSQL, and nothing gets built from source on your machine.
+
+That is all. Every piece is downloaded as a prebuilt image. There is no compiler to install, no Node.js, no separate PostgreSQL, and nothing gets built from source on your machine.
 
 ## Next Steps
 
 - **[Quick Start](/docs/self-hosted/quick-start)**: get it running and sign in for the first time.
-- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, API keys, and how to update.
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, API keys, backups, and how to update.
+- **[Going Live](/docs/self-hosted/deploy)**: move it to a real server with your own domain and HTTPS.
+- **[Dokploy](/docs/self-hosted/dokploy)**: deploy it through Dokploy without editing config files.
+- **[Microsoft Entra ID](/docs/self-hosted/entra-id)**: sign people in with their Microsoft work accounts.
+- **[Settings Reference](/docs/self-hosted/settings)**: every value in the settings file, grouped by what it does.

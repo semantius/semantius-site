@@ -1,6 +1,7 @@
 ---
 title: 'Settings Reference'
 navTitle: 'Settings'
+seoTitle: 'Settings Reference · Self-Hosting Semantius'
 description: 'Every value in the .env file of a self-hosted Semantius stack, grouped by what it is for.'
 order: 6
 ---
@@ -76,6 +77,8 @@ Leaving it unset is reasonable on a laptop, where an administrator creates every
 
 The ports default to unusual numbers deliberately, so they do not collide with a PostgreSQL you may already run on 5432.
 
+**Both ports are published on every network interface by default**, not only on the machine itself. That is harmless on a laptop and a real exposure on a public server. The interface is set in `docker-compose.yml` rather than here, and [Going Live](/docs/self-hosted/deploy#close-the-database-ports) shows how to restrict it.
+
 ## Identity
 
 You can leave every one of these alone if you use the built-in sign-in system, which is what the defaults describe. They matter when you point the stack at a provider of your own, which is usually better done with the [Entra ID variant](/docs/self-hosted/entra-id) than by editing these.
@@ -88,7 +91,7 @@ You can leave every one of these alone if you use the built-in sign-in system, w
 | `IDP_JWT_AUDIENCE` | `semantius://api` | What the built-in system issues logins for. One setting moves both sides |
 | `JWKS_URL` | the built-in system | Where the API fetches the keys it checks logins against. Set it **empty** to derive them from your own provider instead |
 | `SEMANTIUS_IDP_TYPE` | `semantius` | Which provider is behind this deployment. Informational only, used in logs and support. Set it to `custom` if you repoint the stack |
-| `CLI_OAUTH_CLIENT_ID` | `semantius-cli` | Which registered application the command-line tool signs in as. Not the web app's |
+| `CLI_OAUTH_CLIENT_ID` | `semantius-cli` | Which registered application the `semantius` CLI signs in as. Not the web app's |
 
 Two of these are easy to misread. `JWKS_URL` set to **empty** is meaningful and different from removing the line: empty means "work it out from the provider's discovery document," which is what an external provider wants. And `SEMANTIUS_IDP_TYPE` is not derived from anything, so a stack repointed at another provider keeps announcing the built-in one until you change it by hand.
 

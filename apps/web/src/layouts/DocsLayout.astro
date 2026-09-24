@@ -8,23 +8,29 @@ import MobileDocsMenu from '~/components/docs/MobileDocsMenu.astro';
 import NavTree from '~/components/docs/NavTree.astro';
 import DocsTabs from '~/components/docs/DocsTabs.astro';
 import PageActions from '~/components/docs/PageActions.astro';
+import Schema from '~/components/layout/Schema.astro';
+import RepoCard from '~/components/docs/RepoCard.astro';
 import {
   buildDocsTree,
-  flattenNodes,
-  findTopAncestor,
+  docsTrail,
   getDocsCollectionNavs,
   findCollectionForPath,
+  tabPages,
+  tabSidebarNodes,
 } from '~/lib/docs-tree';
 
 interface Props {
   title: string;
+  /** The <title> and og:title, when the short H1 needs product context in a search result. */
+  seoTitle?: string;
   description: string;
+  repository?: { url: string; license: string; description?: string };
   noindex?: boolean;
   nofollow?: boolean;
   headings?: MarkdownHeading[];
 }
 
-const { title, description, noindex, nofollow, headings = [] } = Astro.props;
+const { title, seoTitle, description, repository, noindex, nofollow, headings = [] } = Astro.props;
 
 const docs = await getCollection('docs');
 const tree = buildDocsTree(docs);
@@ -51,39 +57,47 @@ const tabs = collectionNavs.map((c) => ({
   active: c.slug === activeCollection?.slug,
 }));
 
-// The tab's folders, assembled by nav.json rather than read off the filesystem.
-const tabFolders = activeCollection?.folders ?? [];
-// The tab's own index.mdx leads the sidebar, with its children dropped so it
-// renders as a plain link rather than a duplicate of the folder list below it.
-const sidebarNodes = activeCollection?.node.doc
-  ? [{ ...activeCollection.node, children: [] }, ...tabFolders]
-  : tabFolders;
+const sidebarNodes = activeCollection ? tabSidebarNodes(activeCollection) : [];
 
-const flat = activeCollection?.node.doc
-  ? [activeCollection.node, ...flattenNodes(tabFolders)]
-  : flattenNodes(tabFolders);
+const flat = activeCollection ? tabPages(activeCollection) : [];
 const currentIndex = flat.findIndex((n) => n.path === normalizedCurrentPath);
 const prevNode = currentIndex > 0 ? flat[currentIndex - 1] : null;
 const nextNode =
   currentIndex >= 0 && currentIndex < flat.length - 1 ? flat[currentIndex + 1] : null;
 
-// Breadcrumb: Docs › <collection> › <section> › <page>, mirroring the URL. A
-// level is dropped when it is the page itself, so the trail never links to the
-// page you are already on, on a collection start page it reads Docs › Guide.
-const topAncestor = findTopAncestor(tabFolders, normalizedCurrentPath);
-const currentSectionLabel =
-  topAncestor && topAncestor.path !== normalizedCurrentPath ? topAncestor.navTitle : null;
+// Breadcrumb: Docs > <tab> > <section> > <page>. The same trail feeds the
+// JSON-LD BreadcrumbList, so search engines see what readers see.
+const crumbs = docsTrail(activeCollection, normalizedCurrentPath);
+const jsonLdCrumbs = [
+  ...crumbs.map((c) => ({ name: c.label, href: c.href })),
+  { name: title, href: normalizedCurrentPath },
+];
 
-const crumbs: { label: string; href: string }[] = [{ label: 'Docs', href: '/docs' }];
-if (activeCollection && activeCollection.node.path !== normalizedCurrentPath) {
-  crumbs.push({ label: activeCollection.label, href: activeCollection.landingPath });
-}
-if (currentSectionLabel && topAncestor) {
-  crumbs.push({ label: currentSectionLabel, href: topAncestor.path });
-}
+const repoName = repository?.url.replace(/^https:\/\/github\.com\//, '');
 ---
 
-<UntranslatedLayout title={title} description={description} noindex={noindex} nofollow={nofollow}>
+<UntranslatedLayout
+  title={seoTitle ?? title}
+  description={description}
+  noindex={noindex}
+  nofollow={nofollow}
+  breadcrumbs={jsonLdCrumbs}
+>
+  {repository && (
+    <Schema
+      slot="head"
+      item={{
+        '@context': 'https://schema.org',
+        '@type': 'SoftwareSourceCode',
+        name: repoName,
+        description: repository.description ?? description,
+        codeRepository: repository.url,
+        license: `https://spdx.org/licenses/${repository.license}`,
+        isAccessibleForFree: true,
+        url: new URL(normalizedCurrentPath, Astro.site).toString(),
+      }}
+    />
+  )}
   <ScrollProgress />
   <div class="max-w-360 mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
     <DocsTabs tabs={tabs} />
@@ -140,6 +154,14 @@ if (currentSectionLabel && topAncestor) {
             <div class="prose prose-lg max-w-none prose-headings:font-bold prose-headings:scroll-mt-24 prose-a:text-primary hover:prose-a:text-primary/80 dark:prose-invert text-foreground prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-code:text-primary prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-white/10 prose-pre:bg-black/80">
                 <h1 class="text-4xl font-bold mb-8 text-foreground" data-pagefind-meta="title">{title}</h1>
                 <PageActions pathname={Astro.url.pathname} noindex={noindex} />
+                {repository && repoName && (
+                  <RepoCard
+                    url={repository.url}
+                    name={repoName}
+                    license={repository.license}
+                    description={repository.description}
+                  />
+                )}
                 {/* Stands in for the right-hand column below xl, where that
                     column is not rendered. data-pagefind-ignore so the heading
                     list is not indexed twice as page content. */}

@@ -1,6 +1,7 @@
 ---
 title: 'Sign In with Microsoft Entra ID'
 navTitle: 'Microsoft Entra ID'
+seoTitle: 'Sign In with Microsoft Entra ID · Self-Hosting Semantius'
 description: 'Run a self-hosted Semantius stack where your organization signs people in with Microsoft Entra ID instead of the built-in system.'
 order: 5
 ---
@@ -35,7 +36,7 @@ Unlike the other variants, this one **will not start until it is configured**. T
 
 ## 2. Register Three Applications in Entra
 
-Semantius needs three registrations in your tenant: one for the **API** (what access is granted to), one for the **web app** (what people sign in to), and one for the **CLI**.
+Semantius needs three registrations in your tenant: one for the **API** (what access is granted to), one for the **web app** (what people sign in to), and one for the **`semantius` CLI** that coding agents use.
 
 ### With the Script
 
@@ -123,9 +124,11 @@ Run that after a rotation. Because Microsoft rotates on its own schedule rather 
 
 Okta, Keycloak, Auth0 and similar are not shipped as ready-made variants, but they are generally **easier** to set up than Entra, because they can issue the permission claim Semantius expects in its simplest form, while Entra needs a workaround.
 
+The provider has to issue **JWT access tokens**, in the style of RFC 9068, rather than opaque ones. Semantius checks each token itself against the provider's published keys, so a token it cannot read is useless to it. Google and GitHub sign-in issue opaque access tokens and do not work this way. Auth0 issues a JWT only when the app asks for an API audience, which the Semantius web app does.
+
 The approach is to copy the Entra variant's definition file, change the handful of values that are Entra-specific, and rebuild. What any provider has to do is short:
 
-- Issue a login token carrying a role claim that says `authenticated`.
+- Issue a JWT access token carrying a role claim that says `authenticated`. If the provider cannot use the name `role`, point `PGRST_JWT_ROLE_CLAIM_KEY` at the claim it does use.
 - Carry a stable internal user id. The Semantius user record is created from it the first time somebody signs in, and their name and email fill in the rest.
 - Pin the audience, if the provider signs tokens for many customers with shared keys as Entra does. This is what ties a login to **your** registration rather than anyone else's on the same provider.
 

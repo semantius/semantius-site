@@ -11,9 +11,9 @@ import { getCollection, type CollectionEntry } from 'astro:content';
 import {
 	buildDocsTree,
 	getDocsCollectionNavs,
-	flattenNodes,
+	docsTrail,
 	findCollectionForPath,
-	findTopAncestor,
+	tabPages,
 	type NavNode,
 } from '../docs-tree';
 import {
@@ -157,19 +157,10 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 	for (const doc of docs) {
 		const path = docsPath(doc);
 		const nav = findCollectionForPath(navs, path) ?? navs[0];
-		const tabFolders = nav?.folders ?? [];
-		const top = findTopAncestor(tabFolders, path);
+		// Mirrors DocsLayout through the same helper: Docs > tab > section > page.
+		const trail = [...docsTrail(nav, path).map((c) => c.label), doc.data.title];
 
-		// Mirrors DocsLayout: Docs > tab > section > page. The guards skip a level
-		// that IS this page, so it is named once, at the end, rather than twice.
-		const trail = ['Docs'];
-		if (nav && nav.node.path !== path) trail.push(nav.label);
-		if (top && top.path !== path) trail.push(top.navTitle);
-		trail.push(doc.data.title);
-
-		const flat: NavNode[] = nav?.node.doc
-			? [nav.node, ...flattenNodes(tabFolders)]
-			: flattenNodes(tabFolders);
+		const flat: NavNode[] = nav ? tabPages(nav) : [];
 		const i = flat.findIndex((n) => n.path === path);
 		const prev = i > 0 ? flat[i - 1] : undefined;
 		const next = i >= 0 && i < flat.length - 1 ? flat[i + 1] : undefined;
@@ -193,6 +184,13 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 				url: canonicalUrl(path, siteUrl),
 				trail,
 				indexUrl,
+				facts: [
+					[
+						'Repository',
+						doc.data.repository &&
+							`${doc.data.repository.url} (${doc.data.repository.license})`,
+					],
+				],
 			}) +
 				resolveSite(doc.data.markdownTwin ?? '', siteUrl) +
 				docFooter(related, indexUrl),
@@ -200,7 +198,7 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 	}
 
 	const docItems: GroupedItem[] = navs.flatMap((nav) =>
-		[nav.node, ...flattenNodes(nav.folders)]
+		tabPages(nav)
 			.filter((n) => n.doc)
 			.map((n) => ({
 				title: n.navTitle,

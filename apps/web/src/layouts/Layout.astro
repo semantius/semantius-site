@@ -19,6 +19,8 @@ interface Props {
     nofollow?: boolean;
     /** Set false on listing/index pages so Pagefind does not index their excerpts twice. */
     searchable?: boolean;
+    /** Explicit trail for the JSON-LD BreadcrumbList. Without it the trail is guessed from the URL, which is wrong wherever the visible breadcrumb does not mirror the path (docs). */
+    breadcrumbs?: { name: string; href: string }[];
     children?: any;
 }
 
@@ -34,7 +36,15 @@ const {
     noindex = false,
     nofollow = false,
     searchable = true,
+    breadcrumbs,
 } = Astro.props;
+
+const breadcrumbItems = breadcrumbs
+    ? breadcrumbs.map((c) => ({ name: c.name, path: c.href }))
+    : Astro.url.pathname.split('/').filter(Boolean).map((part, index, arr) => ({
+        name: part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' '),
+        path: arr.slice(0, index + 1).join('/'),
+    }));
 ---
 
 <!doctype html>
@@ -67,11 +77,11 @@ const {
             <Schema item={{
                 "@context": "https://schema.org",
                 "@type": "BreadcrumbList",
-                "itemListElement": Astro.url.pathname.split('/').filter(Boolean).map((part, index, arr) => ({
+                "itemListElement": breadcrumbItems.map((crumb, index) => ({
                     "@type": "ListItem",
                     "position": index + 1,
-                    "name": part.charAt(0).toUpperCase() + part.slice(1).replace(/-/g, ' '),
-                    "item": new URL(arr.slice(0, index + 1).join('/'), Astro.site).toString()
+                    "name": crumb.name,
+                    "item": new URL(crumb.path, Astro.site).toString()
                 }))
             }} />
         )}

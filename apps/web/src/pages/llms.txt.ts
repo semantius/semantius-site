@@ -9,7 +9,7 @@ import {
 	CHANGELOG_PATH,
 } from '~/lib/routes';
 import { twinUrl } from '~/lib/dualmark/nav';
-import { buildDocsTree, getDocsCollectionNavs, flattenNodes } from '~/lib/docs-tree';
+import { buildDocsTree, getDocsCollectionNavs, tabPages } from '~/lib/docs-tree';
 
 export const prerender = true;
 
@@ -56,7 +56,7 @@ export const GET: APIRoute = async ({ site }) => {
 	// Docs, grouped by nav tab so the structure matches what a reader sees.
 	const navs = getDocsCollectionNavs(buildDocsTree(docs));
 	for (const nav of navs) {
-		const nodes = [nav.node, ...flattenNodes(nav.folders)].filter((n) => n.doc);
+		const nodes = tabPages(nav).filter((n) => n.doc);
 		section(
 			`Documentation: ${nav.label}`,
 			nodes.map((n) => {

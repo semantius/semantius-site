@@ -2,8 +2,8 @@
   "$schema": "./nav.schema.json",
   "tabs": [
     {
-      "folder": "guide",
-      "folders": []
+      "folder": "self-hosted",
+      "folders": ["self-hosted"]
     },
     {
       "folder": "reference",
@@ -14,8 +14,7 @@
         "mcp-connectors",
         "agent-skills",
         "cli",
-        "pg-semantius",
-        "self-hosted"
+        "pg-semantius"
       ]
     }
   ]

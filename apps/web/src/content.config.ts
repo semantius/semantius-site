@@ -100,8 +100,18 @@ const docsCollection = defineCollection({
     schema: z.object({
         title: z.string(),
         navTitle: z.string().optional(),
+        // The <title>, when the short H1 alone would not say which product or
+        // section a search result or AI citation belongs to.
+        seoTitle: z.string().optional(),
         description: z.string(),
         order: z.number().optional(),
+        // A section's own source repository. Rendered as a card on the page,
+        // a `- **Repository**:` line in the twin and SoftwareSourceCode JSON-LD.
+        repository: z.object({
+            url: z.string().url(),
+            license: z.string(),
+            description: z.string().optional(),
+        }).optional(),
         noindex: z.boolean().optional().default(false),
         nofollow: z.boolean().optional().default(false),
         // Derived by the loader: the body as agent-facing markdown.

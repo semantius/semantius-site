@@ -24,7 +24,9 @@ const { Content, headings } = await render(entry);
 
 <DocsLayout
   title={entry.data.title}
+  seoTitle={entry.data.seoTitle}
   description={entry.data.description}
+  repository={entry.data.repository}
   noindex={entry.data.noindex}
   nofollow={entry.data.nofollow}
   headings={headings}

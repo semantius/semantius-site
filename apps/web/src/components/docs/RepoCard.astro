@@ -1,0 +1,43 @@
+---
+/**
+ * The source repository of a docs section, shown under the <h1> of its landing
+ * page. Driven by the `repository` frontmatter, which also writes the
+ * `- **Repository**:` line into the markdown twin's header and the
+ * SoftwareSourceCode JSON-LD, so the three cannot disagree.
+ *
+ * data-pagefind-ignore keeps it out of search and out of the HTML-extracted
+ * twin: the twin already carries the repository as a header fact, and a second
+ * copy in the body would read as content.
+ *
+ * Rendered by DocsLayout rather than from MDX, so Tailwind classes are enough;
+ * see "Astro component styles inside MDX prose" in CONTEXT-MEMORY.md for why a
+ * component used from MDX could not rely on a scoped <style>.
+ */
+interface Props {
+	url: string;
+	/** owner/name, shown as the card title. */
+	name: string;
+	license: string;
+	description?: string;
+}
+
+const { url, name, license, description } = Astro.props;
+---
+
+<a
+	href={url}
+	class="not-prose group my-6 flex items-start gap-4 rounded-xl border border-foreground/10 p-4 no-underline transition-colors hover:border-primary/30 hover:bg-primary/5"
+	data-pagefind-ignore
+>
+	<svg viewBox="0 0 24 24" class="mt-0.5 h-6 w-6 shrink-0 fill-current text-foreground" aria-hidden="true">
+		<path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.52-1.33-1.28-1.69-1.28-1.69-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.76 2.69 1.25 3.35.96.1-.75.4-1.25.73-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.84 1.19 3.1 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5Z" />
+	</svg>
+	<span class="flex min-w-0 flex-col gap-1">
+		<span class="flex flex-wrap items-center gap-2">
+			<span class="font-semibold text-foreground group-hover:text-primary break-all">{name}</span>
+			<span class="rounded-full border border-foreground/15 px-2 py-0.5 text-xs text-muted-foreground">{license} license</span>
+		</span>
+		{description && <span class="text-sm text-foreground/70">{description}</span>}
+		<code class="mt-1 text-xs text-muted-foreground break-all">git clone {url}</code>
+	</span>
+</a>

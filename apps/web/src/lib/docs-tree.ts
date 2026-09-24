@@ -158,6 +158,15 @@ export interface DocsCollectionNav {
   /** The folders this tab shows, assembled in nav.json order. */
   folders: NavNode[];
   landingPath: string;
+  /**
+   * True when the tab lists its own folder in `folders`, which makes the tab a
+   * single section (Self-Hosting): the folder's index.mdx is both the tab start
+   * page and the section landing, and its pages are the tab's pages. Every
+   * consumer has to avoid naming that node twice, which is why the sidebar,
+   * the page order and the breadcrumb are all derived below rather than by
+   * each renderer.
+   */
+  isSection: boolean;
 }
 
 // Tabs are the `tabs` array in nav.json, in array order. Each tab's folders are
@@ -211,8 +220,43 @@ export function getDocsCollectionNavs(tree: NavNode): DocsCollectionNav[] {
       node,
       folders,
       landingPath,
+      isSection: folders.includes(node),
     };
   });
+}
+
+// The nodes the sidebar renders for a tab. A tab's own index.mdx leads the
+// list with its children dropped, so it renders as a plain link rather than a
+// duplicate of the folder list below it. A section tab already lists that node,
+// children and all, so nothing is prepended.
+export function tabSidebarNodes(nav: DocsCollectionNav): NavNode[] {
+  if (nav.isSection || !nav.node.doc) return nav.folders;
+  return [{ ...nav.node, children: [] }, ...nav.folders];
+}
+
+// Every page of a tab in reading order, for prev/next, the llms.txt listing
+// and the /docs.md index.
+export function tabPages(nav: DocsCollectionNav): NavNode[] {
+  if (nav.isSection || !nav.node.doc) return flattenNodes(nav.folders);
+  return [nav.node, ...flattenNodes(nav.folders)];
+}
+
+// Docs > tab > section > page, shared by the visible breadcrumb, the JSON-LD
+// BreadcrumbList and the markdown twin's location line, which used to derive
+// it three different ways and disagreed. A level is dropped when it is the
+// page itself, and a section tab's section is dropped because it IS the tab.
+export function docsTrail(
+  nav: DocsCollectionNav | null | undefined,
+  path: string,
+): { label: string; href: string }[] {
+  const crumbs = [{ label: 'Docs', href: '/docs' }];
+  if (!nav) return crumbs;
+  if (nav.node.path !== path) crumbs.push({ label: nav.label, href: nav.landingPath });
+  const top = findTopAncestor(nav.folders, path);
+  if (top && top.path !== path && top !== nav.node) {
+    crumbs.push({ label: top.navTitle, href: top.path });
+  }
+  return crumbs;
 }
 
 // The URL no longer contains the tab, so the active tab is the one whose own

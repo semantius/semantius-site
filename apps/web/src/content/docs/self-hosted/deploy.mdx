@@ -1,6 +1,7 @@
 ---
 title: 'Going Live on Your Own Server'
 navTitle: 'Going Live'
+seoTitle: 'Going Live on Your Own Server · Self-Hosting Semantius'
 description: 'Move a self-hosted Semantius stack from your laptop to a real server, with your own domain and HTTPS.'
 order: 3
 ---
@@ -27,7 +28,7 @@ Do not copy a `.env` from your laptop. The generated secrets are meant to be uni
 
 ## The Settings That Have To Change
 
-Open `.env` and set these four. Everything else in the file can stay at its default for a first deployment.
+Open `.env` and set these four. Most of the rest of the file can stay at its default for a first deployment.
 
 | Setting | Set it to | Why |
 | --- | --- | --- |
@@ -37,6 +38,8 @@ Open `.env` and set these four. Everything else in the file can stay at its defa
 | `PUBLIC_API_URL` | `https://yourdomain.com/gateway/rest` | The address the API documentation tells people to call |
 
 `IDP_BASE_URL` keeps the `/idp` suffix and `PUBLIC_WEB_ORIGIN` has no path at all. That difference is not a typo. The first is the sign-in system's own address, the second is the app's.
+
+**Then decide about the sample data.** `NWIND=TRUE` is on by default and loads the Northwind demo dataset into your database. Remove that line unless you want demo customers and orders in production. It has to happen before your first `./create.sh`, because sample data is loaded only when the database is created.
 
 Also confirm your three secrets are the generated ones and not the placeholders from the example file. `setup-env` handles this, but it is worth a look before a machine goes on the public internet:
 
@@ -58,6 +61,24 @@ Open `docker-compose.yml`, find the `semantius` service, and replace its `ports:
 ```
 
 Make sure your server's firewall allows both. Port 80 is not optional even though nothing is served on it: it is how the certificate authority checks that you control the domain, and how visitors who type a bare domain get redirected to the secure version.
+
+## Close the Database Ports
+
+**Out of the box, the database is published on every network interface, so a public server exposes it to the internet.** Ports 5434 (PostgreSQL, as the all-powerful `postgres` user) and 6432 (the pooled connection) are then protected by nothing but a password. On Linux, a firewall such as `ufw` does not help here, because ports Docker publishes bypass it.
+
+Unless you deliberately want SQL access from other machines, bind both to the server itself. In `docker-compose.yml`, add `127.0.0.1:` in front of the `ports:` entries of the `postgres` and `pgbouncer` services:
+
+```yaml
+  postgres:
+    ports:
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+
+  pgbouncer:
+    ports:
+      - "127.0.0.1:${PGBOUNCER_PORT:-6432}:5432"
+```
+
+Nothing inside the stack uses those published ports, so the app and the API keep working. You can still connect a database client from the server itself, or from your own machine through an SSH tunnel.
 
 ## Pin Your Versions
 
@@ -89,6 +110,8 @@ The features switch on together the next time the stack starts.
 
 Use `create` for a first deployment, because there is no data to lose and you want the database built from scratch. On every later change, use `./up.sh`, which applies the new settings and keeps your data.
 
+Every long-running service is set to restart on its own, so the stack comes back after a crash or a server reboot without anyone logging in. Once it holds real data, set up the daily backup described in [Running Your Stack](/docs/self-hosted/running-your-stack#backing-up).
+
 Then open `https://yourdomain.com` and complete the setup page. **The first person to finish it becomes the administrator**, so do this immediately. Until somebody does, that page is open to anyone who finds the address.
 
 ## Checking It Worked
@@ -103,6 +126,6 @@ There is a setting called `IDP_DYNAMIC_ISSUER` that makes the stack follow whate
 
 ## Next Steps
 
-- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands and how to update.
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: the everyday commands, backups, and how to update.
 - **[Settings Reference](/docs/self-hosted/settings)**: every value in `.env`, grouped by what it does.
 - **[Dokploy](/docs/self-hosted/dokploy)**: if you would rather not administer a server by hand.

@@ -27,7 +27,7 @@
         },
         "folders": {
           "type": "array",
-          "description": "Folder names at the top level of this tab, in display order. A standalone .mdx file at this level is currently also accepted, which is why entries are resolved by path rather than by directory. Anything omitted still appears, sorted after the listed entries by its frontmatter `order`.",
+          "description": "Folder names at the top level of this tab, in display order. List the tab's own folder here to make the tab a single section: its index.mdx is then both the tab start page and the section landing, and its pages are the tab's pages. A standalone .mdx file at this level is currently also accepted, which is why entries are resolved by path rather than by directory. Anything omitted still appears, sorted after the listed entries by its frontmatter `order`.",
           "items": { "type": "string", "minLength": 1 }
         }
       }
