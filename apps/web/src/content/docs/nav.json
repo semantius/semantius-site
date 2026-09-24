@@ -2,6 +2,10 @@
   "$schema": "./nav.schema.json",
   "tabs": [
     {
+      "folder": "guide",
+      "folders": []
+    },
+    {
       "folder": "self-hosted",
       "folders": ["self-hosted"]
     },
