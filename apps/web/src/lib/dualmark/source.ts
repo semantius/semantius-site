@@ -24,6 +24,7 @@ import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
 import { visit, SKIP } from 'unist-util-visit';
 import { skillInstallCommand } from '../skill-install';
+import { repoCloneCommand, repoUrl } from '../repo-card';
 import { collapseBlankLines } from './text';
 import { toMarkdownPath } from './paths';
 import { hasMarkdownTwin } from './excluded';
@@ -73,7 +74,8 @@ function codeNode(value: string, lang: string) {
 /**
  * Strip ESM imports and rewrite the four components our docs actually use.
  * Counted across all 19 .mdx files: Command 29, SkillInstall 2, Image 2,
- * ModelList 1. Anything else capitalized is unwrapped, keeping its children.
+ * ModelList 1, plus RepoCard. Anything else capitalized is unwrapped,
+ * keeping its children.
  *
  * This is an AST walk rather than regex specifically because regex is wrong
  * here: docs/cli/command.mdx has `semantius call crud create_field <<EOF`
@@ -81,7 +83,7 @@ function codeNode(value: string, lang: string) {
  * visitor never enters `code` nodes, so it cannot.
  */
 /** Components rewriteMdx knows how to express as markdown. */
-const KNOWN_COMPONENTS = new Set(['Command', 'SkillInstall', 'Image']);
+const KNOWN_COMPONENTS = new Set(['Command', 'SkillInstall', 'Image', 'RepoCard']);
 
 /**
  * Does this MDX hold content that only the RENDERED page has?
@@ -145,6 +147,30 @@ function rewriteMdx() {
 					// valueless attribute such as `includeSubagents` parses with
 					// value null, so attr() never returns it and the branch is dead.
 					parent.children.splice(index, 1, codeNode(skillInstallCommand(url), 'bash'));
+					return [SKIP, index];
+				}
+			}
+
+			if (name === 'RepoCard') {
+				const repo = attr(node, 'repo');
+				if (repo) {
+					// A labeled line plus the clone command as a fence, which is what the
+					// card shows. Strings come from lib/repo-card.ts, like the component.
+					const license = attr(node, 'license');
+					const description = attr(node, 'description');
+					const tail = [license && ` (${license} license)`, description && `: ${description}`]
+						.filter(Boolean)
+						.join('');
+					const line = {
+						type: 'paragraph',
+						children: [
+							{ type: 'strong', children: [{ type: 'text', value: 'Repository:' }] },
+							{ type: 'text', value: ' ' },
+							{ type: 'link', url: repoUrl(repo), children: [{ type: 'text', value: repo }] },
+							...(tail ? [{ type: 'text', value: tail }] : []),
+						],
+					};
+					parent.children.splice(index, 1, line, codeNode(repoCloneCommand(repo), 'bash'));
 					return [SKIP, index];
 				}
 			}

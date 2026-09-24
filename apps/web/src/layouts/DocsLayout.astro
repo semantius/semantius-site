@@ -8,8 +8,6 @@ import MobileDocsMenu from '~/components/docs/MobileDocsMenu.astro';
 import NavTree from '~/components/docs/NavTree.astro';
 import DocsTabs from '~/components/docs/DocsTabs.astro';
 import PageActions from '~/components/docs/PageActions.astro';
-import Schema from '~/components/layout/Schema.astro';
-import RepoCard from '~/components/docs/RepoCard.astro';
 import {
   buildDocsTree,
   docsTrail,
@@ -24,13 +22,12 @@ interface Props {
   /** The <title> and og:title, when the short H1 needs product context in a search result. */
   seoTitle?: string;
   description: string;
-  repository?: { url: string; license: string; description?: string };
   noindex?: boolean;
   nofollow?: boolean;
   headings?: MarkdownHeading[];
 }
 
-const { title, seoTitle, description, repository, noindex, nofollow, headings = [] } = Astro.props;
+const { title, seoTitle, description, noindex, nofollow, headings = [] } = Astro.props;
 
 const docs = await getCollection('docs');
 const tree = buildDocsTree(docs);
@@ -72,8 +69,6 @@ const jsonLdCrumbs = [
   ...crumbs.map((c) => ({ name: c.label, href: c.href })),
   { name: title, href: normalizedCurrentPath },
 ];
-
-const repoName = repository?.url.replace(/^https:\/\/github\.com\//, '');
 ---
 
 <UntranslatedLayout
@@ -83,21 +78,6 @@ const repoName = repository?.url.replace(/^https:\/\/github\.com\//, '');
   nofollow={nofollow}
   breadcrumbs={jsonLdCrumbs}
 >
-  {repository && (
-    <Schema
-      slot="head"
-      item={{
-        '@context': 'https://schema.org',
-        '@type': 'SoftwareSourceCode',
-        name: repoName,
-        description: repository.description ?? description,
-        codeRepository: repository.url,
-        license: `https://spdx.org/licenses/${repository.license}`,
-        isAccessibleForFree: true,
-        url: new URL(normalizedCurrentPath, Astro.site).toString(),
-      }}
-    />
-  )}
   <ScrollProgress />
   <div class="max-w-360 mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-24">
     <DocsTabs tabs={tabs} />
@@ -154,14 +134,6 @@ const repoName = repository?.url.replace(/^https:\/\/github\.com\//, '');
             <div class="prose prose-lg max-w-none prose-headings:font-bold prose-headings:scroll-mt-24 prose-a:text-primary hover:prose-a:text-primary/80 dark:prose-invert text-foreground prose-headings:text-foreground prose-p:text-foreground/80 prose-strong:text-foreground prose-code:text-primary prose-code:before:content-none prose-code:after:content-none prose-pre:border prose-pre:border-white/10 prose-pre:bg-black/80">
                 <h1 class="text-4xl font-bold mb-8 text-foreground" data-pagefind-meta="title">{title}</h1>
                 <PageActions pathname={Astro.url.pathname} noindex={noindex} />
-                {repository && repoName && (
-                  <RepoCard
-                    url={repository.url}
-                    name={repoName}
-                    license={repository.license}
-                    description={repository.description}
-                  />
-                )}
                 {/* Stands in for the right-hand column below xl, where that
                     column is not rendered. data-pagefind-ignore so the heading
                     list is not indexed twice as page content. */}

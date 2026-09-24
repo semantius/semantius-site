@@ -184,13 +184,6 @@ export async function getRouteTwins(siteUrl: string): Promise<TwinPage[]> {
 				url: canonicalUrl(path, siteUrl),
 				trail,
 				indexUrl,
-				facts: [
-					[
-						'Repository',
-						doc.data.repository &&
-							`${doc.data.repository.url} (${doc.data.repository.license})`,
-					],
-				],
 			}) +
 				resolveSite(doc.data.markdownTwin ?? '', siteUrl) +
 				docFooter(related, indexUrl),

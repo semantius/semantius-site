@@ -3,15 +3,15 @@ title: 'Self-Hosting'
 seoTitle: 'Self-Hosting Semantius (Open Source, Docker)'
 description: 'Run the complete Semantius platform on your own machine or your own server, using Docker. Free and MIT licensed.'
 order: 7
-repository:
-  url: 'https://github.com/semantius/semantius-self-hosted'
-  license: 'MIT'
-  description: 'The whole Semantius platform in one Docker Compose setup: database, API, web app and sign-in.'
 ---
+
+import RepoCard from '~/components/common/RepoCard.astro';
 
 **Semantius Open Source** is the free, MIT-licensed, self-hosted edition of Semantius. It runs on hardware you control, as one Docker setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and sign-in.
 
 Everything lives in its own repository, [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted). The same platform also runs as a managed service at [app.semantius.com](https://app.semantius.com).
+
+<RepoCard repo="semantius/semantius-self-hosted" license="MIT" description="The whole Semantius platform in one Docker Compose setup: database, API, web app and sign-in." />
 
 ## Which Setup Do You Need?
 
