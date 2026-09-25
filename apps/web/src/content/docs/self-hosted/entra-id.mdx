@@ -10,7 +10,7 @@ import Command from '~/components/common/Command.astro';
 
 If your organization manages its people in Microsoft Entra ID, Semantius can use it directly. Who has access, how they authenticate (multi-factor authentication, conditional access) and when access ends are then managed in Entra, in one place, instead of in a separate user list that someone has to keep in sync. When someone leaves and is removed in Entra, they lose access to Semantius at the same moment.
 
-The repository ships a ready-made variant for exactly this, `local-entra-idp`: the same stack, generated without the bundled sign-in service, with Entra ID handling sign-in instead. After setup, follow [Running Your Stack](/docs/self-hosted/running-your-stack) and [Going Live](/docs/self-hosted/deploy) as usual; both pages point out where this variant differs.
+The repository ships a ready-made [variant](/docs/self-hosted/variants) for exactly this, `local-entra-idp`: the same stack, set up for Entra ID to handle sign-in. After setup, follow [Running Your Stack](/docs/self-hosted/running-your-stack) and [Going Live](/docs/self-hosted/deploy) as usual; both pages point out where this variant differs.
 
 This is a different folder rather than a setting, because the built-in sign-in system is genuinely absent from it. Running both at once would give you two competing sign-in systems on one address.
 
