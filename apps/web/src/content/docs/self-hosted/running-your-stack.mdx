@@ -10,7 +10,7 @@ import Command from '~/components/common/Command.astro';
 
 Once your stack is up, day-to-day work is a handful of commands plus a few addresses worth bookmarking. This page covers both. Every command here is run **from inside your variant folder**, the one holding `docker-compose.yml` and `.env`.
 
-**This page is written for the `local-semantius-idp` variant.** The commands, backups and updates apply to `local-entra-idp` as well. The sections that need the bundled sign-in service say so, and do not apply to Entra. On Dokploy there are no scripts to run, so use the [Dokploy](/docs/self-hosted/dokploy#after-the-first-deploy) page instead.
+**This page is written for the `local-semantius-idp` variant, and applies to `local-entra-idp` as well.** Where a task happens in your identity provider rather than in semantius-idp, the section says where. On Dokploy there are no scripts to run, so use the [Dokploy](/docs/self-hosted/dokploy#after-the-first-deploy) page instead.
 
 Every command exists twice: a `.sh` version for macOS, Linux, and Git Bash, and a `.cmd` version for the Windows command prompt. The examples below show the `.sh` form. On Windows, swap the extension.
 
@@ -41,9 +41,11 @@ The reason they are separate commands rather than one command with a flag is tha
 
 ## Adding People
 
-**This needs the bundled sign-in service.** With Entra ID, people are assigned in Entra instead, as described on the [Entra page](/docs/self-hosted/entra-id#3-give-people-access).
+With semantius-idp, sign in as the administrator and go to `http://localhost:3000/idp/admin`. That is where accounts are created and managed.
 
-Sign in as the administrator and go to `http://localhost:3000/idp/admin`. That is where users are created and managed.
+With your own identity provider, people are managed there: in Entra, you assign them to the Semantius API, as the [Entra page](/docs/self-hosted/entra-id#3-give-people-access) describes. Either way, what each person can see is granted in the Semantius app, under **Administration**, then **Users**.
+
+The rest of this section is about semantius-idp's email.
 
 By default the stack does not send email. That is deliberate: a local install with no mail service configured would otherwise offer password reset links that never arrive. The practical consequence is that **an administrator creates accounts and sets passwords directly**, and there is no self-service password reset.
 
@@ -51,7 +53,7 @@ To turn email on for a real deployment, add a [Resend](https://resend.com) API k
 
 ## Reaching the API From a Script
 
-Browsers sign in interactively, but scripts and scheduled jobs cannot. For those, create an **API key**. API keys and the `/gateway/rest/` address come from the bundled sign-in service. With Entra ID, a script instead gets an access token for the Semantius API registration from Entra and sends it as a bearer token to `/rest/`.
+Browsers sign in interactively, but scripts and scheduled jobs cannot. For those, semantius-idp offers personal **API keys**, through the API gateway built into it:
 
 1. Sign in and open `http://localhost:3000/idp/account/api-keys`.
 2. Create a key and copy it. You only see it once.
@@ -64,9 +66,11 @@ curl -H "x-api-key: YOUR_KEY_HERE" \
 
 That address is the same API as `/rest/`, with the key exchange handled for you. The key belongs to your user account, so it can see exactly what you can see and nothing more. Treat it like a password: anyone holding it can act as you.
 
+**With your own identity provider**, such as Entra, a script gets an access token from that provider and sends it as a bearer token to `/rest/`. If you want personal API keys there as well, put an API gateway of your choice, such as Kong, Tyk or AWS API Gateway, in front of `/rest/`.
+
 ## Browsing the API
 
-`http://localhost:3000/api-docs/` lists every endpoint your model generates, with request and response shapes and a **Test Request** button on each one. When you are signed in to the app in the same browser, those test requests are authenticated automatically, so you can explore the whole API without pasting a credential anywhere.
+`http://localhost:3000/api-docs/` lists every endpoint your model generates, with request and response shapes and a **Test Request** button on each one. With semantius-idp, when you are signed in to the app in the same browser, those test requests are authenticated automatically, so you can explore the whole API without pasting a credential anywhere. With your own identity provider, paste an access token into the docs page instead.
 
 The documentation is generated from your live model. Change the model and the docs change with it.
 
@@ -86,11 +90,15 @@ You can read that document yourself to check a deployment is answering correctly
 
 ## Connecting a Database Client
 
-Sometimes you want SQL directly. The database is reachable on **port 5434** with the username `postgres` and the `POSTGRES_PASSWORD` value from your `.env`. The database is named `semantius`.
+The stack publishes two database ports on purpose, for the programs that talk SQL rather than HTTP.
 
-There is also a pooled connection on **port 6432**, which is the one your own applications should use if they talk SQL rather than HTTP. It handles many short-lived connections far better than connecting to the database directly.
+**Port 6432 is the pooled connection for your own applications.** It handles many short-lived connections far better than connecting to the database directly. It logs in as `semantius_authenticator`, with the `SEMANTIUS_AUTHENTICATOR_PASSWORD` value from your `.env`.
 
-If you just want to look at some data and do not want to install a client at all, administrators of the bundled sign-in service have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
+**Port 5434 is the direct connection**, for administration and for migrations with the [`pg_semantius` CLI](/docs/pg-semantius/cli), and for anything that needs a session of its own. Connect as `postgres` with the `POSTGRES_PASSWORD` value from your `.env`. The database is named `semantius`.
+
+On a public server, restrict both to the machines that need them, as [Going Live](/docs/self-hosted/deploy#restrict-the-database-ports) shows.
+
+If you just want to look at some data and do not want to install a client at all, semantius-idp's administrators have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
 
 ## Backing Up
 
@@ -118,7 +126,7 @@ To make it permanent, set `SEMANTIUS_DB_VERSION` in `.env`. There are matching `
 
 The published versions are listed on each image's package page: [database](https://github.com/orgs/semantius/packages/container/package/postgres), [web app](https://github.com/orgs/semantius/packages/container/package/semantius-app) and [sign-in service](https://github.com/orgs/semantius/packages/container/package/semantius-idp). Database tags always end in `-pg18`, for example `0.4.0-pg18`.
 
-**The other pieces cannot be pinned from `.env` yet.** The API server, the connection pooler, the API docs viewer and the key fetcher run their `latest` version, and the front door runs Caddy `2-alpine`. Each `./up.sh` or `./create.sh` downloads their newest release. To hold one of them back, set its `image:` to a fixed tag in a [`docker-compose.override.yml`](/docs/self-hosted/variants#customizing-a-variant).
+**The other pieces have no setting in `.env` yet.** The API server, the connection pooler, the API docs viewer and the key fetcher run their `latest` version, and the front door runs Caddy `2-alpine`. Each `./up.sh` or `./create.sh` downloads their newest release. Once a combination works for you, pin at least the API server and the docs viewer to fixed tags too, by setting their `image:` in a [`docker-compose.override.yml`](/docs/self-hosted/variants#customizing-a-variant).
 
 ## Updating to a New Version
 

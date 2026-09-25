@@ -48,7 +48,7 @@ The rest of this section is written for `local-semantius-idp`. Most of it carrie
 | Page | `local-semantius-idp` | `local-entra-idp` | `dokploy-semantius-idp` |
 | --- | --- | --- | --- |
 | [Quick Start](/docs/self-hosted/quick-start) | Yes | No, the Entra page replaces it | No, the Dokploy page replaces it |
-| [Running Your Stack](/docs/self-hosted/running-your-stack) | Yes | The commands, backups and updates, yes. Adding people, API keys and the SQL console belong to the bundled sign-in service, which this variant does not have | No. The Dokploy page covers the same tasks for Dokploy |
+| [Running Your Stack](/docs/self-hosted/running-your-stack) | Yes | Yes. People are managed in Entra, and scripts use Entra tokens or an API gateway of your choice, as the page describes | No. The Dokploy page covers the same tasks for Dokploy |
 | [Going Live](/docs/self-hosted/deploy) | Yes | Yes, with one extra step for Entra, listed on that page | No, the Dokploy page replaces it |
 | [Settings Reference](/docs/self-hosted/settings) | Yes | Yes, plus the Entra values listed on that page | Yes, set in Dokploy's **Environment** tab |
 
@@ -60,7 +60,7 @@ Most changes need no new variant at all. There are two places for them, and neit
 
 **`docker-compose.override.yml` holds your changes to the compose file.** Docker Compose reads a file with that name automatically when it sits next to `docker-compose.yml`, so the included scripts pick it up with no extra flag. It is not part of the repository either, so it survives updates the same way `.env` does.
 
-For example, this override publishes the web ports for HTTPS and keeps the database ports on the server itself. It is the change [Going Live](/docs/self-hosted/deploy) walks you through:
+For example, this override publishes the web ports for HTTPS and restricts the database ports to the server itself. It is the change [Going Live](/docs/self-hosted/deploy) walks you through:
 
 ```yaml
 services:
@@ -91,7 +91,9 @@ Any OpenID Connect provider that issues **JWT access tokens** works with Semanti
 
 Register three applications with the provider, as the [Entra page](/docs/self-hosted/entra-id#2-register-three-applications-in-entra) does: one for the API, one for the web app (a public client), and one for the `semantius` CLI, whose redirect addresses are `http://127.0.0.1:53682/callback`, `:53683` and `:53684`.
 
-The quickest route is the `local-entra-idp` folder, because it already leaves out the bundled sign-in service. Fill its `.env` with your provider's values instead of Entra's: `VITE_OAUTH_CONFIG`, `VITE_OAUTH_CLIENT_ID`, `VITE_OAUTH_AUDIENCE`, `VITE_OAUTH_SCOPE`, `PGRST_JWT_AUD` and `CLI_OAUTH_CLIENT_ID`. Then override the Entra defaults that do not fit: set `SEMANTIUS_IDP_TYPE=custom`, set `PGRST_JWT_ROLE_CLAIM_KEY` to your provider's claim, and point `VITE_UI_CUSTOMIZER` at your provider's own profile page. For a setup you keep for years, a variant of its own is cleaner, because its name then says what it is.
+The quickest route is the `local-entra-idp` folder, because it is already set up for an external identity provider. Fill its `.env` with your provider's values instead of Entra's: `VITE_OAUTH_CONFIG`, `VITE_OAUTH_CLIENT_ID`, `VITE_OAUTH_AUDIENCE`, `VITE_OAUTH_SCOPE`, `PGRST_JWT_AUD` and `CLI_OAUTH_CLIENT_ID`. Then override the Entra defaults that do not fit: set `SEMANTIUS_IDP_TYPE=custom`, set `PGRST_JWT_ROLE_CLAIM_KEY` to your provider's claim, and point `VITE_UI_CUSTOMIZER` at your provider's own profile page. For a setup you keep for years, a variant of its own is cleaner, because its name then says what it is.
+
+Personal API keys for scripts come from semantius-idp's built-in gateway. With your own provider, scripts use tokens from that provider, or you add an API gateway such as Kong, Tyk or AWS API Gateway in front of `/rest/`.
 
 ## Generating a New Variant
 
@@ -104,7 +106,7 @@ Each variant is described by `templates/variants/<name>/variant.json`:
 | Field | What it does |
 | --- | --- |
 | `platform` | `compose` for a folder you run with the scripts, `dokploy` for a Dokploy blueprint |
-| `removeFeatures` | The parts of the stack to leave out. `bundled-idp` removes the bundled sign-in service with its `/idp` and `/gateway` routes |
+| `removeFeatures` | The parts of the stack this variant does not use. `bundled-idp` is semantius-idp with its `/idp` and `/gateway` routes, which a variant for your own identity provider does not need |
 | `required` | Settings the variant cannot start without. `create` and `up` then stop and name any that are empty, instead of starting a broken stack |
 | `defaults` | New default values for settings whose built-in default pointed at something the variant removed |
 

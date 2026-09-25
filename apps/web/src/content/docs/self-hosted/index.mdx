@@ -52,7 +52,7 @@ flowchart TB
     subgraph http["Behind the front door"]
         app["Web app"]
         docs["API docs (Scalar)"]
-        idp["Sign-in service (semantius-idp)<br/>not in the Entra variant"]
+        idp["semantius-idp<br/>sign-in and API-key gateway"]
         api["API server (PostgREST)"]
     end
 
@@ -77,7 +77,9 @@ flowchart TB
     sqlclient -->|"port 5434"| pg
 ```
 
-You do not have to install or configure any of these individually. They are described once in a Docker Compose file and started together. The [Microsoft Entra ID](/docs/self-hosted/entra-id) variant leaves out the sign-in service and its `/idp/` and `/gateway/` addresses, because Entra takes its place.
+You do not have to install or configure any of these individually. They are described once in a Docker Compose file and started together.
+
+The diagram shows the default variant, where semantius-idp handles both sign-in and personal API keys. With an identity provider you already run, such as [Microsoft Entra ID](/docs/self-hosted/entra-id), that provider signs people in instead. Scripts then use tokens from your provider, or an API gateway of your choice, such as Kong, Tyk or AWS API Gateway, placed in front of `/rest/` if you want personal API keys.
 
 ## Building Blocks
 
@@ -87,7 +89,7 @@ The platform is assembled from separate open-source projects, each with its own 
 | --- | --- | --- | --- | --- |
 | PostgreSQL 18 with [pg_semantius](/docs/pg-semantius) | The database and the semantic model | [semantius/semantius](https://github.com/semantius/semantius) (MIT) | `ghcr.io/semantius/postgres` | `SEMANTIUS_DB_VERSION` |
 | Semantius web app | The app people work in | [semantius/semantius-app](https://github.com/semantius/semantius-app) (MIT) | `ghcr.io/semantius/semantius-app` | `SEMANTIUS_APP_VERSION` |
-| semantius-idp | Sign-in, accounts and API keys. Optional: not in the Entra variant | [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT) | `ghcr.io/semantius/semantius-idp` | `SEMANTIUS_IDP_VERSION` |
+| semantius-idp | Sign-in and accounts, plus a built-in API gateway for personal API keys. Used when you do not bring your own identity provider | [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT) | `ghcr.io/semantius/semantius-idp` | `SEMANTIUS_IDP_VERSION` |
 | PostgREST | The API server, generated from the database | [PostgREST/postgrest](https://github.com/PostgREST/postgrest) (MIT) | `postgrest/postgrest` | Not yet |
 | PgBouncer | The connection pooler | [pgbouncer/pgbouncer](https://github.com/pgbouncer/pgbouncer) (ISC) | `edoburu/pgbouncer` | Not yet |
 | Scalar | The API docs viewer | [scalar/scalar](https://github.com/scalar/scalar) (MIT) | `scalarapi/api-reference` | Not yet |
@@ -103,7 +105,7 @@ Semantius has no login system of its own. The API and the database accept standa
 That split is what IT teams usually ask for. Single sign-on, multi-factor authentication and offboarding stay in the identity provider your organization already runs, rather than in a second user list.
 
 - **Use the provider you already run.** Microsoft Entra ID has a ready-made variant, with a script that registers the web app, the API and the `semantius` CLI for you ([Microsoft Entra ID](/docs/self-hosted/entra-id)). Other OpenID Connect providers that issue JWT access tokens, such as Okta, Keycloak and Auth0, work the same way, through settings or a variant of their own ([Variants](/docs/self-hosted/variants#pointing-a-variant-at-another-provider)).
-- **No provider, or no time to set one up?** The default setup bundles [semantius-idp](https://github.com/semantius/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
+- **No provider, or no time to set one up?** The default setup bundles [semantius-idp](https://github.com/semantius/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider with a built-in API gateway for personal API keys. So you need neither a separate identity provider nor a separate gateway. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
 
 With the bundled provider, the user list is empty on first run, so the sign-in page doubles as the setup page: the first person to complete it becomes the administrator. There is no default password to look up and no account to register anywhere.
 

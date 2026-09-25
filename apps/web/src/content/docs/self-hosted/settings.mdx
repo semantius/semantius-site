@@ -83,7 +83,7 @@ Leaving it unset is reasonable on a laptop, where an administrator creates every
 
 The ports default to unusual numbers deliberately, so they do not collide with a PostgreSQL you may already run on 5432.
 
-**Both ports are published on every network interface by default**, not only on the machine itself. That is harmless on a laptop and a real exposure on a public server. The interface is set in `docker-compose.yml` rather than here, and [Going Live](/docs/self-hosted/deploy#close-the-database-ports) shows how to restrict it.
+Both ports are published on purpose: 6432 for your own applications that talk SQL, 5434 for administration and migrations with the `pg_semantius` CLI. **They are published on every network interface**, not only on the machine itself. That is harmless on a laptop, but on a public server they should be restricted to the machines that need them. The interface is set in the compose file rather than here, and [Going Live](/docs/self-hosted/deploy#restrict-the-database-ports) shows how.
 
 ## Identity
 
@@ -123,7 +123,7 @@ Email links deliberately do not follow the request, even with this on. They are 
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `DOCS_API_ROUTE` | `/gateway/rest` | The API address the documentation page uses. The Entra variant sets `/rest`, because it has no `/gateway/` address |
+| `DOCS_API_ROUTE` | `/gateway/rest` | The API address the documentation page uses. `/gateway/rest` is semantius-idp's API gateway; the Entra variant uses `/rest`, the API itself |
 | `DOCS_SPEC_URL` | `/gateway/rest` | Where the documentation page loads the API description from, if it should differ from `DOCS_API_ROUTE` |
 | `PGRST_DB_POOL_MAX_IDLETIME` | `1800` | Seconds an unused database connection is kept open |
 | `PGRST_JWT_ROLE_CLAIM_KEY` | `.role` | Which part of a login token names the permission level. Only changes with an external provider that cannot use the standard name |
@@ -138,7 +138,7 @@ A few values are deliberately fixed in `docker-compose.yml` rather than exposed 
 
 ## Entra ID Variant
 
-`local-entra-idp` has no built-in sign-in system, so the settings for it are gone, and six settings become **required**. `create` and `up` stop and name any that are empty. The [Entra setup script](/docs/self-hosted/entra-id#2-register-three-applications-in-entra) fills them in for you.
+In `local-entra-idp`, Entra signs people in, so the semantius-idp settings do not appear in its `.env`. Six settings that connect the stack to your tenant are **required** instead. `create` and `up` stop and name any that are empty. The [Entra setup script](/docs/self-hosted/entra-id#2-register-three-applications-in-entra) fills them in for you.
 
 | Required setting | What it holds |
 | --- | --- |

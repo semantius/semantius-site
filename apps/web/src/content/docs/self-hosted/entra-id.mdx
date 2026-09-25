@@ -109,6 +109,10 @@ Entra reports failures as codes, which are precise but not self-explanatory. The
 
 The variant's README carries the full list along with what fixes each one.
 
+## Scripts and API Keys
+
+Scripts and scheduled jobs sign in the Entra way, with an access token for the Semantius API registration, sent as a bearer token to `/rest/`. Personal API keys for scripts come from semantius-idp's built-in gateway, which this variant does not run. If you need them, add an API gateway such as Kong, Tyk or AWS API Gateway in front of `/rest/`.
+
 ## Keeping Keys Fresh
 
 Microsoft periodically replaces the keys used to sign logins, and this variant downloads them once when it starts. A stale copy eventually rejects everybody.
