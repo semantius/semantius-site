@@ -12,6 +12,8 @@ import Command from '~/components/common/Command.astro';
 
 This is the easiest way to get Semantius onto a real server. You do not edit a settings file, you do not generate secrets, and you do not configure HTTPS. Dokploy does all three.
 
+**This page covers the `dokploy-semantius-idp` variant from start to finish.** The Quick Start, Running Your Stack and Going Live pages are written for the Docker Compose variants, and their scripts do not exist here. Everything you need after deploying is under [After the First Deploy](#after-the-first-deploy).
+
 ## What the Blueprint Handles For You
 
 | Job | How it is handled |
@@ -21,6 +23,7 @@ This is the easiest way to get Semantius onto a real server. You do not edit a s
 | Domain routing | Point a domain at the deployment in the interface |
 | Config files | Bundled inside the blueprint, so there is nothing to upload |
 | Sample data | The Northwind demo module is loaded, so there is data on first open |
+| Database ports | None are published. The database is reachable only from inside the deployment |
 
 The one thing it cannot do is create your administrator account, because that is deliberately yours. Open the deployment once it is live and complete the setup page.
 
@@ -100,7 +103,53 @@ Once your deployment is running, you can narrow it to just Dokploy's own network
 
 Then set `TRUSTED_PROXIES` in the Environment tab to the subnet it reports and redeploy. This is optional hardening rather than a required step.
 
+## After the First Deploy
+
+The everyday tasks from [Running Your Stack](/docs/self-hosted/running-your-stack) work differently on Dokploy, because there are no scripts and the containers are named by Dokploy. Using the app, API keys, the API docs and the `semantius` CLI work exactly as described there, on your own domain.
+
+### Pinning Versions
+
+The blueprint sets all three Semantius versions to `latest`. Before the deployment holds data you care about, set real versions in the **Environment** tab and redeploy:
+
+```bash
+SEMANTIUS_DB_VERSION=x.y.z-pg18
+SEMANTIUS_APP_VERSION=x.y.z
+SEMANTIUS_IDP_VERSION=x.y.z
+```
+
+Replace each `x.y.z` with a version from the image's package page: [database](https://github.com/orgs/semantius/packages/container/package/postgres), [web app](https://github.com/orgs/semantius/packages/container/package/semantius-app), [sign-in service](https://github.com/orgs/semantius/packages/container/package/semantius-idp). The other pieces, such as the API server and the front door, cannot be pinned from the Environment tab yet.
+
+### Backing Up
+
+Your data lives in one PostgreSQL database, so a backup is a plain `pg_dump`. On the Dokploy server, find the database container's name first, because Dokploy chooses it:
+
+<Command command="docker ps --format '{{.Names}}' | grep postgres" />
+
+Then dump it, replacing the name with the one that command printed:
+
+```bash
+docker exec your-deployment-postgres-1 pg_dump -U postgres -Fc -d semantius > semantius.dump
+```
+
+Put that on a daily schedule and keep the copies somewhere other than the server. Deleting the deployment in Dokploy deletes its database volume with it, so take a dump before you do.
+
+### Updating
+
+To update the web app or the sign-in service, change its version in the **Environment** tab and redeploy. Your data is kept.
+
+**Updating the database takes one more step.** A newer `SEMANTIUS_DB_VERSION` brings newer extension files but does not change a database that already exists. Take a backup, change the version, redeploy, then apply the update inside the database, using the container name from above:
+
+```bash
+docker exec your-deployment-postgres-1 psql -U postgres -d semantius \
+  -c "ALTER EXTENSION pg_semantius UPDATE;" \
+  -c "SELECT semantius.migrate();"
+```
+
+Both statements are safe to run again. [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain) explains them in more detail.
+
+To pick up a newer version of the blueprint itself, replace the deployment's compose file in Dokploy with the current `variants/dokploy-semantius-idp/docker-compose.yml` from the repository, and redeploy. The **Environment** tab, with your generated secrets, stays as it is.
+
 ## Next Steps
 
-- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: API keys, the `semantius` CLI, backups, and everyday use.
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: API keys, the `semantius` CLI, and the API docs.
 - **[Settings Reference](/docs/self-hosted/settings)**: what every value in the Environment tab does.

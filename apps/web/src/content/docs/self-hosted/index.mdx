@@ -1,15 +1,15 @@
 ---
 title: 'Self-Hosting'
-seoTitle: 'Self-Hosting Semantius (Open Source, Docker)'
-description: 'Run the complete Semantius platform on your own machine or your own server, using Docker. Free and MIT licensed.'
+seoTitle: 'Self-Hosting Semantius (Open Source, Docker Compose)'
+description: 'Run the complete Semantius platform on your own machine or your own server, using Docker Compose. Free and MIT licensed.'
 order: 7
 ---
 
 import RepoCard from '~/components/common/RepoCard.astro';
 
-**Semantius Open Source** is the free, MIT-licensed, self-hosted edition of Semantius. It runs on hardware you control, as one Docker setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and sign-in.
+**Semantius Open Source** is the free, MIT-licensed, self-hosted edition of Semantius. It runs on hardware you control, as one Docker Compose setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and sign-in.
 
-Everything lives in its own repository, [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted). The same platform also runs as a managed service at [app.semantius.com](https://app.semantius.com).
+The same platform also runs as a managed service at [app.semantius.com](https://app.semantius.com).
 
 <RepoCard repo="semantius/semantius-self-hosted" license="MIT" description="The whole Semantius platform in one Docker Compose setup: database, API, web app and sign-in." />
 
@@ -26,7 +26,7 @@ There are three ways to get Semantius, and only one of them is this section:
 ## Why Self-Host
 
 - **Your data stays with you.** The database runs on your machine or your server, and nothing has to leave it.
-- **It works offline.** Once the images are downloaded, the stack runs with no connection to Semantius at all.
+- **It runs air-gapped.** Once the images are on the machine, nothing connects to Semantius or the internet: no telemetry and no license check. People reach it over your own network. Only installing and updating download images, and automatic HTTPS for a public domain needs to reach Let's Encrypt.
 - **It is the full open-source platform.** The same semantic model, API, web app and permissions the managed service runs. This is not a trimmed-down demo edition.
 - **It is easy to throw away.** One command creates it, one command removes it, so it is a safe place to experiment.
 
@@ -39,9 +39,63 @@ You run one command and get a small set of programs running side by side in Dock
 | `http://localhost:3000/` | The Semantius web app. This is where you sign in and work. |
 | `http://localhost:3000/api-docs/` | Browsable API documentation, with a button to try any call live. |
 | `http://localhost:3000/rest/` | The HTTP API itself, generated from your model. |
+| `http://localhost:3000/gateway/rest/` | The same API for scripts, which accepts an API key instead of a sign-in. |
 | `http://localhost:3000/idp/` | The bundled sign-in service: accounts, users, and API keys. |
 
-Behind those addresses sit a PostgreSQL 18 database carrying the [`pg_semantius` extension](/docs/pg-semantius), the API server, the documentation viewer, the web app, and the sign-in service. You do not have to install or configure any of them individually. They are described once in a Docker Compose file and started together.
+Behind that one address, a front door passes each request to the program that handles it:
+
+```mermaid
+flowchart LR
+    browser(["Browser, CLI, scripts"])
+    sqlclient(["SQL clients"])
+    caddy["Front door (Caddy)<br/>port 3000, or 80 and 443 when live"]
+
+    subgraph http["Behind the front door"]
+        direction TB
+        app["Web app"]
+        idp["Sign-in service (semantius-idp)<br/>not in the Entra variant"]
+        docs["API docs (Scalar)"]
+        api["API server (PostgREST)"]
+    end
+
+    subgraph data["Database"]
+        direction TB
+        pool["Connection pooler (PgBouncer)"]
+        pg[("PostgreSQL 18<br/>with pg_semantius")]
+    end
+
+    browser --> caddy
+    caddy -->|"/"| app
+    caddy -->|"/idp/ and /gateway/"| idp
+    caddy -->|"/api-docs/"| docs
+    caddy -->|"/rest/"| api
+    idp -->|"/gateway/rest/ with an API key"| api
+    idp -.->|"sign-in keys"| api
+    idp --> pool
+    api --> pg
+    pool --> pg
+    sqlclient -->|"port 6432"| pool
+    sqlclient -->|"port 5434"| pg
+```
+
+You do not have to install or configure any of these individually. They are described once in a Docker Compose file and started together. The [Microsoft Entra ID](/docs/self-hosted/entra-id) variant leaves out the sign-in service and its `/idp/` and `/gateway/` addresses, because Entra takes its place.
+
+## Building Blocks
+
+The platform is assembled from separate open-source projects, each with its own repository and image. Three are Semantius projects; the others are well-known upstream projects, used unmodified.
+
+| Building block | Role | Source | Image | Version setting |
+| --- | --- | --- | --- | --- |
+| PostgreSQL 18 with [pg_semantius](/docs/pg-semantius) | The database and the semantic model | [semantius/semantius](https://github.com/semantius/semantius) (MIT) | `ghcr.io/semantius/postgres` | `SEMANTIUS_DB_VERSION` |
+| Semantius web app | The app people work in | [semantius/semantius-app](https://github.com/semantius/semantius-app) (MIT) | `ghcr.io/semantius/semantius-app` | `SEMANTIUS_APP_VERSION` |
+| semantius-idp | Sign-in, accounts and API keys. Optional: not in the Entra variant | [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT) | `ghcr.io/semantius/semantius-idp` | `SEMANTIUS_IDP_VERSION` |
+| PostgREST | The API server, generated from the database | [PostgREST/postgrest](https://github.com/PostgREST/postgrest) (MIT) | `postgrest/postgrest` | Not yet |
+| PgBouncer | The connection pooler | [pgbouncer/pgbouncer](https://github.com/pgbouncer/pgbouncer) (ISC) | `edoburu/pgbouncer` | Not yet |
+| Scalar | The API docs viewer | [scalar/scalar](https://github.com/scalar/scalar) (MIT) | `scalarapi/api-reference` | Not yet |
+| Caddy | The front door, and automatic HTTPS | [caddyserver/caddy](https://github.com/caddyserver/caddy) (Apache 2.0) | `caddy:2-alpine` | Not yet |
+| The stack itself | The templates, the generator and the ready-made variants | [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted) (MIT) | None | None |
+
+The [`semantius` CLI](/docs/cli), which coding agents use, runs on your own machine rather than in the stack. Its source is [semantius/semantius-cli](https://github.com/semantius/semantius-cli) (MIT).
 
 ## Sign-In: Standard OpenID Connect
 
@@ -49,16 +103,16 @@ Semantius has no login system of its own. The API and the database accept standa
 
 That split is what IT teams usually ask for. Single sign-on, multi-factor authentication and offboarding stay in the identity provider your organization already runs, rather than in a second user list.
 
-- **Use the provider you already run.** Microsoft Entra ID has a ready-made variant, with a script that registers the web app, the API and the `semantius` CLI for you ([Microsoft Entra ID](/docs/self-hosted/entra-id)). Other OpenID Connect providers that issue JWT access tokens, such as Okta, Keycloak and Auth0, work by adapting that variant.
+- **Use the provider you already run.** Microsoft Entra ID has a ready-made variant, with a script that registers the web app, the API and the `semantius` CLI for you ([Microsoft Entra ID](/docs/self-hosted/entra-id)). Other OpenID Connect providers that issue JWT access tokens, such as Okta, Keycloak and Auth0, work the same way, through settings or a variant of their own ([Variants](/docs/self-hosted/variants#pointing-a-variant-at-another-provider)).
 - **No provider, or no time to set one up?** The default setup bundles [semantius-idp](https://github.com/semantius/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
 
 With the bundled provider, the user list is empty on first run, so the sign-in page doubles as the setup page: the first person to complete it becomes the administrator. There is no default password to look up and no account to register anywhere.
 
-## Three Ways To Run It
+## Choose Your Variant
 
-The repository ships three ready-made setups. Each folder is complete and self-contained, so you pick one and ignore the rest.
+The stack is defined once and generated into ready-made **variants**, one per combination of platform and sign-in provider. Each variant folder is complete and self-contained, so you pick one and ignore the rest.
 
-| Setup | Best for | Sign-in handled by | Guide |
+| Variant | Best for | Sign-in handled by | Guide |
 | --- | --- | --- | --- |
 | `variants/local-semantius-idp/` | Your laptop, a test box, or a plain server. **Start here.** | The bundled semantius-idp | [Quick Start](/docs/self-hosted/quick-start), then [Going Live](/docs/self-hosted/deploy) |
 | `variants/local-entra-idp/` | Organizations that already sign in with Microsoft | Microsoft Entra ID | [Microsoft Entra ID](/docs/self-hosted/entra-id) |
@@ -66,13 +120,15 @@ The repository ships three ready-made setups. Each folder is complete and self-c
 
 Unless you have a reason to do otherwise, use the first one. It needs no accounts, no registrations, and no configuration to start.
 
+None of them an exact fit? Most differences are a setting in `.env`. A new combination, such as Dokploy with Entra ID or Docker Compose with Okta, is a short definition file and one build command. [Choose or Build Your Variant](/docs/self-hosted/variants) explains both, and which of the following pages apply to each variant.
+
 ## What You Need
 
-- **Docker.** Docker Desktop on Windows or macOS, Docker Engine with the Compose plugin on Linux.
+- **Docker with Compose v2.** Docker Desktop on Windows or macOS includes both. On Linux, install Docker Engine with the Compose plugin. Check with `docker compose version`.
 - **Git**, to download the files. If you do not have it, download the repository as a ZIP from its GitHub page instead.
 - **About 5 GB of free disk space** for the downloaded images and the database.
 
-That is all. Every piece is downloaded as a prebuilt image. There is no compiler to install, no Node.js, no separate PostgreSQL, and nothing gets built from source on your machine.
+That is all. Every piece is downloaded as a prebuilt image. There is no compiler to install, no Node.js, no separate PostgreSQL, and nothing gets built from source on your machine. Node.js only comes in if you generate a variant of your own.
 
 ## Next Steps
 
@@ -81,4 +137,5 @@ That is all. Every piece is downloaded as a prebuilt image. There is no compiler
 - **[Going Live](/docs/self-hosted/deploy)**: move it to a real server with your own domain and HTTPS.
 - **[Dokploy](/docs/self-hosted/dokploy)**: deploy it through Dokploy without editing config files.
 - **[Microsoft Entra ID](/docs/self-hosted/entra-id)**: sign people in with their Microsoft work accounts.
+- **[Variants](/docs/self-hosted/variants)**: adjust a variant, or generate one for another platform or provider.
 - **[Settings Reference](/docs/self-hosted/settings)**: every value in the settings file, grouped by what it does.

@@ -12,6 +12,8 @@ A local install and a real deployment run the same stack. What changes is that t
 
 This page covers a plain server you administer yourself: a VPS, a cloud instance, a machine in your office. If you run [Dokploy](/docs/self-hosted/dokploy), use that page instead, because the blueprint handles most of this for you.
 
+**This page is written for the `local-semantius-idp` variant.** It works for `local-entra-idp` too, with the differences listed under [Using the Entra Variant](#using-the-entra-variant).
+
 ## Before You Start
 
 You need a server with Docker installed, a domain name, and a DNS record pointing that domain at the server's IP address. Set the DNS record up first and let it propagate. Certificates are issued by proving you control the domain, so nothing below works until the name resolves.
@@ -47,18 +49,29 @@ Also confirm your three secrets are the generated ones and not the placeholders 
 
 If any of them still reads `dev-only-...`, `postgres`, or `devpassword`, stop and fix that first. `IDP_SECRET` in particular has to be right **before the first start**: it encrypts the keys that sign everyone's logins, so changing it later signs everyone out and makes the stored keys unreadable.
 
+## Keep Your Changes in an Override File
+
+Two of the steps below change which ports the stack publishes. Make those changes in a file of your own called `docker-compose.override.yml`, next to `docker-compose.yml`, rather than in `docker-compose.yml` itself.
+
+Docker Compose reads the override file automatically, so every script picks it up. It is not part of the repository, so updating the stack files with `git pull` leaves it alone. An edit to `docker-compose.yml` would instead block the next update with a conflict. [Choose or Build Your Variant](/docs/self-hosted/variants#customizing-a-variant) explains the approach in full.
+
+The file uses the `!override` tag, which needs Docker Compose 2.24.4 or newer. Check with `docker compose version`.
+
 ## Turning On HTTPS
 
 Setting `SITE_ADDRESS` to a bare domain makes the front door request a certificate automatically, for free, and renew it on its own. For that to work it has to be reachable on the standard web ports, which means publishing ports 80 and 443 rather than the local development port.
 
-Open `docker-compose.yml`, find the `semantius` service, and replace its `ports:` entry:
+Create `docker-compose.override.yml` in the variant folder with this content:
 
 ```yaml
+services:
   semantius:
-    ports:
+    ports: !override
       - "80:80"
       - "443:443"
 ```
+
+The `!override` tag replaces the published ports instead of adding to them, so port 3000 is no longer published.
 
 Make sure your server's firewall allows both. Port 80 is not optional even though nothing is served on it: it is how the certificate authority checks that you control the domain, and how visitors who type a bare domain get redirected to the secure version.
 
@@ -66,15 +79,19 @@ Make sure your server's firewall allows both. Port 80 is not optional even thoug
 
 **Out of the box, the database is published on every network interface, so a public server exposes it to the internet.** Ports 5434 (PostgreSQL, as the all-powerful `postgres` user) and 6432 (the pooled connection) are then protected by nothing but a password. On Linux, a firewall such as `ufw` does not help here, because ports Docker publishes bypass it.
 
-Unless you deliberately want SQL access from other machines, bind both to the server itself. In `docker-compose.yml`, add `127.0.0.1:` in front of the `ports:` entries of the `postgres` and `pgbouncer` services:
+Unless you deliberately want SQL access from other machines, bind both to the server itself. Add the `postgres` and `pgbouncer` services to the same override file, which then reads in full:
 
 ```yaml
+services:
+  semantius:
+    ports: !override
+      - "80:80"
+      - "443:443"
   postgres:
-    ports:
+    ports: !override
       - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
-
   pgbouncer:
-    ports:
+    ports: !override
       - "127.0.0.1:${PGBOUNCER_PORT:-6432}:5432"
 ```
 
@@ -82,15 +99,17 @@ Nothing inside the stack uses those published ports, so the app and the API keep
 
 ## Pin Your Versions
 
-By default the stack downloads the newest version of every piece each time it starts. On a server you depend on, that means an unattended restart can quietly move you to a new version. Pin all three in `.env` before you go live:
+By default the stack downloads the newest version of every piece each time you run `./up.sh` or `./create.sh`. A plain restart or a reboot does not download anything. But on a server you depend on, the next routine `./up.sh` after a settings change would also move you to whatever was published since. Pin the three Semantius pieces in `.env` before you go live:
 
 ```bash
-SEMANTIUS_DB_VERSION=0.4.0-pg18
-SEMANTIUS_APP_VERSION=1.2.0
-SEMANTIUS_IDP_VERSION=1.1.0
+SEMANTIUS_DB_VERSION=x.y.z-pg18
+SEMANTIUS_APP_VERSION=x.y.z
+SEMANTIUS_IDP_VERSION=x.y.z
 ```
 
-Use the actual released tags rather than the examples above. Updating then becomes something you do deliberately: change the tag, run `./up.sh`, and roll back by changing it again.
+Replace each `x.y.z` with a real version from the image's package page: [database](https://github.com/orgs/semantius/packages/container/package/postgres), [web app](https://github.com/orgs/semantius/packages/container/package/semantius-app), [sign-in service](https://github.com/orgs/semantius/packages/container/package/semantius-idp). Updating then becomes something you do deliberately: change the tag, run `./up.sh`, and roll back by changing it again.
+
+The other pieces, such as the API server and the front door, cannot be pinned from `.env` yet. [Running Your Stack](/docs/self-hosted/running-your-stack#choosing-a-version) shows how to hold them back with the override file.
 
 ## Turn On Email
 
@@ -119,6 +138,14 @@ Then open `https://yourdomain.com` and complete the setup page. **The first pers
 <Command command="curl https://yourdomain.com/.well-known/semantius.json" />
 
 Every Semantius deployment publishes a short description of itself at that address. The values in it should carry your domain rather than `localhost`, which confirms the front door picked up the new settings. If they are empty or still local, the containers were restarted rather than recreated. Run `./up.sh`, which recreates them properly.
+
+## Using the Entra Variant
+
+Going live with `local-entra-idp` follows the same steps, in its own folder, with three differences:
+
+- **Set only `SITE_ADDRESS` and `PUBLIC_API_URL`.** The API address is `https://yourdomain.com/rest` here, because this variant has no `/gateway/` address. `IDP_BASE_URL`, `PUBLIC_WEB_ORIGIN` and the email section belong to the bundled sign-in service, which this variant does not include. Password resets and account email are handled by Microsoft.
+- **Update the address registered in Entra.** The web app's redirect address has to match the new domain exactly, or sign-in fails with `AADSTS50011`. Add `https://yourdomain.com/oauth2_callback` under the **Single-page application** platform of the web app registration.
+- **Schedule the key refresh.** Run `./jwks-refresh.sh` daily, as described on the [Entra page](/docs/self-hosted/entra-id#keeping-keys-fresh).
 
 ## A Note on Serving Several Domains
 

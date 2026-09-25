@@ -1,14 +1,17 @@
 ---
 title: 'Self-Hosting Quick Start'
 seoTitle: 'Quick Start · Self-Hosting Semantius'
-navTitle: 'Quick Start'
+navTitle: 'Self-Hosting Quick Start'
 description: 'Get a complete Semantius platform running on your own machine in about five minutes.'
 order: 1
 ---
 
 import Command from '~/components/common/Command.astro';
+import SkillInstall from '~/components/common/SkillInstall.astro';
 
 This page takes you from nothing to a working Semantius platform on your own machine. It uses the built-in sign-in system, so there is nothing to register anywhere and no accounts to create first. Budget about five minutes, most of which is Docker downloading images.
+
+**This page covers the `local-semantius-idp` variant.** For Microsoft sign-in, follow [Microsoft Entra ID](/docs/self-hosted/entra-id) instead. For a Dokploy server, follow [Dokploy](/docs/self-hosted/dokploy).
 
 Before you start, make sure Docker and Git are installed and Docker is running. On Windows and macOS that means Docker Desktop is open; on Linux it means the Docker service is running and you can run `docker ps` without an error.
 
@@ -44,7 +47,7 @@ On Windows, run `create.cmd`.
 
 This downloads the images, creates a fresh database, and starts everything. The first run takes a few minutes because of the downloads. Later runs are much faster.
 
-If you skipped step 2, this command runs it for you, so a settings file always exists before anything starts.
+If you skipped step 2, `create` stops with "No .env" and tells you to run `setup-env` first. It never writes the settings file itself, because that would mean a start command quietly choosing your passwords.
 
 While it runs you will see each piece report itself as healthy. The database takes the longest on a first run, because it is installing itself from scratch.
 
@@ -58,7 +61,7 @@ To check that everything came up, run these two commands. The first should list 
 
 ## 4. Sign In and Create Your Account
 
-**This step needs a person in a browser.** It cannot be scripted, because it creates the administrator account.
+**This step needs a person in a browser.** It cannot be scripted, because it creates the administrator account. An agent should hand over the address here and ask you to confirm when you are signed in.
 
 Open `http://localhost:3000` in a browser.
 
@@ -80,11 +83,23 @@ If you would rather start with an empty database, open `.env`, remove the `NWIND
 
 Semantius is built to be worked on by agents as well as people. The `semantius` CLI is how a coding agent such as Claude Code reads your model, changes it, and works with your data.
 
-Install it and its agent skills by following [Agent Skills Installation](/docs/agent-skills/installation). You can skip the API key and organization settings on that page, which are for the managed service. Instead, point the CLI at your stack:
+Install the CLI. On Linux and macOS:
+
+<Command command="curl -fsSL https://raw.githubusercontent.com/semantius/semantius-cli/main/install.sh | bash" />
+
+On Windows, in PowerShell, run `irm https://raw.githubusercontent.com/semantius/semantius-cli/main/install.ps1 | iex` and open a fresh terminal afterward.
+
+Then point it at your stack:
 
 <Command command="semantius use localhost:3000" />
 
-The CLI reads `/.well-known/semantius.json` from your stack to find out where to sign in, then opens a browser so you can sign in once. After that, every command, and every agent using the CLI, works against your own installation.
+The CLI reads `/.well-known/semantius.json` from your stack to find out where to sign in, then opens a browser so you can sign in once. After that, every command, and every agent using the CLI, works against your own installation. There is no API key or organization name to set: those belong to the managed service.
+
+Finally, add the Semantius agent skills to your coding agent:
+
+<SkillInstall url="semantius/semantius-cli" includeSubagents />
+
+Restart your agent afterward so it picks up the new skills. [Agent Skills Installation](/docs/agent-skills/installation) has more on the skills and on choosing which agents to install them for.
 
 ## If Something Does Not Start
 

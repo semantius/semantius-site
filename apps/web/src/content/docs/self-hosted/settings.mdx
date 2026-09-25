@@ -3,7 +3,7 @@ title: 'Settings Reference'
 navTitle: 'Settings'
 seoTitle: 'Settings Reference · Self-Hosting Semantius'
 description: 'Every value in the .env file of a self-hosted Semantius stack, grouped by what it is for.'
-order: 6
+order: 7
 ---
 
 Your whole installation is configured by one file called `.env`, sitting next to `docker-compose.yml` in your variant folder. It is created for you by `./setup-env.sh`, it is never committed to version control, and it is the only file in that folder you are meant to edit.
@@ -11,6 +11,8 @@ Your whole installation is configured by one file called `.env`, sitting next to
 After changing anything here, apply it with `./up.sh`, which keeps your data. A plain restart is not enough: several of these values are read when a container is created, so a restarted container still carries the old ones.
 
 Most people never touch more than the first two groups below.
+
+**The defaults shown are those of `local-semantius-idp`.** The Entra variant adds required settings and changes some defaults, listed under [Entra ID Variant](#entra-id-variant). On Dokploy, the same settings live in the deployment's **Environment** tab.
 
 ## Secrets
 
@@ -46,15 +48,19 @@ These are the settings a real deployment has to change. On a laptop they all def
 
 ## Versions
 
-Every piece runs the newest published version by default and re-downloads it on each start. Convenient while trying things out, wrong for a server you depend on. Pin all of these before going live.
+Every piece runs the newest published version by default, and `./up.sh` and `./create.sh` download it again each time they run. A plain restart or a reboot does not. Convenient while trying things out, wrong for a server you depend on. Pin all three before going live.
 
-| Setting | Controls |
-| --- | --- |
-| `SEMANTIUS_DB_VERSION` | The database image |
-| `SEMANTIUS_APP_VERSION` | The web app |
-| `SEMANTIUS_IDP_VERSION` | The built-in sign-in system |
+| Setting | Default | Controls |
+| --- | --- | --- |
+| `SEMANTIUS_DB_VERSION` | `latest` | The database image. Released tags end in `-pg18` |
+| `SEMANTIUS_APP_VERSION` | `latest` | The web app |
+| `SEMANTIUS_IDP_VERSION` | `latest` | The built-in sign-in system |
+| `APP_PULL_POLICY` | `always` | Set to `missing` to run a web app image you built and tagged yourself, instead of downloading it |
+| `IDP_PULL_POLICY` | `always` | The same, for the sign-in system |
 
-You can also pin for a single run by passing the tag on the command line, for example `./up.sh 0.4.0-pg18`.
+You can also pin the database for a single run by passing the tag on the command line, for example `./up.sh 0.4.0-pg18`. The published versions are listed on each image's package page: [database](https://github.com/orgs/semantius/packages/container/package/postgres), [web app](https://github.com/orgs/semantius/packages/container/package/semantius-app), [sign-in system](https://github.com/orgs/semantius/packages/container/package/semantius-idp).
+
+**The other images have no version setting yet.** The API server, connection pooler, API docs viewer and key fetcher run `latest`, and the front door runs Caddy `2-alpine`. To hold one back, set its image tag in a [`docker-compose.override.yml`](/docs/self-hosted/variants#customizing-a-variant).
 
 ## Email
 
@@ -92,6 +98,11 @@ You can leave every one of these alone if you use the built-in sign-in system, w
 | `JWKS_URL` | the built-in system | Where the API fetches the keys it checks logins against. Set it **empty** to derive them from your own provider instead |
 | `SEMANTIUS_IDP_TYPE` | `semantius` | Which provider is behind this deployment. Informational only, used in logs and support. Set it to `custom` if you repoint the stack |
 | `CLI_OAUTH_CLIENT_ID` | `semantius-cli` | Which registered application the `semantius` CLI signs in as. Not the web app's |
+| `VITE_OAUTH_SCOPE` | empty | The scopes the app asks for. Empty takes what the provider advertises. With Entra, it has to name the API, or Entra issues a token for Microsoft Graph instead |
+| `VITE_OAUTH_USERINFO_ENDPOINT` | empty | Where the app reads the signed-in person's name and email. Empty takes it from the provider's discovery document |
+| `PGRST_JWT_AUD` | empty | The audience the API requires in every token. Set it for a provider that shares signing keys across customers, as Entra does |
+| `VITE_BACKEND_TYPE` | `self_hosted` | Which account menu the app shows. `self_hosted` links to the built-in system's account pages; `custom` uses the menu in `VITE_UI_CUSTOMIZER` |
+| `VITE_UI_CUSTOMIZER` | empty | The account menu for `custom`, as JSON. Typically one entry pointing at your provider's own profile page |
 
 Two of these are easy to misread. `JWKS_URL` set to **empty** is meaningful and different from removing the line: empty means "work it out from the provider's discovery document," which is what an external provider wants. And `SEMANTIUS_IDP_TYPE` is not derived from anything, so a stack repointed at another provider keeps announcing the built-in one until you change it by hand.
 
@@ -112,7 +123,8 @@ Email links deliberately do not follow the request, even with this on. They are 
 
 | Setting | Default | What it does |
 | --- | --- | --- |
-| `DOCS_SPEC_URL` | `/gateway/rest` | Where the documentation page loads the API description from |
+| `DOCS_API_ROUTE` | `/gateway/rest` | The API address the documentation page uses. The Entra variant sets `/rest`, because it has no `/gateway/` address |
+| `DOCS_SPEC_URL` | `/gateway/rest` | Where the documentation page loads the API description from, if it should differ from `DOCS_API_ROUTE` |
 | `PGRST_DB_POOL_MAX_IDLETIME` | `1800` | Seconds an unused database connection is kept open |
 | `PGRST_JWT_ROLE_CLAIM_KEY` | `.role` | Which part of a login token names the permission level. Only changes with an external provider that cannot use the standard name |
 
@@ -122,7 +134,31 @@ A few values are deliberately fixed in `docker-compose.yml` rather than exposed 
 
 - The database administrator username, always `postgres`.
 - Where the sign-in system reads its configuration from, and which part of the database it uses.
-- The two settings that put the web app in self-hosted mode. These are pinned because this deployment **is** the self-hosted backend, and there is no case where one of its own containers should be asking a hosted service about itself.
+- The setting that puts the web app in self-hosted mode, so it never contacts the managed service. It is pinned because this deployment **is** the self-hosted backend, and there is no case where one of its own containers should be asking a hosted service about itself.
+
+## Entra ID Variant
+
+`local-entra-idp` has no built-in sign-in system, so the settings for it are gone, and six settings become **required**. `create` and `up` stop and name any that are empty. The [Entra setup script](/docs/self-hosted/entra-id#2-register-three-applications-in-entra) fills them in for you.
+
+| Required setting | What it holds |
+| --- | --- |
+| `VITE_OAUTH_CONFIG` | Your tenant's OpenID Connect discovery address |
+| `VITE_OAUTH_CLIENT_ID` | The web app registration's id |
+| `VITE_OAUTH_AUDIENCE` | The API registration, which tokens are issued for |
+| `VITE_OAUTH_SCOPE` | The scopes, including the API's own scope |
+| `PGRST_JWT_AUD` | The same API registration, checked by the API on every token |
+| `CLI_OAUTH_CLIENT_ID` | The `semantius` CLI registration's id |
+
+It also changes these defaults, so they already fit Entra:
+
+| Setting | Entra default |
+| --- | --- |
+| `SEMANTIUS_IDP_TYPE` | `entra` |
+| `JWKS_URL` | empty, so the keys come from Entra's discovery document |
+| `PGRST_JWT_ROLE_CLAIM_KEY` | `.roles[0]`, because Entra puts app roles in a list |
+| `DOCS_API_ROUTE` | `/rest` |
+| `VITE_BACKEND_TYPE` | `custom` |
+| `VITE_UI_CUSTOMIZER` | One menu entry linking to the Microsoft account page |
 
 ## Next Steps
 

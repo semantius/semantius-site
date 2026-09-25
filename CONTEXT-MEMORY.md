@@ -61,6 +61,21 @@ that it exists.
 - **Bold** for product and UI labels, `code spans` for filenames, settings and
   commands. No `<h1>` in the body: the layout renders it from `title`.
 
+**Self-hosted docs are variant-aware.** The `semantius-self-hosted` repo generates
+several variants (`local-semantius-idp`, `local-entra-idp`, `dokploy-semantius-idp`)
+from one template, and the pages are written for `local-semantius-idp`. Every page
+under `self-hosted/` therefore opens with a bold lead-in naming the variants it
+covers, and `variants.mdx` holds the page-by-variant table. Keep both in step when
+adding a page or a section that only one variant has (anything under `/idp` or
+`/gateway` is bundled-idp only). Operator changes go in `.env` or
+`docker-compose.override.yml`, never in generated variant files: `git pull` and
+`./build.sh` would conflict with or overwrite them.
+
+**Never pipe doc content through a Bash heredoc into a Python string when it holds
+a backslash line continuation.** The `\` plus newline arrives collapsed, leaving
+one long line with triple spaces (that is how the `psql -c ... -c ...` snippets
+broke once). Use Write or Edit for such content.
+
 ## Content that does not originate in this repo
 
 `blueprints/`, `skill-specs/` and `skills/` are **mirrors**. They are generated and

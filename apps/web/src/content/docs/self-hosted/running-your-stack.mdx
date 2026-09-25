@@ -10,6 +10,8 @@ import Command from '~/components/common/Command.astro';
 
 Once your stack is up, day-to-day work is a handful of commands plus a few addresses worth bookmarking. This page covers both. Every command here is run **from inside your variant folder**, the one holding `docker-compose.yml` and `.env`.
 
+**This page is written for the `local-semantius-idp` variant.** The commands, backups and updates apply to `local-entra-idp` as well. The sections that need the bundled sign-in service say so, and do not apply to Entra. On Dokploy there are no scripts to run, so use the [Dokploy](/docs/self-hosted/dokploy#after-the-first-deploy) page instead.
+
 Every command exists twice: a `.sh` version for macOS, Linux, and Git Bash, and a `.cmd` version for the Windows command prompt. The examples below show the `.sh` form. On Windows, swap the extension.
 
 ## The Everyday Commands
@@ -39,15 +41,17 @@ The reason they are separate commands rather than one command with a flag is tha
 
 ## Adding People
 
+**This needs the bundled sign-in service.** With Entra ID, people are assigned in Entra instead, as described on the [Entra page](/docs/self-hosted/entra-id#3-give-people-access).
+
 Sign in as the administrator and go to `http://localhost:3000/idp/admin`. That is where users are created and managed.
 
 By default the stack does not send email. That is deliberate: a local install with no mail service configured would otherwise offer password reset links that never arrive. The practical consequence is that **an administrator creates accounts and sets passwords directly**, and there is no self-service password reset.
 
-To turn email on for a real deployment, add a [Resend](https://resend.com) API key to `.env` as `RESEND_API_KEY` and run `./up.sh`. Password resets, email verification, and notifications switch on together.
+To turn email on for a real deployment, add a [Resend](https://resend.com) API key to `.env` as `RESEND_API_KEY` and run `./up.sh`. Password resets, email verification, and notifications switch on together. Resend is the only email service the sign-in service supports; there are no settings for your own SMTP server.
 
 ## Reaching the API From a Script
 
-Browsers sign in interactively, but scripts and scheduled jobs cannot. For those, create an **API key**.
+Browsers sign in interactively, but scripts and scheduled jobs cannot. For those, create an **API key**. API keys and the `/gateway/rest/` address come from the bundled sign-in service. With Entra ID, a script instead gets an access token for the Semantius API registration from Entra and sends it as a bearer token to `/rest/`.
 
 1. Sign in and open `http://localhost:3000/idp/account/api-keys`.
 2. Create a key and copy it. You only see it once.
@@ -86,7 +90,7 @@ Sometimes you want SQL directly. The database is reachable on **port 5434** with
 
 There is also a pooled connection on **port 6432**, which is the one your own applications should use if they talk SQL rather than HTTP. It handles many short-lived connections far better than connecting to the database directly.
 
-If you just want to look at some data and do not want to install a client at all, administrators have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
+If you just want to look at some data and do not want to install a client at all, administrators of the bundled sign-in service have a read-only SQL console at `http://localhost:3000/idp/admin/database`. Every query there runs read-only and is recorded in the audit log, which also means an administrator who can open it can read everything stored in the database. Worth knowing before you hand out administrator accounts.
 
 ## Backing Up
 
@@ -100,17 +104,21 @@ That writes a single file you can copy anywhere. It runs as the `postgres` super
 
 **`./create.sh` and `./destroy.sh` delete the database, and there is no undo.** The data sits in a Docker volume called `semantius_pgdata`, and those two commands remove it. Take a dump before running either one on a stack you care about.
 
-For a server, put the command on a daily schedule and keep several days of files somewhere other than that server. Restoring follows the rules in [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain#back-up): restore into an empty database, as the `postgres` user, with no extra flags.
+For a server, put the command on a daily schedule. Keep the copies somewhere other than that server, encrypt them if they leave your network, and decide how many days to keep. A backup you have never restored is a hope rather than a backup, so try a restore on a test machine now and then. Restoring follows the rules in [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain#back-up): restore into an empty database, as the `postgres` user, with no extra flags.
 
 ## Choosing a Version
 
-By default the stack runs the latest published version of every piece and re-downloads it each time you run `./create.sh` or `./up.sh`. That is convenient while you are trying things out, and the wrong default for a server you depend on.
+By default the stack runs the latest published version of every piece. It downloads that version each time you run `./create.sh` or `./up.sh`. A plain restart, a reboot or `./start.sh` does not download anything, and keeps running what is already there. That is convenient while you are trying things out, and the wrong default for a server you depend on.
 
-To pin a version for one run, pass the tag:
+To pin a database version for one run, pass the tag:
 
 <Command command="./up.sh 0.4.0-pg18" />
 
-To make it permanent, set `SEMANTIUS_DB_VERSION` in `.env`. There are matching `SEMANTIUS_APP_VERSION` and `SEMANTIUS_IDP_VERSION` settings for the web app and the sign-in service. Pin all three before you put a stack into real use, so an update happens when you choose rather than on the next restart.
+To make it permanent, set `SEMANTIUS_DB_VERSION` in `.env`. There are matching `SEMANTIUS_APP_VERSION` and `SEMANTIUS_IDP_VERSION` settings for the web app and the sign-in service. Pin all three before you put a stack into real use, so an update happens when you choose rather than on the next `./up.sh`.
+
+The published versions are listed on each image's package page: [database](https://github.com/orgs/semantius/packages/container/package/postgres), [web app](https://github.com/orgs/semantius/packages/container/package/semantius-app) and [sign-in service](https://github.com/orgs/semantius/packages/container/package/semantius-idp). Database tags always end in `-pg18`, for example `0.4.0-pg18`.
+
+**The other pieces cannot be pinned from `.env` yet.** The API server, the connection pooler, the API docs viewer and the key fetcher run their `latest` version, and the front door runs Caddy `2-alpine`. Each `./up.sh` or `./create.sh` downloads their newest release. To hold one of them back, set its `image:` to a fixed tag in a [`docker-compose.override.yml`](/docs/self-hosted/variants#customizing-a-variant).
 
 ## Updating to a New Version
 
@@ -119,10 +127,22 @@ Updating the web app and the sign-in service is one step: change `SEMANTIUS_APP_
 **Updating the database takes one more step.** The database sets itself up only once, when it is first created. A newer `SEMANTIUS_DB_VERSION` therefore brings newer extension files, but it does not change the schema of a database that already exists. Take a backup first, then change the tag and run `./up.sh`, then apply the update inside the database:
 
 ```bash
-docker exec semantius-postgres psql -U postgres -d semantius   -c "ALTER EXTENSION pg_semantius UPDATE;"   -c "SELECT semantius.migrate();"
+docker exec semantius-postgres psql -U postgres -d semantius \
+  -c "ALTER EXTENSION pg_semantius UPDATE;" \
+  -c "SELECT semantius.migrate();"
 ```
 
 Both statements are safe to run again, because `migrate()` records what it has already applied and skips it. To see what is installed and whether anything is still pending, run `SELECT * FROM semantius.status();` the same way. [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain) explains both in more detail, including which old versions have no upgrade path.
+
+## Updating the Stack Files
+
+The compose file, the front door configuration and the scripts also change over time. You pick up a newer set by pulling the repository again, from the folder you cloned:
+
+<Command command="git pull" />
+
+Then run `./up.sh` from your variant folder. It recreates the containers from the new files and keeps your database.
+
+Your `.env` and a `docker-compose.override.yml` survive this, because neither is part of the repository. A change made directly to a file in the variant folder does not: `git pull` stops on the conflict. Keep your changes in those two files, or in a variant of your own, as [Choose or Build Your Variant](/docs/self-hosted/variants#keeping-your-changes-when-you-update) explains.
 
 ## When Sign-In Suddenly Stops Working
 

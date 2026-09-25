@@ -1,0 +1,162 @@
+---
+title: 'Choose or Build Your Variant'
+navTitle: 'Variants'
+seoTitle: 'Choose or Build Your Variant · Self-Hosting Semantius'
+description: 'How the self-hosted Semantius stack is built from one template, which ready-made variants exist, and how to customize one or generate your own.'
+order: 6
+---
+
+import Command from '~/components/common/Command.astro';
+
+The self-hosted stack is defined once, in the repository's `templates/` folder. Every folder under `variants/` is **generated** from it: the same stack, minus the parts that variant leaves out, with defaults that fit its platform and its sign-in provider.
+
+So your first decision is not how to write a setup from scratch. It is which of three routes fits: use a ready-made variant as it is, adjust one through its settings, or generate a new one.
+
+## How the Repository Is Built
+
+```text
+semantius-self-hosted/
+├── templates/                 the stack, written once
+│   ├── docker-compose.yml
+│   ├── Caddyfile
+│   ├── .env.example
+│   ├── semantius-idp-config/
+│   ├── compose-scripts/       create, up, stop, setup-env...
+│   └── variants/<name>/       one variant.json per variant
+├── variants/<name>/           generated, ready to run
+└── build.sh                   the generator
+```
+
+Each variant is named `<platform>-<identity provider>`, so the name tells you where it runs and who signs people in. The platform is either `local`, a Docker Compose folder you run with the included scripts, or `dokploy`, a single blueprint file you import into [Dokploy](https://dokploy.com).
+
+The generated folders are committed to the repository. Running a ready-made variant therefore needs only Docker and Git. Only generating a new one needs Node.js.
+
+## Ready-Made Variants
+
+| Variant | Platform | Sign-in handled by | Guide |
+| --- | --- | --- | --- |
+| `local-semantius-idp` | Docker Compose | The bundled [semantius-idp](https://github.com/semantius/semantius-idp) | [Quick Start](/docs/self-hosted/quick-start), then [Going Live](/docs/self-hosted/deploy) |
+| `local-entra-idp` | Docker Compose | Microsoft Entra ID | [Microsoft Entra ID](/docs/self-hosted/entra-id) |
+| `dokploy-semantius-idp` | Dokploy blueprint | The bundled semantius-idp | [Dokploy](/docs/self-hosted/dokploy) |
+
+**Pick `local-semantius-idp` unless you have a reason not to.** It needs no accounts, no registrations, and no configuration to start. Other combinations, such as Dokploy with Entra ID or Docker Compose with Okta, are one small definition file away, as described below.
+
+## Which Pages Apply to Your Variant
+
+The rest of this section is written for `local-semantius-idp`. Most of it carries over, but not all of it:
+
+| Page | `local-semantius-idp` | `local-entra-idp` | `dokploy-semantius-idp` |
+| --- | --- | --- | --- |
+| [Quick Start](/docs/self-hosted/quick-start) | Yes | No, the Entra page replaces it | No, the Dokploy page replaces it |
+| [Running Your Stack](/docs/self-hosted/running-your-stack) | Yes | The commands, backups and updates, yes. Adding people, API keys and the SQL console belong to the bundled sign-in service, which this variant does not have | No. The Dokploy page covers the same tasks for Dokploy |
+| [Going Live](/docs/self-hosted/deploy) | Yes | Yes, with one extra step for Entra, listed on that page | No, the Dokploy page replaces it |
+| [Settings Reference](/docs/self-hosted/settings) | Yes | Yes, plus the Entra values listed on that page | Yes, set in Dokploy's **Environment** tab |
+
+## Customizing a Variant
+
+Most changes need no new variant at all. There are two places for them, and neither is touched when you update the repository.
+
+**`.env` holds your settings.** Your domain, ports, versions, email and identity provider are all settings. `.env` is not tracked by Git, so `git pull` never conflicts with it, and a rebuild never overwrites it. The [Settings Reference](/docs/self-hosted/settings) lists every value.
+
+**`docker-compose.override.yml` holds your changes to the compose file.** Docker Compose reads a file with that name automatically when it sits next to `docker-compose.yml`, so the included scripts pick it up with no extra flag. It is not part of the repository either, so it survives updates the same way `.env` does.
+
+For example, this override publishes the web ports for HTTPS and keeps the database ports on the server itself. It is the change [Going Live](/docs/self-hosted/deploy) walks you through:
+
+```yaml
+services:
+  semantius:
+    ports: !override
+      - "80:80"
+      - "443:443"
+  postgres:
+    ports: !override
+      - "127.0.0.1:${POSTGRES_PORT:-5434}:5432"
+  pgbouncer:
+    ports: !override
+      - "127.0.0.1:${PGBOUNCER_PORT:-6432}:5432"
+```
+
+The `!override` tag replaces the list instead of adding to it. Without the tag, Compose would publish the old ports **and** the new ones. It needs Docker Compose 2.24.4 or newer; check with `docker compose version`.
+
+**Do not edit the generated files themselves.** A change to `docker-compose.yml`, the `Caddyfile` or a script in a variant folder conflicts with the next `git pull` and is overwritten by the next `./build.sh`. If you need a different `Caddyfile`, keep your copy under another name and point the mount at it in the override file.
+
+### Pointing a Variant at Another Provider
+
+Any OpenID Connect provider that issues **JWT access tokens** works with Semantius, and Okta, Keycloak and Auth0 are often easier to connect than Entra. What the provider has to do:
+
+- **Issue a JWT access token**, in the style of RFC 9068, rather than an opaque one. Semantius checks each token itself against the provider's published keys, so a token it cannot read is useless to it. Google and GitHub sign-in issue opaque access tokens and do not work this way. Auth0 issues a JWT only when the app asks for an API audience, which the Semantius web app does.
+- **Put a role claim saying `authenticated` in the token.** If the provider cannot use the name `role`, point `PGRST_JWT_ROLE_CLAIM_KEY` at the claim it does use. Entra, for example, uses `.roles[0]`.
+- **Carry a stable internal user id.** The Semantius user record is created from it the first time somebody signs in, and their name and email fill in the rest.
+- **Pin the audience** if the provider signs tokens for many customers with shared keys, as Entra does. Setting `PGRST_JWT_AUD` ties a login to **your** registration rather than anyone else's on the same provider.
+
+Register three applications with the provider, as the [Entra page](/docs/self-hosted/entra-id#2-register-three-applications-in-entra) does: one for the API, one for the web app (a public client), and one for the `semantius` CLI, whose redirect addresses are `http://127.0.0.1:53682/callback`, `:53683` and `:53684`.
+
+The quickest route is the `local-entra-idp` folder, because it already leaves out the bundled sign-in service. Fill its `.env` with your provider's values instead of Entra's: `VITE_OAUTH_CONFIG`, `VITE_OAUTH_CLIENT_ID`, `VITE_OAUTH_AUDIENCE`, `VITE_OAUTH_SCOPE`, `PGRST_JWT_AUD` and `CLI_OAUTH_CLIENT_ID`. Then override the Entra defaults that do not fit: set `SEMANTIUS_IDP_TYPE=custom`, set `PGRST_JWT_ROLE_CLAIM_KEY` to your provider's claim, and point `VITE_UI_CUSTOMIZER` at your provider's own profile page. For a setup you keep for years, a variant of its own is cleaner, because its name then says what it is.
+
+## Generating a New Variant
+
+A new combination of platform, sign-in provider and features is a new `variant.json`, not a fork of the stack. You need Node.js 18 or newer, and you install the generator's one dependency once:
+
+<Command command="npm install" />
+
+Each variant is described by `templates/variants/<name>/variant.json`:
+
+| Field | What it does |
+| --- | --- |
+| `platform` | `compose` for a folder you run with the scripts, `dokploy` for a Dokploy blueprint |
+| `removeFeatures` | The parts of the stack to leave out. `bundled-idp` removes the bundled sign-in service with its `/idp` and `/gateway` routes |
+| `required` | Settings the variant cannot start without. `create` and `up` then stop and name any that are empty, instead of starting a broken stack |
+| `defaults` | New default values for settings whose built-in default pointed at something the variant removed |
+
+The same folder needs a `header.txt`, the comment that opens the generated compose file. Any other file in it is copied into the variant as it is, which is how the Entra setup script reaches `local-entra-idp`. A Dokploy variant also needs a `template.toml` and a `meta.json`; copy both from `templates/variants/dokploy-semantius-idp/` and adjust them.
+
+### Example: Docker Compose With Okta
+
+Create `templates/variants/local-okta-idp/variant.json`:
+
+```json
+{
+  "platform": "compose",
+  "removeFeatures": ["bundled-idp"],
+  "required": [
+    "VITE_OAUTH_CONFIG",
+    "VITE_OAUTH_CLIENT_ID",
+    "VITE_OAUTH_AUDIENCE",
+    "CLI_OAUTH_CLIENT_ID"
+  ],
+  "defaults": {
+    "SEMANTIUS_IDP_TYPE": "custom",
+    "JWKS_URL": "",
+    "DOCS_API_ROUTE": "/rest",
+    "VITE_BACKEND_TYPE": "custom",
+    "VITE_UI_CUSTOMIZER": "{\"user\":{\"menu\":[{\"title\":\"Okta account\",\"url\":\"https://yourcompany.okta.com/enduser/settings\",\"target\":\"newtab\"}]}}"
+  }
+}
+```
+
+Copy `header.txt` from the Entra variant's folder next to it and reword it for Okta. Then build:
+
+<Command command="./build.sh local-okta-idp" />
+
+On Windows, run `build.cmd local-okta-idp`. The result is a new `variants/local-okta-idp/` folder that you run like any other: `./setup-env.sh`, fill in the required values, `./create.sh`.
+
+**The generator checks its own output.** It fails, rather than writing a half-working folder, when a route or a dependency still names a removed service, or when a required setting has no line in the new `.env.example`.
+
+## Keeping Your Changes When You Update
+
+Updating to a newer version of the stack files means pulling the repository again. What happens to your changes depends on where you made them:
+
+| What you changed | `git pull` | `./build.sh` |
+| --- | --- | --- |
+| `.env` | Kept | Kept |
+| `docker-compose.override.yml` | Kept | Kept |
+| A file generated into a variant folder | Conflicts | Overwritten |
+| Your own `variant.json`, committed to your fork | Merges like any file | Regenerates your variant from it |
+
+The safe routine for a ready-made variant is `git pull`, then `./up.sh` from the variant folder. For a variant of your own, keep it in a fork: pull the upstream changes, run `./build.sh <name>` to regenerate it from the new templates, commit the result, and run `./up.sh`. [Running Your Stack](/docs/self-hosted/running-your-stack#updating-the-stack-files) covers when an update also needs a database step.
+
+## Next Steps
+
+- **[Quick Start](/docs/self-hosted/quick-start)**: run the default variant on your own machine.
+- **[Microsoft Entra ID](/docs/self-hosted/entra-id)**: the ready-made variant for organizations that sign in with Microsoft.
+- **[Settings Reference](/docs/self-hosted/settings)**: every value you can set in `.env`.

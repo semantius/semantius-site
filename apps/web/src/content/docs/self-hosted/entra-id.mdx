@@ -2,15 +2,15 @@
 title: 'Sign In with Microsoft Entra ID'
 navTitle: 'Microsoft Entra ID'
 seoTitle: 'Sign In with Microsoft Entra ID · Self-Hosting Semantius'
-description: 'Run a self-hosted Semantius stack where your organization signs people in with Microsoft Entra ID instead of the built-in system.'
+description: 'Run a self-hosted Semantius stack that signs people in with Microsoft Entra ID, so users, sign-in and offboarding are managed centrally in Entra.'
 order: 5
 ---
 
 import Command from '~/components/common/Command.astro';
 
-If your organization already signs in with Microsoft, you probably want Semantius to use that rather than asking people to keep another password. The repository ships a variant for exactly this: the same stack, with the built-in sign-in system removed and Microsoft Entra ID handling logins instead.
+If your organization manages its people in Microsoft Entra ID, Semantius can use it directly. Who has access, how they authenticate (multi-factor authentication, conditional access) and when access ends are then managed in Entra, in one place, instead of in a separate user list that someone has to keep in sync. When someone leaves and is removed in Entra, they lose access to Semantius at the same moment.
 
-People then sign in with their work account, and access is granted or revoked in Entra along with everything else, rather than in a separate place somebody has to remember to update.
+The repository ships a ready-made variant for exactly this, `local-entra-idp`: the same stack, generated without the bundled sign-in service, with Entra ID handling sign-in instead. After setup, follow [Running Your Stack](/docs/self-hosted/running-your-stack) and [Going Live](/docs/self-hosted/deploy) as usual; both pages point out where this variant differs.
 
 This is a different folder rather than a setting, because the built-in sign-in system is genuinely absent from it. Running both at once would give you two competing sign-in systems on one address.
 
@@ -20,7 +20,7 @@ This is a different folder rather than a setting, because the built-in sign-in s
 - **An Entra tenant**, and someone allowed to register applications in it. That is the *Application Developer* role or higher, and it may well be someone else in your organization rather than you.
 - **For the setup script only:** PowerShell 7 and the Azure CLI. Everything it does can also be done by hand in the Entra admin center.
 
-Leave the version settings at their defaults unless you have a reason to pin. Entra needs reasonably recent images, and an old pin shows up as a confusing error at sign-in rather than as a clear version complaint.
+Entra support needs recent images. When you pin versions, as [Going Live](/docs/self-hosted/deploy#pin-your-versions) recommends for a server, pin versions you have tested sign-in with, and do not pin older than that. An image that predates Entra support shows up as a confusing error at sign-in, `90002`, rather than as a clear version complaint.
 
 ## 1. Get the Files
 
@@ -113,26 +113,16 @@ The variant's README carries the full list along with what fixes each one.
 
 Microsoft periodically replaces the keys used to sign logins, and this variant downloads them once when it starts. A stale copy eventually rejects everybody.
 
-```bash
-docker compose run --rm jwks-fetch
-docker compose restart postgrest
-```
+<Command command="./jwks-refresh.sh" />
 
-Run that after a rotation. Because Microsoft rotates on its own schedule rather than yours, a **daily scheduled run is the safe default** here, which is a real difference from the built-in sign-in system where running it on demand is usually enough.
+On Windows, run `jwks-refresh.cmd`. It fetches the current keys and restarts the API, which takes about a second, and nobody is signed out. Because Microsoft rotates on its own schedule rather than yours, a **daily scheduled run is the safe default** here, which is a real difference from the built-in sign-in system where running it on demand is usually enough.
 
 ## Using a Different Provider
 
-Okta, Keycloak, Auth0 and similar are not shipped as ready-made variants, but they are generally **easier** to set up than Entra, because they can issue the permission claim Semantius expects in its simplest form, while Entra needs a workaround.
-
-The provider has to issue **JWT access tokens**, in the style of RFC 9068, rather than opaque ones. Semantius checks each token itself against the provider's published keys, so a token it cannot read is useless to it. Google and GitHub sign-in issue opaque access tokens and do not work this way. Auth0 issues a JWT only when the app asks for an API audience, which the Semantius web app does.
-
-The approach is to copy the Entra variant's definition file, change the handful of values that are Entra-specific, and rebuild. What any provider has to do is short:
-
-- Issue a JWT access token carrying a role claim that says `authenticated`. If the provider cannot use the name `role`, point `PGRST_JWT_ROLE_CLAIM_KEY` at the claim it does use.
-- Carry a stable internal user id. The Semantius user record is created from it the first time somebody signs in, and their name and email fill in the rest.
-- Pin the audience, if the provider signs tokens for many customers with shared keys as Entra does. This is what ties a login to **your** registration rather than anyone else's on the same provider.
+Okta, Keycloak, Auth0 and other OpenID Connect providers that issue JWT access tokens work too, often more easily than Entra. What a provider has to do, and how to run this variant against one or generate a variant of its own, is on [Choose or Build Your Variant](/docs/self-hosted/variants#pointing-a-variant-at-another-provider).
 
 ## Next Steps
 
 - **[Running Your Stack](/docs/self-hosted/running-your-stack)**: everyday commands and the API.
 - **[Going Live](/docs/self-hosted/deploy)**: putting it on a server with your own domain.
+- **[Settings Reference](/docs/self-hosted/settings#entra-id-variant)**: the settings this variant adds and the defaults it changes.
