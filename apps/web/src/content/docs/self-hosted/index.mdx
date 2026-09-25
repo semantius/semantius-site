@@ -45,24 +45,23 @@ You run one command and get a small set of programs running side by side in Dock
 Behind that one address, a front door passes each request to the program that handles it:
 
 ```mermaid
-flowchart LR
+flowchart TB
     browser(["Browser, CLI, scripts"])
-    sqlclient(["SQL clients"])
     caddy["Front door (Caddy)<br/>port 3000, or 80 and 443 when live"]
 
     subgraph http["Behind the front door"]
-        direction TB
         app["Web app"]
-        idp["Sign-in service (semantius-idp)<br/>not in the Entra variant"]
         docs["API docs (Scalar)"]
+        idp["Sign-in service (semantius-idp)<br/>not in the Entra variant"]
         api["API server (PostgREST)"]
     end
 
     subgraph data["Database"]
-        direction TB
         pool["Connection pooler (PgBouncer)"]
         pg[("PostgreSQL 18<br/>with pg_semantius")]
     end
+
+    sqlclient(["SQL clients"])
 
     browser --> caddy
     caddy -->|"/"| app
