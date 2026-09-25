@@ -3,7 +3,7 @@ title: 'Choose or Build Your Variant'
 navTitle: 'Variants'
 seoTitle: 'Choose or Build Your Variant · Self-Hosting Semantius'
 description: 'How the self-hosted Semantius stack is built from one template, which ready-made variants exist, and how to customize one or generate your own.'
-order: 6
+order: 7
 ---
 
 import Command from '~/components/common/Command.astro';
@@ -35,7 +35,7 @@ The generated folders are committed to the repository. Running a ready-made vari
 
 | Variant | Platform | Sign-in handled by | Guide |
 | --- | --- | --- | --- |
-| `local-semantius-idp` | Docker Compose | The bundled [semantius-idp](https://github.com/semantius/semantius-idp) | [Quick Start](/docs/self-hosted/quick-start), then [Going Live](/docs/self-hosted/deploy) |
+| `local-semantius-idp` | Docker Compose | The bundled [semantius-idp](/docs/self-hosted/semantius-idp) | [Quick Start](/docs/self-hosted/quick-start), then [Going Live](/docs/self-hosted/deploy) |
 | `local-entra-idp` | Docker Compose | Microsoft Entra ID | [Microsoft Entra ID](/docs/self-hosted/entra-id) |
 | `dokploy-semantius-idp` | Dokploy blueprint | The bundled semantius-idp | [Dokploy](/docs/self-hosted/dokploy) |
 
@@ -78,7 +78,9 @@ services:
 
 The `!override` tag replaces the list instead of adding to it. Without the tag, Compose would publish the old ports **and** the new ones. It needs Docker Compose 2.24.4 or newer; check with `docker compose version`.
 
-**Do not edit the generated files themselves.** A change to `docker-compose.yml`, the `Caddyfile` or a script in a variant folder conflicts with the next `git pull` and is overwritten by the next `./build.sh`. If you need a different `Caddyfile`, keep your copy under another name and point the mount at it in the override file.
+**Do not edit the generated files in place.** A change to `docker-compose.yml`, the `Caddyfile` or a script in a ready-made variant folder conflicts with the next `git pull` and is overwritten by the next `./build.sh`. If you need a different `Caddyfile`, keep your copy under another name and point the mount at it in the override file.
+
+**Copying a variant is the other supported route.** Copy a variant folder under a new name, for example `variants/my-stack/`, and change whatever you like in the copy. Neither `git pull` nor `./build.sh` touches a folder the repository does not know. The price is that updates no longer reach it on their own: after pulling a newer version, compare your copy with the variant it came from and carry the changes over yourself. The override file is the recommended route because it avoids that step.
 
 ### Pointing a Variant at Another Provider
 
@@ -153,6 +155,7 @@ Updating to a newer version of the stack files means pulling the repository agai
 | `.env` | Kept | Kept |
 | `docker-compose.override.yml` | Kept | Kept |
 | A file generated into a variant folder | Conflicts | Overwritten |
+| A copied variant folder | Kept, but not updated | Kept, but not updated |
 | Your own `variant.json`, committed to your fork | Merges like any file | Regenerates your variant from it |
 
 The safe routine for a ready-made variant is `git pull`, then `./up.sh` from the variant folder. For a variant of your own, keep it in a fork: pull the upstream changes, run `./build.sh <name>` to regenerate it from the new templates, commit the result, and run `./up.sh`. [Running Your Stack](/docs/self-hosted/running-your-stack#updating-the-stack-files) covers when an update also needs a database step.

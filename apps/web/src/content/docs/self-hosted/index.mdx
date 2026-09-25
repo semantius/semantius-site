@@ -30,6 +30,31 @@ There are three ways to get Semantius, and only one of them is this section:
 - **It is the full open-source platform.** The same semantic model, API, web app and permissions the managed service runs. This is not a trimmed-down demo edition.
 - **It is easy to throw away.** One command creates it, one command removes it, so it is a safe place to experiment.
 
+## Is Self-Hosting Right for You?
+
+Self-hosting suits you if you want your data on infrastructure you control, have compliance requirements that rule out a managed service, or want to try Semantius locally without an account.
+
+The Quick Start needs nothing beyond running a few commands. **Running it for other people** assumes you are comfortable with Docker and Docker Compose, basic Linux server administration, and DNS, HTTPS and firewalls. **You are responsible for** the server, security updates, backups and restores, upgrades, and uptime.
+
+If you would rather not run it yourself, [app.semantius.com](https://app.semantius.com) runs the platform for you.
+
+**Found a security issue?** Report it privately through the **Security** tab of the [semantius-self-hosted repository](https://github.com/semantius/semantius-self-hosted/security), using **Report a vulnerability**, rather than in a public issue.
+
+## Self-Hosted and Managed Compared
+
+| | Self-hosted | Managed at app.semantius.com |
+| --- | --- | --- |
+| Semantic model, API, web app, permissions | Included | Included |
+| Sign-in | semantius-idp, or your own identity provider | Managed for you |
+| Operations, monitoring and updates | You | Semantius |
+| Backups and restores | You | Semantius |
+| Analytics (Cube) | Not included | Included |
+| Remote MCP servers for agents | Not included | Included |
+| Webhooks | Not included | Included |
+| Send email action | Not included | Included |
+| Cost | Your own server | A plan |
+| License | MIT | Service |
+
 ## What Actually Starts
 
 You run one command and get a small set of programs running side by side in Docker. You only ever open **one address** in a browser, and everything is reachable behind it:
@@ -105,7 +130,7 @@ Semantius has no login system of its own. The API and the database accept standa
 That split is what IT teams usually ask for. Single sign-on, multi-factor authentication and offboarding stay in the identity provider your organization already runs, rather than in a second user list.
 
 - **Use the provider you already run.** Microsoft Entra ID has a ready-made variant, with a script that registers the web app, the API and the `semantius` CLI for you ([Microsoft Entra ID](/docs/self-hosted/entra-id)). Other OpenID Connect providers that issue JWT access tokens, such as Okta, Keycloak and Auth0, work the same way, through settings or a variant of their own ([Variants](/docs/self-hosted/variants#pointing-a-variant-at-another-provider)).
-- **No provider, or no time to set one up?** The default setup bundles [semantius-idp](https://github.com/semantius/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider with a built-in API gateway for personal API keys. So you need neither a separate identity provider nor a separate gateway. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
+- **No provider, or no time to set one up?** The default setup bundles [semantius-idp](/docs/self-hosted/semantius-idp), an MIT-licensed OAuth 2.1 and OpenID Connect provider with a built-in API gateway for personal API keys. So you need neither a separate identity provider nor a separate gateway. It comes already configured for the Semantius web app and the `semantius` CLI, so nothing needs registering anywhere.
 
 With the bundled provider, the user list is empty on first run, so the sign-in page doubles as the setup page: the first person to complete it becomes the administrator. There is no default password to look up and no account to register anywhere.
 
@@ -138,5 +163,6 @@ That is all. Every piece is downloaded as a prebuilt image. There is no compiler
 - **[Going Live](/docs/self-hosted/deploy)**: move it to a real server with your own domain and HTTPS.
 - **[Dokploy](/docs/self-hosted/dokploy)**: deploy it through Dokploy without editing config files.
 - **[Microsoft Entra ID](/docs/self-hosted/entra-id)**: sign people in with their Microsoft work accounts.
+- **[semantius-idp](/docs/self-hosted/semantius-idp)**: the bundled sign-in service and API gateway.
 - **[Variants](/docs/self-hosted/variants)**: adjust a variant, or generate one for another platform or provider.
 - **[Settings Reference](/docs/self-hosted/settings)**: every value in the settings file, grouped by what it does.

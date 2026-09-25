@@ -1,0 +1,78 @@
+---
+title: 'semantius-idp: Sign-In and API Gateway'
+navTitle: 'semantius-idp'
+seoTitle: 'semantius-idp: Sign-In and API Gateway · Self-Hosting Semantius'
+description: 'The open-source identity provider bundled with self-hosted Semantius: standard OpenID Connect sign-in plus a built-in API gateway for personal API keys.'
+order: 6
+---
+
+import RepoCard from '~/components/common/RepoCard.astro';
+
+**semantius-idp** is the identity provider that ships with self-hosted Semantius. It is a standards-based OAuth 2.1 and OpenID Connect provider with a **built-in API gateway** for personal API keys. So a self-hosted stack needs neither a separate identity provider nor a separate gateway.
+
+It is its own MIT-licensed project and runs anywhere, not only inside Semantius. In the self-hosted stack it comes already configured for the Semantius web app and the `semantius` CLI, so there is nothing to register.
+
+<RepoCard repo="semantius/semantius-idp" license="MIT" description="A lightweight, self-hosted OAuth 2.1 and OpenID Connect provider with user management and a built-in API gateway." />
+
+**This page applies to the variants with the bundled provider**, `local-semantius-idp` and `dokploy-semantius-idp`. If your organization already runs an identity provider, such as Microsoft Entra ID, use that instead, as described on [Variants](/docs/self-hosted/variants#pointing-a-variant-at-another-provider).
+
+## What It Gives You
+
+- **Sign-in to the web app and the CLI**, with email and password, and optional two-factor authentication with an authenticator app.
+- **Standard tokens.** Every access token is a signed JWT, which the API checks against the provider's published keys, with no call back to the provider on each request.
+- **Personal API keys for scripts.** Each person creates their own keys, and the built-in gateway at `/gateway/rest/` exchanges a key for a token on every call. [Running Your Stack](/docs/self-hosted/running-your-stack#reaching-the-api-from-a-script) shows how to use one.
+- **An account page for everyone** at `/idp/account`: profile, password, two-factor, API keys and active sessions.
+- **An administration area** at `/idp/admin`: create and edit accounts, invitations, password resets, suspending people, signing them out everywhere.
+- **An audit log** of sign-ins and administrative actions, browsable in the administration area, and a read-only SQL console for administrators.
+
+The gateway is also what lets the API docs page send test requests without a pasted credential: a signed-in browser is recognized there automatically.
+
+## Where It Lives in the Stack
+
+| What | Where |
+| --- | --- |
+| Sign-in, account and admin pages | `/idp/` on your front door address |
+| The API gateway | `/gateway/rest/`, the same API as `/rest/`, accepting an API key |
+| Discovery and signing keys | `/.well-known/` on your front door address |
+| Its data: accounts, sessions, keys, audit log | The `idp` schema of the same PostgreSQL database as Semantius |
+| Its configuration | The `semantius-idp-config/` folder of your variant, plus the settings in `.env` |
+
+Because its data sits in the Semantius database, the ordinary [backup](/docs/self-hosted/running-your-stack#backing-up) covers it. Keep `IDP_SECRET` with your backups: it encrypts the keys that sign every login, so a database restored without the matching secret signs everyone out and cannot verify existing tokens.
+
+## Roles: Who Signs In Versus What They See
+
+semantius-idp decides **who may sign in**. Its own roles only say who may use its administration area. What a person can see and change in Semantius is decided by Semantius's roles and permissions, granted in the app under **Administration**, then **Users**.
+
+That is the same split as with any other identity provider. It is why you can move from semantius-idp to Entra or Okta later without redesigning your permissions.
+
+## Email
+
+semantius-idp sends email through [Resend](https://resend.com), or not at all. Set `RESEND_API_KEY` in `.env` and password resets, address verification and security notifications switch on together. There are no settings for your own SMTP server.
+
+Without a key it runs in a reduced mode: nothing is sent, and administrators set passwords directly or hand out a one-time link. That is fine on a laptop. On a deployment people depend on, set the key.
+
+## If Nobody Can Sign In as Administrator
+
+There is no default password to fall back on, which is deliberate. In order of preference:
+
+1. **Ask another administrator.** Give a second account the administrator role early, so this never becomes a problem.
+2. **Use the password reset email**, if email is turned on.
+3. **Promote an account in the database**, as a last resort:
+
+```bash
+docker exec semantius-postgres psql -U postgres -d semantius -c "UPDATE idp.\"user\" SET role = 'admin' WHERE email = 'you@example.com';"
+```
+
+## What It Is Not
+
+semantius-idp is deliberately small. It is **not** multi-tenant, it does not speak SAML, LDAP or SCIM, and it has no passkeys or SMS codes. It runs as a single instance.
+
+If your organization needs any of those, it almost certainly runs an identity provider that has them already. Use that provider with Semantius instead: [Microsoft Entra ID](/docs/self-hosted/entra-id) has a ready-made variant, and others work as described on [Variants](/docs/self-hosted/variants#pointing-a-variant-at-another-provider).
+
+The full reference, including every configuration option, lives in the [semantius-idp repository](https://github.com/semantius/semantius-idp).
+
+## Next Steps
+
+- **[Running Your Stack](/docs/self-hosted/running-your-stack)**: adding people, API keys and email in day-to-day use.
+- **[Settings Reference](/docs/self-hosted/settings)**: the `.env` values semantius-idp reads.
+- **[Variants](/docs/self-hosted/variants)**: use your own identity provider instead.

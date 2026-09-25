@@ -53,7 +53,7 @@ If any of them still reads `dev-only-...`, `postgres`, or `devpassword`, stop an
 
 Two of the steps below change which ports the stack publishes. Make those changes in a file of your own called `docker-compose.override.yml`, next to `docker-compose.yml`, rather than in `docker-compose.yml` itself.
 
-Docker Compose reads the override file automatically, so every script picks it up. It is not part of the repository, so updating the stack files with `git pull` leaves it alone. An edit to `docker-compose.yml` would instead block the next update with a conflict. [Choose or Build Your Variant](/docs/self-hosted/variants#customizing-a-variant) explains the approach in full.
+Docker Compose reads the override file automatically, so every script picks it up. It is not part of the repository, so updating the stack files with `git pull` leaves it alone. An edit to `docker-compose.yml` would instead block the next update with a conflict. [Choose or Build Your Variant](/docs/self-hosted/variants#customizing-a-variant) explains the approach in full, and the alternative of working in a copy of the variant folder.
 
 The file uses the `!override` tag, which needs Docker Compose 2.24.4 or newer. Check with `docker compose version`.
 
