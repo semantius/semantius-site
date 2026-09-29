@@ -3,35 +3,39 @@
 The single place to look. Detail lives in the linked files; this page exists so
 nothing has to be remembered.
 
-Last reviewed: 2026-09-22.
+Last reviewed: 2026-09-29.
 
 ---
 
-## 🔴 Open: pricing page states things that are not true
+## 🟡 Open: pricing decisions still marked TBD on /pricing
 
-`apps/web/src/pages/pricing.astro` carries template FAQ copy that reads as real
-commercial terms:
+The page follows the founder's pricing specification of 2026-09-29. Every
+figure that was not decided renders as a visible amber **TBD** placeholder
+rather than a guess. Each one carries a `data-tbd` note, so
+`grep -o 'data-tbd="[^"]*"' apps/web/dist/client/pricing/index.html` lists
+what is still open after a build.
 
-> "We offer a **14-day free trial** on the Pro plan"
-> "We accept all major credit cards, **PayPal**, and **wire transfers** for Enterprise"
-> "Yes, we have a **30-day money-back guarantee**"
+- Free plan: monthly credits (about 200 proposed).
+- Starter and Pro: yearly prices (round figures about 17% below 12 months).
+- Starter support: the response-time target, and whether it is forum only.
+- Pro support: the level and the target.
+- Idle time before the database pauses, and the typical wake-up time.
+- Low-credit warning threshold.
+- What happens at zero credits ("read-only" is not offered).
+- The order credits are used in (proposed: monthly first, then top-ups, oldest first).
+- Refunds on yearly plans, and the EU withdrawal wording (merchant of record).
+- The three worked examples, which are pending confirmation as a whole.
+- Self-hosted support: plan names and prices, services, and how out-of-scope
+  hours are sold.
 
-while every price on the same page renders as `X/month`. The same trial is also
-promised by the homepage CTA ("14-day free trial for Pro", in `index.astro`) and
-by the default `disclaimer` in `apps/web/src/components/sections/CTA.astro`.
+Not shown until confirmed: the dollar value of a credit, and a
+machine-readable pricing file (`/pricing.json` or a pricing section in
+`llms.txt`).
 
-**Contained, not fixed.** `/pricing` is in `EXCLUDED` in
-`apps/web/src/lib/dualmark/excluded.ts`, so no `/pricing.md` twin exists and the
-page advertises no markdown alternate. That stops the claims becoming cleanly
-machine-quotable. **The HTML page is live and still says all of this**, and it is
-indexed.
-
-**To close it:** write the real terms into the page, or land a hand-written twin
-at `apps/web/src/data/twin-overrides/pricing.md`. Then remove the `/pricing`
-entry from `EXCLUDED` and the exception note in `public/robots.txt`. Nothing else
-needs changing; `twinUrl()` already falls back correctly.
-
-Needs a human decision on the actual trial, payment and refund terms.
+**To close an item:** set the value in `apps/web/src/data/pricing.ts` (or the
+copy in `apps/web/src/pages/pricing.astro`), which replaces its placeholder
+everywhere it appears. The FAQ keeps an answer out of the FAQPage JSON-LD for
+as long as it holds a placeholder.
 
 ---
 
@@ -198,10 +202,10 @@ decide whether that is useful or ornamental:
 Strip the fingerprint out again before the file is served, so readers do not
 receive build metadata inside their document.
 
-All theoretical while that folder is empty. It becomes real the moment the
-pricing copy at the top of this file is hand-written, which is exactly the case
-it was designed for: a stale hand-written page means agents quoting prices we no
-longer charge.
+All theoretical while that folder is empty. `/pricing` was the likely first
+case and no longer is: its twin is extracted from the page, so it cannot go
+stale. It becomes real the moment any twin is hand-written, and a stale one
+means agents quoting terms that no longer apply.
 
 #### 3. A blueprint whose text fails to load is dropped instead of reported
 
@@ -240,9 +244,9 @@ items on this page went unnoticed for months.
 
 | | |
 |---|---|
-| **Real pricing terms** | The release shipped with the twin held, so this no longer blocks anything — but the live HTML page still states a 14-day trial, PayPal/wire payment and a 30-day money-back guarantee. See the top of this file. |
+| **Pricing TBDs** | The page now carries the founder's decided terms, and its twin is published. The figures still open are listed at the top of this file. |
 | **`Accept: text/markdown` handling** | Agents that content-negotiate instead of reading `rel="alternate"` currently get HTML. Two options: Cloudflare's "Markdown for Agents" toggle (machine conversion of the rendered page) or a zone Redirect Rule matching the Accept header and redirecting to our own twin. The second serves better content and still costs no Worker invocation; plan availability of `http.request.headers` in Redirect Rules is unconfirmed. |
-| **Training-crawler policy** | Resolved 2026-09-22: GPTBot and ClaudeBot unblocked. Recorded so it is not silently reverted — note that only the *Training* category was ever blocked, and AI-answer visibility never depended on it. |
+| **Training-crawler policy** | Resolved 2026-09-22: GPTBot and ClaudeBot unblocked. Recorded so it is not silently reverted. Note that only the *Training* category was ever blocked, and AI-answer visibility never depended on it. |
 
 ---
 
@@ -263,7 +267,7 @@ ClaudeBot, GPTBot on /docs/cli.md   200
 Both things that could only ever be checked on the real host came out clean:
 **no `X-Robots-Tag`** anywhere (the `workers.dev` preview masks this by
 injecting its own `noindex`), and **Bot Preference Sync prepends nothing** to
-`robots.txt` — our own 701-byte file is served verbatim. Worth re-checking if
+`robots.txt`: our own 701-byte file is served verbatim. Worth re-checking if
 that toggle is ever reconfigured.
 
 

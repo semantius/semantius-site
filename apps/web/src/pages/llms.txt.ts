@@ -72,7 +72,7 @@ export const GET: APIRoute = async ({ site }) => {
 	// nothing at all until they were listed.
 	section('Product', [
 		`- [Features](${md('/features')}): what the platform does.`,
-		`- [Pricing](${md('/pricing')}): open source and managed plans.`,
+		`- [Pricing](${md('/pricing')}): cloud plans paid in credits, and free self-hosting with paid support.`,
 		`- [About](${md('/about')}): why Semantius exists.`,
 		`- [Contact](${md('/contact')}): how to reach the team.`,
 		`- [License](${md('/license')}): MIT.`,

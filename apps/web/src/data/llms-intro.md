@@ -41,8 +41,7 @@ with ".md" appended:
     https://www.semantius.com/about           ->  https://www.semantius.com/about.md
     https://www.semantius.com/                ->  https://www.semantius.com/index.md
 
-/pricing is the one deliberate exception and has no twin. Rather than guessing
-a URL, follow the links below or read the page's own
+Rather than guessing a URL, follow the links below or read the page's own
 `<link rel="alternate" type="text/markdown">`: both only ever name twins that
 exist.
 

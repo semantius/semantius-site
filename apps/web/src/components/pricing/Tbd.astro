@@ -1,0 +1,12 @@
+---
+import { tbdHtml } from './tbd';
+
+interface Props {
+  /** What is pending, for the tooltip and for grep. */
+  note: string;
+}
+
+const { note } = Astro.props;
+---
+
+<Fragment set:html={tbdHtml(note)} />

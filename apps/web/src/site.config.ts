@@ -75,7 +75,7 @@ export const NAV_LINKS = [
     label: 'Product',
     children: [
       { href: '/features', label: 'Features', description: 'What makes us different', icon: 'Zap' },
-      { href: '/pricing', label: 'Pricing', description: 'Plans for every team', icon: 'CreditCard' },
+      { href: '/pricing', label: 'Pricing', description: 'Cloud plans and self-hosting', icon: 'CreditCard' },
     ]
   },
   {

@@ -3,128 +3,530 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import Schema from '~/components/layout/Schema.astro';
-import PricingTable from '~/components/sections/PricingTable.astro';
-import PricingPlan from '~/components/sections/PricingPlan.astro';
 import FAQ from '~/components/sections/FAQ.astro';
-import ComparisonTable from '~/components/sections/ComparisonTable.astro';
 import Container from '~/components/ui/Container.astro';
+import Button from '~/components/ui/Button.astro';
+import PlanCard from '~/components/pricing/PlanCard.astro';
+import PricingCell from '~/components/pricing/PricingCell.astro';
+import Tbd from '~/components/pricing/Tbd.astro';
+import { tbdHtml } from '~/components/pricing/tbd';
+import { ArrowRight } from 'lucide-react';
+import { siteConfig } from '~/site.config';
+import {
+  CLOUD_PLANS,
+  CREDIT_RATES,
+  TOP_UP_PACKS,
+  WORKED_EXAMPLES,
+  count,
+  isPending,
+  pending,
+  usageCredits,
+  usd,
+  type Cell,
+  type CloudPlan,
+} from '~/data/pricing';
 
-const plans = [
+// One page, two tabs. /pricing opens Cloud and /pricing#self-hosted opens
+// Self-hosted, so each can be linked. Both panels are always in the HTML, so
+// search, the markdown twin and a reader without JavaScript get all of it; the
+// script at the bottom only decides which panel is displayed.
+
+const planByKey = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p])) as Record<CloudPlan['key'], CloudPlan>;
+
+const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell }[] = [
+  { label: 'Price, monthly', cell: (p) => `${usd(p.monthlyPrice)} per month` },
   {
-    name: 'Starter',
-    price: 0,
-    displayPrice: 'X',
-    description: 'Perfect for side projects and hobbyists.',
-    features: ['X', 'X', 'X', 'X'],
-    cta: 'Get Started',
+    label: 'Price, yearly',
+    hint: 'paid upfront for 12 months',
+    cell: (p) => (p.yearlyPrice === null ? null : isPending(p.yearlyPrice) ? p.yearlyPrice : usd(p.yearlyPrice)),
   },
-  {
-    name: 'Pro',
-    price: 29,
-    displayPrice: 'X',
-    description: 'For growing teams and startups.',
-    features: ['X', 'X', 'X', 'X', 'X'],
-    cta: 'Get Started',
-    popular: true,
-  },
-  {
-    name: 'Enterprise',
-    price: 99,
-    displayPrice: 'X',
-    description: 'For large scale organizations.',
-    features: ['X', 'X', 'X', 'X', 'X'],
-    cta: 'Contact Sales',
-  },
+  { label: 'Credits included', hint: 'granted each month', cell: (p) => (isPending(p.credits) ? p.credits : count(p.credits)) },
+  { label: 'Users', hint: 'people and agents each count as one', cell: (p) => (p.userLimit === null ? 'No limit' : String(p.userLimit)) },
+  { label: 'Maximum compute', cell: (p) => `${p.maxComputeUnits} compute ${p.maxComputeUnits === 1 ? 'unit' : 'units'}` },
+  { label: 'Data storage limit', cell: (p) => p.storageLimit ?? 'Unlimited, paid in credits' },
+  { label: 'Top-ups', cell: (p) => p.topUps },
+  { label: 'Support', cell: (p) => p.support },
+  { label: 'Webhook receivers', hint: 'let other systems send records in through a signed webhook', cell: (p) => p.webhookReceivers },
 ];
+
+const selfHostedParts = [
+  { name: 'pg_semantius', href: '/docs/pg-semantius', text: 'the PostgreSQL extension at the core, which enforces permissions, row-level security and the audit trail inside the database.' },
+  { name: 'The app', text: 'the web app where people work with the data, with forms, grids and dashboards generated from the model.' },
+  { name: 'The identity provider', href: '/docs/self-hosted/semantius-idp', text: 'semantius-idp, for sign-in and personal API keys.' },
+  { name: 'The self-hosted stack', href: '/docs/self-hosted', text: 'the whole platform as one Docker Compose project.' },
+  { name: 'The agent CLI', href: '/docs/cli', text: 'the command-line tool for scripting, automation and headless agents.' },
+  { name: 'The agent skills', href: '/docs/agent-skills', text: 'instructions that teach coding agents to work with Semantius models.' },
+  { name: 'The models', text: 'ready-made semantic data models.' },
+];
+
+const email = siteConfig.contact.email;
 
 const faqs = [
-  { question: 'Can I switch plans later?', answer: 'Yes, you can upgrade or downgrade at any time. Prorated charges will apply.' },
-  { question: 'Is there a free trial?', answer: 'We offer a 14-day free trial on the Pro plan so you can explore all features.' },
-  { question: 'What payments do you accept?', answer: 'We accept all major credit cards, PayPal, and wire transfers for Enterprise.' },
-  { question: 'Do you offer refunds?', answer: 'Yes, we have a 30-day money-back guarantee if you are not satisfied.' },
+  {
+    question: 'What is a credit?',
+    answer: 'A credit is the unit every cloud plan is paid in. One credit buys one compute unit for 15 minutes. Data storage, data transfer out and emails are paid in credits too, at the <a href="#credit-rates">rates on the Cloud tab</a>.',
+  },
+  {
+    question: 'What is a compute unit?',
+    answer: 'A compute unit is a fraction of a virtual CPU plus 1 GB of memory. Your plan sets the most your database can use: 1 compute unit on Free, 4 on Starter and 32 on Pro.',
+  },
+  {
+    question: 'Who counts as a user?',
+    answer: 'Users only matter on the Free plan, which allows 5. People and agents count alike, so an agent with its own login is one user. Starter and Pro have no limit on users.',
+  },
+  {
+    question: 'Do unused credits roll over?',
+    answer: 'No. Monthly credits expire at the end of each month, on yearly plans too. Top-up credits expire 12 months after purchase.',
+  },
+  {
+    question: 'Can I be charged more than my plan?',
+    answer: 'No. You spend only the credits you hold, and top-ups are always bought manually. There are no unexpected charges.',
+  },
+  {
+    question: 'What happens when I run out?',
+    answer: `You get a warning when your credits run low. What happens at zero credits: ${tbdHtml('what happens at zero credits')}`,
+  },
+  {
+    question: 'Can I leave?',
+    answer: 'Yes. Unlike a CRM, Airtable or Salesforce, Semantius lets you export the whole system as one Postgres database: the data, the model, the rules and the permissions. You can then run it on your own server with the open-source stack.',
+  },
+  {
+    question: 'Is there a free self-hosted option?',
+    answer: 'Yes. Everything you run yourself is free and open source under the MIT license. See the <a href="#self-hosted">Self-hosted tab</a>.',
+  },
+  {
+    question: 'Can I get a refund?',
+    answer: `Top-ups are non-refundable. Refunds on yearly plans: ${tbdHtml('refunds on yearly plans')} The EU right of withdrawal: ${tbdHtml('EU consumer withdrawal wording, to check with the merchant of record')}`,
+  },
 ];
 
+const sectionTitle = 'text-2xl md:text-3xl font-bold mb-4 scroll-mt-28';
+const lede = 'text-muted-foreground leading-relaxed mb-8 max-w-3xl';
+const th = 'py-3 px-4 font-semibold text-sm';
+const td = 'py-3 px-4 text-sm align-top';
 ---
 
-<Layout title="Pricing - Semantius Agentic Data Platform" description="Pricing for the Semantius Agentic Data Platform. The open source core is MIT licensed and free to self-host; managed plans run the platform for you.">
-  
+<Layout
+  title="Pricing - Semantius, the Agent-First Data Platform"
+  description="Semantius cloud plans: Free, Starter at $24 a month and Pro at $45 a month, paid in credits for what your database uses, not per user. Self-hosting is free and MIT licensed."
+>
+  {/* Must match the plan cards exactly, which is why both read CLOUD_PLANS.
+      No aggregateRating or review markup: there are no reviews to cite. */}
   <Schema item={{
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     "name": "Semantius",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Web",
-    "offers": plans.map(plan => ({
+    "offers": CLOUD_PLANS.map((plan) => ({
       "@type": "Offer",
       "name": plan.name,
-      "price": String(plan.price),
+      "price": String(plan.monthlyPrice),
       "priceCurrency": "USD",
-      "description": plan.description,
-      "url": `${Astro.site}pricing`,
-      ...(plan.price > 0 && {
+      "description": plan.summary,
+      "url": new URL('/pricing', Astro.site).toString(),
+      ...(plan.monthlyPrice > 0 && {
         "priceSpecification": {
           "@type": "UnitPriceSpecification",
-          "price": String(plan.price),
+          "price": String(plan.monthlyPrice),
           "priceCurrency": "USD",
-          "billingDuration": "P1M"
-        }
-      })
-    }))
+          "billingDuration": "P1M",
+        },
+      }),
+    })),
   }} />
 
-  
-  <PageHeader 
-      title='Simple <span class="text-primary">Pricing</span>'
-      description="Choose the plan that's right for you. No hidden fees. Cancel anytime."
+  <PageHeader
+    title='Pricing for the <span class="text-primary">Agent-First</span> Data Platform'
+    description="Run Semantius in the cloud and pay in credits for what your database uses, not per user. Or run it yourself, free and open source."
   />
 
-  <Container as="section" class="pb-24">
-      <PricingTable>
-        {plans.map(plan => (
-          <PricingPlan
-            name={plan.name}
-            price={plan.displayPrice}
-            description={plan.description}
-            features={plan.features}
-            cta={plan.cta}
-            popular={plan.popular}
-          />
-        ))}
-      </PricingTable>
+  <Container class="pb-8">
+    <div class="flex justify-center mb-12 scroll-mt-28" id="pricing-tabs" data-pagefind-ignore>
+      <div role="tablist" aria-label="How you run Semantius" class="inline-flex p-1 rounded-full border border-foreground/10 bg-foreground/5">
+        <a role="tab" id="tab-cloud" href="#cloud" aria-controls="cloud" aria-selected="true" data-tab="cloud"
+          class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white">Cloud</a>
+        <a role="tab" id="tab-self-hosted" href="#self-hosted" aria-controls="self-hosted" aria-selected="false" tabindex="-1" data-tab="self-hosted"
+          class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white">Self-hosted</a>
+      </div>
+    </div>
 
-      <div class="mt-24">
-        <ComparisonTable 
-          title='Compare Plans'
-          subtitle='Find the perfect plan for your needs.'
-          labels={{ features: 'Features', popular: 'Most Popular' }}
-          plans={plans.map(plan => ({
-            name: plan.name,
-            key: plan.name.toLowerCase(),
-            ...(plan.popular && { popular: true })
-          }))}
-          features={[
-            { category: 'Core Features', items: [
-                { name: 'f1', starter: '3', pro: 'Unlimited', enterprise: 'Unlimited' },
-                { name: 'f2', starter: '1', pro: '5', enterprise: 'Unlimited' },
-                { name: 'f3', starter: '1GB', pro: '10GB', enterprise: 'Unlimited' },
-            ]},
-            { category: 'Analytics', items: [
-                { name: 'f4', starter: true, pro: true, enterprise: true },
-                { name: 'f5', starter: false, pro: true, enterprise: true },
-                { name: 'f6', starter: false, pro: true, enterprise: true },
-                { name: 'f7', starter: false, pro: false, enterprise: true },
-            ]},
-            { category: 'Support & Security', items: [
-                { name: 'f8', starter: 'Standard', pro: 'Priority', enterprise: 'Dedicated' },
-                { name: 'f9', starter: false, pro: false, enterprise: true },
-                { name: 'f10', starter: false, pro: false, enterprise: '99.99%' },
-            ]}
-          ]}
-        />
+    {/* Runs before the panels are parsed, so a /pricing#self-hosted visit never
+        paints the Cloud panel first. Without JavaScript no data-pricing-tab is
+        set and both panels show, one after the other. */}
+    <script is:inline>
+      (function () {
+        var tab = location.hash === '#self-hosted' ? 'self-hosted' : 'cloud';
+        document.documentElement.setAttribute('data-pricing-tab', tab);
+        document.querySelectorAll('[data-tab]').forEach(function (el) {
+          var on = el.getAttribute('data-tab') === tab;
+          el.setAttribute('aria-selected', String(on));
+          el.tabIndex = on ? 0 : -1;
+        });
+      })();
+    </script>
+
+    {/* ------------------------------------------------------------------ */}
+    {/* Cloud                                                              */}
+    {/* ------------------------------------------------------------------ */}
+    <section id="cloud" data-panel="cloud" role="tabpanel" aria-labelledby="tab-cloud" data-billing="monthly" class="pricing-panel">
+      <h2 class="sr-only">Cloud Plans</h2>
+
+      <div class="flex flex-col items-center gap-3 mb-10" data-pagefind-ignore>
+        <div role="group" aria-label="Billing period" class="inline-flex p-1 rounded-full border border-foreground/10 bg-foreground/5">
+          <button type="button" data-billing-option="monthly" aria-pressed="true"
+            class="px-5 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow">Monthly</button>
+          <button type="button" data-billing-option="yearly" aria-pressed="false"
+            class="px-5 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow">Yearly</button>
+        </div>
       </div>
-      
-      <div class="mt-20">
-          <FAQ items={faqs} />
+      <p class="text-sm text-muted-foreground text-center -mt-6 mb-10" data-period="yearly">
+        Yearly plans are paid upfront for 12 months. Credits are still granted each month.
+      </p>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+        {CLOUD_PLANS.map((plan) => <PlanCard plan={plan} />)}
       </div>
+
+      <p class="mt-8 text-center text-sm text-muted-foreground">
+        Spending is limited to the credits you hold. Top-ups are manual, so there are no unexpected charges.
+      </p>
+
+      <div class="max-w-5xl mx-auto mt-24 space-y-24">
+        <section>
+          <h3 id="compare-plans" class={sectionTitle}>Compare Plans</h3>
+          <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+            <table class="w-full text-left border-collapse min-w-160">
+              <thead>
+                <tr class="border-b border-foreground/10 bg-foreground/3">
+                  <th scope="col" class={th}><span class="sr-only">Feature</span></th>
+                  {CLOUD_PLANS.map((p) => <th scope="col" class={`${th} text-base`}>{p.name}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                {compareRows.map((row) => (
+                  <tr class="border-b border-foreground/10 last:border-b-0">
+                    <th scope="row" class={`${td} font-medium`}>
+                      {row.label}
+                      {/* The parentheses are for the markdown twin and screen readers,
+                          which get no line break between label and hint. */}
+                      {row.hint && <span class="block text-xs font-normal text-muted-foreground mt-0.5 first-letter:uppercase"><span class="sr-only"> (</span>{row.hint}<span class="sr-only">)</span></span>}
+                    </th>
+                    {CLOUD_PLANS.map((p) => <td class={td}><PricingCell value={row.cell(p)} /></td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <h3 id="how-credits-work" class={sectionTitle}>How Credits Work</h3>
+          <div class="space-y-4 max-w-3xl leading-relaxed text-muted-foreground">
+            <p>Every cloud plan includes credits each month, and everything your platform uses is paid for in credits. A <strong class="text-foreground">compute unit</strong> is a fraction of a virtual CPU plus 1 GB of memory, and <strong class="text-foreground">one credit buys one compute unit for 15 minutes</strong>.</p>
+            <p>The database pauses when it is idle, and compute is only counted while it runs. So compute depends on how long the database is active, not on how many people use it. How long it waits before pausing, and how long it takes to wake up: <Tbd note="idle time before the database pauses, and typical wake-up time" /></p>
+          </div>
+          <ul class="mt-6 grid gap-3 sm:grid-cols-2 text-sm">
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Monthly credits expire at the end of each month.</strong> They do not roll over, on yearly plans either.</li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Spending is limited to the credits you hold.</strong> Top-ups are bought manually, so there are no unexpected charges.</li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>You get a warning when credits run low.</strong> The point at which it is sent: <Tbd note="low-credit warning threshold" /></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>What happens at zero credits:</strong> <Tbd note="what happens at zero credits" /></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5 sm:col-span-2"><strong>The order credits are used in:</strong> <Tbd note="order in which monthly and top-up credits are used" /></li>
+          </ul>
+        </section>
+
+        <section>
+          <h3 id="credit-rates" class={sectionTitle}>Credit Rates</h3>
+          <p class={lede}>What each thing your platform uses costs, in credits.</p>
+          <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-foreground/10 bg-foreground/3">
+                  <th scope="col" class={th}>What</th>
+                  <th scope="col" class={th}>Unit</th>
+                  <th scope="col" class={`${th} text-right`}>Credits</th>
+                </tr>
+              </thead>
+              <tbody>
+                {CREDIT_RATES.map((r) => (
+                  <tr class="border-b border-foreground/10 last:border-b-0">
+                    <td class={`${td} font-medium`}>{r.what}</td>
+                    <td class={td}>{r.unit}</td>
+                    <td class={`${td} text-right tabular-nums`}>{r.credits}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section>
+          <h3 id="top-ups" class={sectionTitle}>Top-Ups</h3>
+          <p class={lede}>Top-ups add credits when your monthly credits are not enough. They are available on Starter and Pro; the Free plan cannot be topped up.</p>
+          <div class="grid gap-6 md:grid-cols-[1fr_1fr] items-start">
+            <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+              <table class="w-full text-left border-collapse">
+                <thead>
+                  <tr class="border-b border-foreground/10 bg-foreground/3">
+                    <th scope="col" class={th}>Pack</th>
+                    <th scope="col" class={`${th} text-right`}>Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {TOP_UP_PACKS.map((pack) => (
+                    <tr class="border-b border-foreground/10 last:border-b-0">
+                      <td class={`${td} font-medium`}>{count(pack.credits)} credits</td>
+                      <td class={`${td} text-right tabular-nums`}>{usd(pack.price)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <ul class="space-y-3 text-sm text-muted-foreground leading-relaxed">
+              <li><strong class="text-foreground">Bought manually.</strong> A top-up is never added for you.</li>
+              <li><strong class="text-foreground">Valid for 12 months.</strong> Top-up credits expire 12 months after purchase.</li>
+              <li><strong class="text-foreground">Non-refundable.</strong> A top-up cannot be refunded once bought.</li>
+            </ul>
+          </div>
+        </section>
+
+        <section>
+          <h3 id="examples" class={sectionTitle}>Worked Examples</h3>
+          <p class="mb-4 text-sm"><Tbd note="worked examples: usage assumptions and results" /> <span class="text-muted-foreground">These examples are pending confirmation.</span></p>
+          <p class={lede}>Compute depends on how long the database is active, not on the number of users. Here is what three setups would use in a month, at the rates above.</p>
+          <div class="grid gap-6 lg:grid-cols-3">
+            {WORKED_EXAMPLES.map((ex) => {
+              const c = usageCredits(ex.usage);
+              const u = ex.usage;
+              const rows = [
+                ['Compute', `${u.computeUnits} compute ${u.computeUnits === 1 ? 'unit' : 'units'}, ${count(u.hours)} hours a month (${u.activity})`, c.compute],
+                ['Data storage', `${u.storageGb} GB`, c.storage],
+                ['Egress', `${u.egressGb} GB`, c.egress],
+                ['Emails', `${count(u.emails)} emails`, c.email],
+              ] as const;
+              return (
+                <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
+                  <h4 class="text-lg font-bold mb-1">{ex.title}</h4>
+                  <p class="text-sm text-muted-foreground mb-5">{ex.who}</p>
+                  <table class="w-full text-left border-collapse text-sm mb-5">
+                    <thead class="sr-only">
+                      <tr><th scope="col">Item</th><th scope="col">Assumed usage</th><th scope="col">Credits</th></tr>
+                    </thead>
+                    <tbody>
+                      {rows.map(([item, assumed, credits]) => (
+                        <tr class="border-b border-foreground/10">
+                          <th scope="row" class="py-2 pr-2 font-medium align-top">{item}</th>
+                          <td class="py-2 pr-2 text-muted-foreground align-top">{assumed}</td>
+                          <td class="py-2 text-right tabular-nums align-top">{count(Math.round(credits))}</td>
+                        </tr>
+                      ))}
+                      <tr>
+                        <th scope="row" class="pt-3 pr-2 font-semibold">Total</th>
+                        <td class="pt-3 pr-2 text-muted-foreground">credits a month</td>
+                        <td class="pt-3 text-right font-semibold tabular-nums">{count(Math.round(c.total))}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <p class="mt-auto text-sm leading-relaxed"><strong>{planByKey[ex.plan].name}:</strong> <span class="text-muted-foreground">{ex.cost}</span></p>
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+    </section>
+
+    {/* ------------------------------------------------------------------ */}
+    {/* Self-hosted                                                        */}
+    {/* ------------------------------------------------------------------ */}
+    <section id="self-hosted" data-panel="self-hosted" role="tabpanel" aria-labelledby="tab-self-hosted" class="pricing-panel">
+      <h2 class="sr-only">Self-Hosted Semantius</h2>
+
+      <p class="mb-10 text-center text-sm text-muted-foreground" data-pagefind-ignore>
+        Would you rather not run it yourself? <a href="#cloud" class="font-medium text-primary hover:underline">See the Cloud plans</a>.
+      </p>
+
+      <div class="max-w-5xl mx-auto space-y-24">
+        <section class="rounded-3xl border border-primary/30 bg-primary/5 p-8 md:p-12">
+          <p class="mb-3 text-xs font-semibold uppercase tracking-wider text-primary">MIT license</p>
+          <h3 id="open-source" class={sectionTitle}>Free and Open Source</h3>
+          <p class={`${lede} mb-6`}>Everything you need to run Semantius on your own server is free and open source under the MIT license. Support is sold separately.</p>
+          <div class="flex flex-wrap gap-3">
+            <Button href="/docs/self-hosted">Read the self-hosting guide</Button>
+            <Button href="https://github.com/Semantius/semantius-self-hosted" variant="outline">View it on GitHub</Button>
+          </div>
+        </section>
+
+        <section>
+          <h3 id="included" class={sectionTitle}>What Is Included</h3>
+          <p class={lede}>All of it is released under the MIT license, and all of it is free to run.</p>
+          <ul class="grid gap-4 sm:grid-cols-2">
+            {selfHostedParts.map((part) => (
+              <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5 text-sm leading-relaxed">
+                <strong class="block text-base mb-1">{part.href ? <a href={part.href} class="hover:text-primary transition-colors">{part.name}</a> : part.name}</strong><span class="sr-only">: </span>
+                <span class="block text-muted-foreground first-letter:uppercase">{part.text}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        <section>
+          <h3 id="support-plans" class={sectionTitle}>Support Plans</h3>
+          <p class={lede}>The software is free, and support is sold separately. It comes as an entry plan and a main plan above it.</p>
+          <div class="grid gap-6 md:grid-cols-2">
+            {[
+              { tier: 'Entry Plan', name: pending('entry support plan name'), price: pending('entry support plan price') },
+              { tier: 'Main Plan', name: pending('main support plan name'), price: pending('main support plan price') },
+            ].map((plan) => (
+              <article class="rounded-3xl border border-foreground/10 bg-foreground/2 p-8">
+                <h4 class="text-xl font-bold mb-4">{plan.tier}</h4>
+                <p class="text-sm text-muted-foreground mb-2">Name: <Tbd note={plan.name.tbd} /></p>
+                <p class="text-sm text-muted-foreground">Price: <Tbd note={plan.price.tbd} /></p>
+              </article>
+            ))}
+          </div>
+          <ul class="mt-6 grid gap-3 sm:grid-cols-3 text-sm">
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No incident counting.</strong> <span class="text-muted-foreground">Neither plan limits how many issues you raise.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No cap per incident.</strong> <span class="text-muted-foreground">There is no limit on the hours spent on one issue.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Prices in US dollars.</strong> <span class="text-muted-foreground">Every support price is in USD.</span></li>
+          </ul>
+          <p class="mt-6 text-sm text-muted-foreground">To ask about a support plan, email <a href={`mailto:${email}`} class="font-medium text-primary hover:underline">{email}</a>.</p>
+        </section>
+
+        <section>
+          <h3 id="services" class={sectionTitle}>Services</h3>
+          <p class={lede}>Work outside the support scope is billed at <strong class="text-foreground">$250 an hour</strong>. The services on offer, and how hours are bought: <Tbd note="self-hosted services, and how out-of-scope hours are sold" /></p>
+        </section>
+
+        <section>
+          <h3 id="support-hours" class={sectionTitle}>Support Hours</h3>
+          <p class={lede}>Support is available during business hours, <strong class="text-foreground">09:00 to 17:00 US Eastern</strong>.</p>
+        </section>
+
+        <a href="#cloud" data-pagefind-ignore class="group flex items-center justify-between gap-6 rounded-3xl border border-foreground/10 bg-foreground/2 p-8 hover:border-primary/30 transition-colors">
+          <span>
+            <span class="block text-lg font-bold mb-1">Would you rather not run it yourself?</span>
+            <span class="block text-sm text-muted-foreground">The cloud runs Semantius for you, with a free plan to start on.</span>
+          </span>
+          <span class="inline-flex items-center gap-2 font-medium text-primary whitespace-nowrap">See Cloud <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" aria-hidden="true" /></span>
+        </a>
+      </div>
+    </section>
   </Container>
+
+  <FAQ items={faqs} />
 </Layout>
+
+<style is:global>
+  /* The inline script above sets data-pricing-tab before the panels paint. */
+  html[data-pricing-tab='cloud'] [data-panel='self-hosted'],
+  html[data-pricing-tab='self-hosted'] [data-panel='cloud'] {
+    display: none;
+  }
+
+  [data-billing='monthly'] [data-period='yearly'],
+  [data-billing='yearly'] [data-period='monthly'] {
+    display: none;
+  }
+
+  /* A visit to /pricing#self-hosted scrolls to the panel; this margin keeps
+     the fixed header and the tab bar above it in view. */
+  .pricing-panel {
+    scroll-margin-top: 13rem;
+  }
+</style>
+
+<script>
+  type Tab = 'cloud' | 'self-hosted';
+
+  const root = document.documentElement;
+  const tabs = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-tab]'));
+  const tabBar = document.getElementById('pricing-tabs');
+
+  function select(tab: Tab, focus = false) {
+    root.setAttribute('data-pricing-tab', tab);
+    for (const el of tabs) {
+      const on = el.dataset.tab === tab;
+      el.setAttribute('aria-selected', String(on));
+      el.tabIndex = on ? 0 : -1;
+      if (on && focus) el.focus();
+    }
+  }
+
+  // Cloud is the default, so its URL is plain /pricing.
+  function setUrl(hash: string) {
+    const url = hash === '' || hash === '#cloud' ? location.pathname + location.search : hash;
+    history.replaceState(null, '', url);
+  }
+
+  /** Shows the panel holding #id and scrolls to it. False if #id is not in a panel. */
+  function reveal(id: string, smooth = true): boolean {
+    const target = id ? document.getElementById(id) : null;
+    const panel = target?.closest<HTMLElement>('[data-panel]');
+    if (!target || !panel) return false;
+    select(panel.dataset.panel as Tab);
+    const isPanel = target === panel;
+    (isPanel && tabBar ? tabBar : target).scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', block: 'start' });
+    return true;
+  }
+
+  for (const el of tabs) {
+    el.addEventListener('click', (e) => {
+      e.preventDefault();
+      const tab = el.dataset.tab as Tab;
+      select(tab);
+      setUrl(`#${tab}`);
+    });
+  }
+
+  document.querySelector('[role="tablist"]')?.addEventListener('keydown', (e) => {
+    const key = (e as KeyboardEvent).key;
+    if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(key)) return;
+    e.preventDefault();
+    const current = tabs.findIndex((t) => t.getAttribute('aria-selected') === 'true');
+    const next =
+      key === 'Home' ? 0 : key === 'End' ? tabs.length - 1 : (current + (key === 'ArrowRight' ? 1 : -1) + tabs.length) % tabs.length;
+    const tab = tabs[next].dataset.tab as Tab;
+    select(tab, true);
+    setUrl(`#${tab}`);
+  });
+
+  // In-page links such as "See Cloud" or an FAQ answer's "Self-hosted tab"
+  // point into a panel that may be hidden: switch to it first. #signup is not
+  // in a panel, so it falls through to the sign-up overlay's own handler.
+  document.addEventListener('click', (e) => {
+    const link = (e.target as Element).closest<HTMLAnchorElement>('a[href^="#"]');
+    if (!link || link.hasAttribute('data-tab')) return;
+    const hash = link.getAttribute('href') ?? '';
+    if (!reveal(hash.slice(1))) return;
+    e.preventDefault();
+    setUrl(hash);
+  });
+
+  window.addEventListener('hashchange', () => reveal(location.hash.slice(1)));
+
+  // The inline script only knows #self-hosted. A deeper link such as
+  // #support-plans is resolved here, once the panels exist.
+  if (location.hash && location.hash !== '#self-hosted' && location.hash !== '#cloud') {
+    reveal(decodeURIComponent(location.hash.slice(1)), false);
+  }
+
+  const cloud = document.getElementById('cloud');
+  const periodButtons = Array.from(document.querySelectorAll<HTMLButtonElement>('[data-billing-option]'));
+  for (const button of periodButtons) {
+    button.addEventListener('click', () => {
+      const period = button.dataset.billingOption ?? 'monthly';
+      cloud?.setAttribute('data-billing', period);
+      for (const b of periodButtons) b.setAttribute('aria-pressed', String(b === button));
+    });
+  }
+
+  for (const el of document.querySelectorAll<HTMLAnchorElement>('.pricing-plan-cta')) {
+    el.addEventListener('click', () => {
+      (window as any).posthog?.capture('pricing_plan_cta_clicked', {
+        plan: el.dataset.plan,
+        billing: cloud?.getAttribute('data-billing'),
+      });
+    });
+  }
+</script>

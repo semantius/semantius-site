@@ -1,0 +1,25 @@
+---
+import { Check, Minus } from 'lucide-react';
+import Tbd from './Tbd.astro';
+import { isPending, type Cell } from '~/data/pricing';
+
+interface Props {
+  value: Cell;
+}
+
+const { value } = Astro.props;
+// The icons are decorative; the sr-only word is what a screen reader and the
+// markdown twin read, so "Yes" and "No" survive where the svg is dropped.
+---
+
+{value === true ? (
+  <span class="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><span class="sr-only">Yes</span></span>
+) : value === false ? (
+  <span class="inline-flex items-center gap-1.5"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">No</span></span>
+) : value === null ? (
+  <span class="inline-flex items-center gap-1.5"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">Not applicable</span></span>
+) : isPending(value) ? (
+  <span>{value.text && <>{value.text}, </>}<Tbd note={value.tbd} /></span>
+) : (
+  <span>{value}</span>
+)}

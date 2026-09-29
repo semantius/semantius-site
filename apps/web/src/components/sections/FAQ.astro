@@ -4,53 +4,64 @@ import { ChevronDown } from 'lucide-react';
 
 interface FAQItem {
   question: string;
+  /** Trusted HTML written in this repo, so an answer can carry a link. */
   answer: string;
 }
 
 interface Props {
   items: FAQItem[];
+  title?: string;
+  subtitle?: string;
 }
 
-const { items } = Astro.props;
+const {
+  items,
+  title = 'Frequently Asked Questions',
+  subtitle = 'Everything you need to know about the product and billing.',
+} = Astro.props;
+
+const plainText = (html: string) =>
+  html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+// An answer that still carries a TBD placeholder (see components/pricing/tbd.ts)
+// stays on the page but out of the structured data: JSON-LD is what search
+// engines quote, and "TBD" is not an answer.
+const answered = items.filter((item) => !item.answer.includes('data-tbd='));
 
 const schema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "mainEntity": items.map(item => ({
+  "mainEntity": answered.map(item => ({
     "@type": "Question",
     "name": item.question,
     "acceptedAnswer": {
       "@type": "Answer",
-      "text": item.answer
+      "text": plainText(item.answer)
     }
   }))
 };
 ---
 
-<Schema item={schema} />
+{answered.length > 0 && <Schema item={schema} />}
 
 <section class="py-24 relative overflow-hidden" id="faq">
-    <!-- Background element -->
-    <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[500px] bg-primary/5 rounded-[100%] blur-[120px] pointer-events-none"></div>
-
     <div class="max-w-3xl mx-auto px-6 relative z-10">
         <div class="text-center mb-16">
-            <h2 class="text-3xl md:text-5xl font-display font-bold mb-6">Frequently Asked Questions</h2>
-            <p class="text-lg text-muted-foreground">Everything you need to know about the product and billing.</p>
+            <h2 class="text-3xl md:text-5xl font-display font-bold mb-6">{title}</h2>
+            <p class="text-lg text-muted-foreground">{subtitle}</p>
         </div>
 
         <div class="space-y-4">
             {items.map((faq) => (
-                <details class="group border border-white/5 bg-white/2 hover:bg-white/4 backdrop-blur-sm rounded-2xl transition-all duration-300 open:bg-white/5 open:border-primary/20">
+                <details class="group border border-foreground/10 bg-foreground/2 hover:bg-foreground/4 rounded-2xl transition-colors duration-300 open:border-primary/30">
                     <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <span class="text-lg font-medium pr-8">{faq.question}</span>
+                        {/* A heading, so the markdown twin and search keep each question as one. */}
+                        <h3 class="text-lg font-medium pr-8">{faq.question}</h3>
                         <span class="transition-transform duration-300 group-open:rotate-180 text-primary">
-                            <ChevronDown className="w-5 h-5" />
+                            <ChevronDown className="w-5 h-5" aria-hidden="true" />
                         </span>
                     </summary>
-                    <div class="px-6 pb-6 text-muted-foreground leading-relaxed animate-accordion-down">
-                        {faq.answer}
-                    </div>
+                    <div class="faq-answer px-6 pb-6 text-muted-foreground leading-relaxed" set:html={faq.answer} />
                 </details>
             ))}
         </div>
@@ -58,13 +69,16 @@ const schema = {
 </section>
 
 <style>
-    /* 
-      We use a simple animation for the content. 
-      Note: animating height on details is tricky without JS or the new interpolate-size property.
-      For simplicity and robustness in a static site, we'll use a fade/slide-in for the content
-    */
     details[open] summary ~ * {
         animation: accordion-down 0.3s ease-out;
+    }
+
+    .faq-answer :global(a) {
+        color: var(--color-primary);
+    }
+
+    .faq-answer :global(a:hover) {
+        text-decoration: underline;
     }
 
     @keyframes accordion-down {
