@@ -22,7 +22,7 @@ const support = typeof plan.support === 'string' ? `Support: ${plan.support.toLo
 
 <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-8">
   <h3 class="text-xl font-bold mb-2">{plan.name}</h3>
-  <p class="text-sm text-muted-foreground mb-6">{plan.summary}</p>
+  <p class="text-sm text-muted-foreground mb-6 md:min-h-10">{plan.summary}</p>
 
   {/* Both periods are in the HTML, so the markdown twin and search carry both;
       the billing toggle on the page decides which one is displayed. */}

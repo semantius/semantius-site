@@ -52,7 +52,7 @@ const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell 
 const selfHostedParts = [
   { name: 'pg_semantius', href: '/docs/pg-semantius', text: 'the PostgreSQL extension at the core, which enforces permissions, row-level security and the audit trail inside the database.' },
   { name: 'The app', text: 'the web app where people work with the data, with forms, grids and dashboards generated from the model.' },
-  { name: 'The identity provider', href: '/docs/self-hosted/semantius-idp', text: 'semantius-idp, for sign-in and personal API keys.' },
+  { name: 'The identity provider', href: '/docs/self-hosted/semantius-idp', text: 'sign-in and personal API keys, through semantius-idp.' },
   { name: 'The self-hosted stack', href: '/docs/self-hosted', text: 'the whole platform as one Docker Compose project.' },
   { name: 'The agent CLI', href: '/docs/cli', text: 'the command-line tool for scripting, automation and headless agents.' },
   { name: 'The agent skills', href: '/docs/agent-skills', text: 'instructions that teach coding agents to work with Semantius models.' },
@@ -195,7 +195,10 @@ const td = 'py-3 px-4 text-sm align-top';
       <div class="max-w-5xl mx-auto mt-24 space-y-24">
         <section>
           <h3 id="compare-plans" class={sectionTitle}>Compare Plans</h3>
-          <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+          {/* `relative` makes the wrapper the containing block of the sr-only
+              labels in the cells. Without it those absolutely positioned spans
+              escape the scroll box and widen the whole page on a phone. */}
+          <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
             <table class="w-full text-left border-collapse min-w-160">
               <thead>
                 <tr class="border-b border-foreground/10 bg-foreground/3">
@@ -238,7 +241,7 @@ const td = 'py-3 px-4 text-sm align-top';
         <section>
           <h3 id="credit-rates" class={sectionTitle}>Credit Rates</h3>
           <p class={lede}>What each thing your platform uses costs, in credits.</p>
-          <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+          <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
             <table class="w-full text-left border-collapse">
               <thead>
                 <tr class="border-b border-foreground/10 bg-foreground/3">
@@ -264,7 +267,7 @@ const td = 'py-3 px-4 text-sm align-top';
           <h3 id="top-ups" class={sectionTitle}>Top-Ups</h3>
           <p class={lede}>Top-ups add credits when your monthly credits are not enough. They are available on Starter and Pro; the Free plan cannot be topped up.</p>
           <div class="grid gap-6 md:grid-cols-[1fr_1fr] items-start">
-            <div class="overflow-x-auto rounded-2xl border border-foreground/10">
+            <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
               <table class="w-full text-left border-collapse">
                 <thead>
                   <tr class="border-b border-foreground/10 bg-foreground/3">

@@ -652,5 +652,14 @@ Symptom: a custom Astro component looks correct on a page that uses it from anot
 
 **Workaround:** put the component's CSS in `apps/web/src/styles/components.css` (imported globally via `global.css`) instead of a scoped `<style>` block in the component. Do not rely on `<style is:global>` either, since Astro still has to discover and emit the module from MDX and that's the step that fails.
 
+### `sr-only` text inside a scroll box needs a positioned wrapper
+
+`sr-only` is `position: absolute`. Inside an `overflow-x-auto` table wrapper that
+is not itself positioned, those spans take the root as their containing block,
+escape the scroll box and widen the whole page: `/pricing` scrolled 176px sideways
+on a phone because of the "Yes"/"No" labels in its plan table. Give every scroll
+wrapper `relative`. The tell is `document.documentElement.scrollWidth` exceeding
+the viewport while `body` and `main` report no overflow.
+
 Tailwind Typography is a separate concern: when a custom component is rendered inside a `.prose` container, prose styles cascade into its descendants (`<code>`, `<a>`, `<svg>`, etc.). Add `not-prose` to the component's outer wrapper so prose's selectors (`.prose :where(...):not(:where([class~="not-prose"] *))`) skip the subtree. `not-prose` and the global stylesheet workaround are complementary, not alternatives.
 
