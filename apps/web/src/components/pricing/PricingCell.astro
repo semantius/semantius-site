@@ -10,14 +10,16 @@ interface Props {
 const { value } = Astro.props;
 // The icons are decorative; the sr-only word is what a screen reader and the
 // markdown twin read, so "Yes" and "No" survive where the svg is dropped.
+// Each icon sits in a box one text line tall (h-5 matches text-sm), so it
+// centers on the first line of its row instead of riding the baseline.
 ---
 
 {value === true ? (
-  <span class="inline-flex items-center gap-1.5"><Check className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><span class="sr-only">Yes</span></span>
+  <span class="flex h-5 items-center"><Check className="w-4 h-4 text-primary shrink-0" aria-hidden="true" /><span class="sr-only">Yes</span></span>
 ) : value === false ? (
-  <span class="inline-flex items-center gap-1.5"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">No</span></span>
+  <span class="flex h-5 items-center"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">No</span></span>
 ) : value === null ? (
-  <span class="inline-flex items-center gap-1.5"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">Not applicable</span></span>
+  <span class="flex h-5 items-center"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">Not applicable</span></span>
 ) : isPending(value) ? (
   <span>{value.text && <>{value.text}, </>}<Tbd note={value.tbd} /></span>
 ) : (

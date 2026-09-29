@@ -101,6 +101,8 @@ const faqs = [
 ];
 
 const sectionTitle = 'text-2xl md:text-3xl font-bold mb-4 scroll-mt-28';
+// The browser's default focus outline drew a heavy dark ring on the green tab.
+const focusRing = 'outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background';
 const lede = 'text-muted-foreground leading-relaxed mb-8 max-w-3xl';
 const th = 'py-3 px-4 font-semibold text-sm';
 const td = 'py-3 px-4 text-sm align-top';
@@ -142,12 +144,25 @@ const td = 'py-3 px-4 text-sm align-top';
   />
 
   <Container class="pb-8">
-    <div class="flex justify-center mb-12 scroll-mt-28" id="pricing-tabs" data-pagefind-ignore>
-      <div role="tablist" aria-label="How you run Semantius" class="inline-flex p-1 rounded-full border border-foreground/10 bg-foreground/5">
+    {/* One row on desktop: the page tabs centered, and the billing toggle,
+        which only applies to Cloud, smaller at the right end. The two 1fr
+        columns keep the tabs centered whether or not the toggle is shown.
+        On a phone the two stack. */}
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-4 mb-8 scroll-mt-28" id="pricing-tabs" data-pagefind-ignore>
+      <div role="tablist" aria-label="How you run Semantius" class="md:col-start-2 justify-self-center inline-flex p-1 rounded-full border border-foreground/10 bg-foreground/5">
         <a role="tab" id="tab-cloud" href="#cloud" aria-controls="cloud" aria-selected="true" data-tab="cloud"
-          class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white">Cloud</a>
+          class={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white ${focusRing}`}>Cloud</a>
         <a role="tab" id="tab-self-hosted" href="#self-hosted" aria-controls="self-hosted" aria-selected="false" tabindex="-1" data-tab="self-hosted"
-          class="px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white">Self-hosted</a>
+          class={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white ${focusRing}`}>Self-hosted</a>
+      </div>
+      <div class="pricing-billing flex items-center gap-3 justify-self-center md:justify-self-end">
+        <span id="billing-label" class="text-sm text-muted-foreground">Billing</span>
+        <div role="group" aria-labelledby="billing-label" class="inline-flex p-0.5 rounded-full border border-foreground/10 bg-foreground/5">
+          <button type="button" data-billing-option="monthly" aria-pressed="true"
+            class={`px-3.5 py-1 rounded-full text-sm cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm ${focusRing}`}>Monthly</button>
+          <button type="button" data-billing-option="yearly" aria-pressed="false"
+            class={`px-3.5 py-1 rounded-full text-sm cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm ${focusRing}`}>Yearly</button>
+        </div>
       </div>
     </div>
 
@@ -172,15 +187,9 @@ const td = 'py-3 px-4 text-sm align-top';
     <section id="cloud" data-panel="cloud" role="tabpanel" aria-labelledby="tab-cloud" data-billing="monthly" class="pricing-panel">
       <h2 class="sr-only">Cloud Plans</h2>
 
-      <div class="flex flex-col items-center gap-3 mb-10" data-pagefind-ignore>
-        <div role="group" aria-label="Billing period" class="inline-flex p-1 rounded-full border border-foreground/10 bg-foreground/5">
-          <button type="button" data-billing-option="monthly" aria-pressed="true"
-            class="px-5 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow">Monthly</button>
-          <button type="button" data-billing-option="yearly" aria-pressed="false"
-            class="px-5 py-2 rounded-full text-sm font-medium cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow">Yearly</button>
-        </div>
-      </div>
-      <p class="text-sm text-muted-foreground text-center -mt-6 mb-10" data-period="yearly">
+      {/* Sits under the billing toggle. Its space is kept while Monthly is
+          selected, so switching periods does not move the cards. */}
+      <p class="min-h-5 mb-6 text-sm text-muted-foreground text-center md:text-right" data-yearly-note>
         Yearly plans are paid upfront for 12 months. Credits are still granted each month.
       </p>
 
@@ -199,7 +208,13 @@ const td = 'py-3 px-4 text-sm align-top';
               labels in the cells. Without it those absolutely positioned spans
               escape the scroll box and widen the whole page on a phone. */}
           <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
-            <table class="w-full text-left border-collapse min-w-160">
+            {/* Fixed layout with one sized column: the plan columns share the
+                rest equally instead of sizing to their longest cell. */}
+            <table class="w-full table-fixed text-left border-collapse min-w-160">
+              <colgroup>
+                <col class="w-1/3" />
+                {CLOUD_PLANS.map(() => <col />)}
+              </colgroup>
               <thead>
                 <tr class="border-b border-foreground/10 bg-foreground/3">
                   <th scope="col" class={th}><span class="sr-only">Feature</span></th>
@@ -429,6 +444,14 @@ const td = 'py-3 px-4 text-sm align-top';
 
   [data-billing='monthly'] [data-period='yearly'],
   [data-billing='yearly'] [data-period='monthly'] {
+    display: none;
+  }
+
+  [data-billing='monthly'] [data-yearly-note] {
+    visibility: hidden;
+  }
+
+  html[data-pricing-tab='self-hosted'] .pricing-billing {
     display: none;
   }
 
