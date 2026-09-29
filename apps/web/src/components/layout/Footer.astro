@@ -1,6 +1,6 @@
 ---
 import { siteConfig, NAV_LINKS, ACTION_LINKS, FOOTER_LINKS } from '~/site.config';
-import { Github, Facebook, Linkedin, Youtube } from 'lucide-react';
+import { Github } from 'lucide-react';
 import ThemeToggle from '~/components/common/ThemeToggle.astro';
 
 const today = new Date();
@@ -13,8 +13,6 @@ const today = new Date();
       <div class="col-span-1 md:col-span-2 flex flex-col items-start gap-4">
         <div class="flex flex-col gap-2">
           <span class="text-xl font-bold font-display tracking-tight">{siteConfig.name}</span>
-          <p class="text-sm text-muted-foreground/80 max-w-xs">
-          Mankind was born on Earth, it was never meant to die here.
         </div>
 
         <div class="mt-4 w-full">
@@ -64,18 +62,9 @@ const today = new Date();
       
       <div class="flex items-center gap-4">
         <ThemeToggle />
-        {/* <a href={ACTION_LINKS.social.linkedin} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="LinkedIn">
-          <Linkedin className="w-5 h-5" strokeWidth={1.5} />
-        </a> */}
-        {/* <a href={ACTION_LINKS.social.youtube} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="YouTube">
-          <Youtube className="w-5 h-5" strokeWidth={1.5} />
-        </a> */}
         <a href={ACTION_LINKS.social.github} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="GitHub">
           <Github className="w-5 h-5" strokeWidth={1.5} />
         </a>
-        {/* <a href={ACTION_LINKS.social.facebook} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="Facebook">
-          <Facebook className="w-5 h-5" strokeWidth={1.5} />
-        </a> */}
       </div>
     </div>
   </div>

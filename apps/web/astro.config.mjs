@@ -441,10 +441,12 @@ function getAdapter() {
  * are skipped, since they have no twin.
  */
 function markdownRedirects(map) {
+  // The home page's twin is /index.md, not "/.md".
+  const twin = (p) => `${p === '/' ? '/index' : p.replace(/\/$/, '')}.md`;
   const out = {};
   for (const [from, to] of Object.entries(map)) {
     if (typeof to !== 'string' || !to.startsWith('/') || /\.[a-z0-9]{2,4}$/i.test(to)) continue;
-    out[`${from.replace(/\/$/, '')}.md`] = `${to.replace(/\/$/, '')}.md`;
+    out[twin(from)] = twin(to);
   }
   return out;
 }
@@ -511,6 +513,12 @@ const blueprintLegacyRedirects = {
   ),
 };
 
+// Pages that came with the site template and were deleted rather than rewritten.
+// They were in the sitemap and llms.txt, so their URLs are already indexed.
+const removedPageRedirects = {
+  '/showcase': '/',
+};
+
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
@@ -526,11 +534,12 @@ export default defineConfig({
   redirects: {
     ...docsLegacyRedirects,
     ...blueprintLegacyRedirects,
+    ...removedPageRedirects,
     // Markdown twins of every legacy path. Without these, an agent that was
     // given an old URL and appends ".md" gets a 404, because Astro's redirects
     // only cover the HTML form. Derived from the same maps so the two can
     // never disagree about where a legacy path now lives.
-    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects }),
+    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects, ...removedPageRedirects }),
   },
   fonts: [
     {
@@ -613,7 +622,7 @@ export default defineConfig({
       'import.meta.env.DEFAULT_LOCALE': JSON.stringify(DEFAULT_LOCALE)
     },
     // Header islands are gone, but remaining React islands (ContactForm,
-    // BeforeAfter, AudioPlayer) plus the lazy search/signup overlays are still
+    // AudioPlayer) plus the lazy search/signup overlays are still
     // discovered late by Vite's dep scan on first load. Pre-bundling them
     // removes the re-optimize-and-reload stutter in `astro dev`.
     optimizeDeps: {

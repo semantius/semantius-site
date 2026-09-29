@@ -26,10 +26,8 @@ export const siteConfig = {
     postsPerPage: 6,
   },
   contact: {
-    email: {
-      support: 'support@interstellar.com',
-      sales: 'sales@interstellar.com',
-    },
+    // One address for support, sales and privacy questions.
+    email: 'hello@semantius.com',
     phone: {
       main: '+1 (555) 123-4567',
       label: 'Mon-Fri 9am-6pm PST'
@@ -105,14 +103,13 @@ export const NAV_LINKS = [
 export const ACTION_LINKS = {
   primary: { label: 'Get Started', href: '/docs/overview' },
   signIn: { label: 'Sign in', href: 'https://app.semantius.com/' },
+  // Accounts Semantius actually owns. Every entry is published as the
+  // Organization `sameAs` in Layout.astro, which tells search engines these
+  // profiles are this company, so never add a placeholder here.
   social: {
-    twitter: 'https://twitter.com/gladtek',
-    linkedin: 'https://linkedin.com/company/gladtek',
     github: 'https://github.com/Semantius',
-    youtube: 'https://youtube.com/@gladtek',
-    facebook: 'https://facebook.com/gladtek'
+  } as Record<string, string>
 
-  }
 };
 
 export const FOOTER_LINKS = {

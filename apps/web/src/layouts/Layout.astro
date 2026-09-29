@@ -66,12 +66,7 @@ const breadcrumbItems = breadcrumbs
             "name": brandName,
             "url": Astro.site,
             "logo": new URL(siteConfig.logo.src, Astro.site).toString(),
-            "sameAs": [
-                ACTION_LINKS.social?.twitter,
-                ACTION_LINKS.social?.github,
-                ACTION_LINKS.social?.linkedin,
-                ACTION_LINKS.social?.facebook
-            ].filter(Boolean)
+            "sameAs": Object.values(ACTION_LINKS.social)
         }} />
          {Astro.url.pathname !== '/' && (
             <Schema item={{

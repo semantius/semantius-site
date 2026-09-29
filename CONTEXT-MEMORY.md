@@ -104,6 +104,28 @@ upstream. A table or enum name in a blueprint is a published data model besides,
 renaming one is a breaking change for anybody who already deployed it rather than a
 typo fix.
 
+## The site started as a third-party template
+
+`apps/web` was generated from Gladtek's Astro template, whose filler is themed on
+the film Interstellar. Leftovers have shipped for months because a clean-up that
+greps for `gladtek` and fixes page metadata misses most of them. They were found in:
+
+- **Values, not copy**: `site.config.ts` social accounts (published as the
+  Organization `sameAs`, which claims those profiles are this company), contact
+  details, and an email on someone else's real domain (`cooper.com`).
+- **Unlinked pages**: a page nothing links to still ships, sits in the sitemap
+  and may be listed in `llms.txt`. Check `sitemap-0.xml`, not the navigation.
+- **Commented-out JSX and component defaults**: dead today, live the moment
+  someone uncomments it or drops the prop.
+
+So sweep for the template's vocabulary as well as its name: `gladtek`,
+`interstellar`, `endurance`, `lazarus`, `cooper`, `TARS`, `boilerplate`,
+`premium`, `555`. Then curl the live pages and grep the HTML, which is the only
+check that proves nothing is left.
+
+`/design` is template-derived and kept on purpose: it may become the real design
+system page. Do not delete it as a leftover.
+
 ## Cloud Agent environment
 
 The workspace root is `/workspace`. Bootstrap lives at `workplace/setup.sh` (absolute: `/workspace/workplace/setup.sh`). Every existing caller already uses that relative path:
@@ -131,7 +153,7 @@ The only package. It is an **Astro** site, not a React SPA.
 | Language    | TypeScript 5.9, extends `astro/tsconfigs/strict`                        |
 | Styling     | Tailwind CSS 4 via `@tailwindcss/vite`, plus `@tailwindcss/typography`  |
 | Components  | Hand-written `.astro` files in `src/components/ui`                      |
-| Interactive | React 19 islands in `src/components/islands` (contact, showcase, audio, lazy search/signup overlays) |
+| Interactive | React 19 islands in `src/components/islands` (contact, audio, lazy search/signup overlays) |
 | Search      | Pagefind, indexed at build time (see Build)                             |
 | Linting     | None configured                                                         |
 
@@ -227,9 +249,8 @@ no island on it hydrates eagerly. The header used to violate that on every page.
   Cmd+K toggles search: the trigger script tracks open state so it can close an
   already-mounted overlay.
 - **Eager islands remain only where they earn it.** `ContactForm` (`client:load` on
-  `/contact`), `BeforeAfter` (`client:visible` on `/showcase`), `AudioPlayer` (behind
-  `audioUrl` on a blog post). Those three still pull react-dom, lucide, and (for contact
-  and audio) `motion`. Expected initial payload: every other page is zero framework.
+  `/contact`) and `AudioPlayer` (behind `audioUrl` on a blog post). Those two still pull
+  react-dom, lucide and `motion`. Expected initial payload: every other page is zero framework.
 - **Never namespace-import an icon package.** `import * as Icons from 'lucide-react'`
   defeats tree-shaking in the production build too, not only in dev, because the namespace
   object keeps every icon reachable. Map string names to named imports explicitly (see

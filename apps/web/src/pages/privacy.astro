@@ -1,5 +1,6 @@
 ---
 import UntranslatedLayout from '~/layouts/UntranslatedLayout.astro';
+import { siteConfig } from '~/site.config';
 ---
 
 <UntranslatedLayout title="Privacy Policy - Semantius" description="Privacy Policy for Semantius.">
@@ -38,7 +39,7 @@ import UntranslatedLayout from '~/layouts/UntranslatedLayout.astro';
 
                 <h2 class="text-2xl font-bold mt-12 mb-4 text-foreground">4. Contact Us</h2>
                 <p>
-                    If you have any questions about this privacy policy or our privacy practices, please contact us at: support@cooper.com
+                    If you have any questions about this privacy policy or our privacy practices, please contact us at: <a href={`mailto:${siteConfig.contact.email}`}>{siteConfig.contact.email}</a>
                 </p>
             </div>
         </div>

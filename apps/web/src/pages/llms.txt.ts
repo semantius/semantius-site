@@ -68,13 +68,12 @@ export const GET: APIRoute = async ({ site }) => {
 	section('Documentation index', [`- [All documentation](${md(DOCS_INDEX_PATH)})`]);
 
 	// Hand-enumerated, so anything added to the site has to be added here too.
-	// Four twins (design, privacy, showcase, terms) were published and linked
-	// from nothing at all until they were listed.
+	// Three twins (design, privacy, terms) were published and linked from
+	// nothing at all until they were listed.
 	section('Product', [
 		`- [Features](${md('/features')}): what the platform does.`,
 		`- [Pricing](${md('/pricing')}): open source and managed plans.`,
 		`- [About](${md('/about')}): why Semantius exists.`,
-		`- [Showcase](${md('/showcase')}): what the platform looks like in use.`,
 		`- [Contact](${md('/contact')}): how to reach the team.`,
 		`- [License](${md('/license')}): MIT.`,
 		`- [Changelog](${md(CHANGELOG_PATH)}): version history.`,

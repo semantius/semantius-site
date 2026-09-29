@@ -3,101 +3,55 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import ContentSection from '~/components/sections/ContentSection.astro';
 import FeaturesList from '~/components/sections/FeaturesList.astro';
-import TeamSection from '~/components/sections/TeamSection.astro';
 import FeatureItem from '~/components/ui/FeatureItem.astro';
-import TeamMember from '~/components/ui/TeamMember.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
-import { Zap, Shield, Smartphone, Globe, Code, Layers } from 'lucide-react';
-
-import Timeline from '~/components/sections/Timeline.astro';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 import Heading from '~/components/ui/Heading.astro';
 import Text from '~/components/ui/Text.astro';
+import Button from '~/components/ui/Button.astro';
+import { Database, Layers, Users, Shield, Code, Server } from 'lucide-react';
+import { ACTION_LINKS } from '~/site.config';
 
-const timelineItems = [
-    { date: '2067', title: 'The Blight', description: "Crop failures and dust storms threaten humanity's survival on Earth." },
-    { date: '2069', title: 'Lazarus Missions', description: 'NASA secretly sends 12 brave astronauts through the wormhole to find a new home.' },
-    { date: '2087', title: 'Endurance Launch', description: 'Semantius and Brand leave Earth to follow the breadcrumbs and save the species.' },
-    { date: '2156', title: 'Semantius Station', description: "Humanity thrives on O'Neill cylinders near Saturn. Semantius returns." },
+// Every claim here is also made in src/data/llms-intro.md and on the home
+// page. Keep them in step: this page is what llms.txt calls "why Semantius exists".
+const principles = [
+    { title: 'Your Data Stays Yours', description: 'Every entity you define is a real PostgreSQL table. You can query it, back it up and take it with you.', icon: Database },
+    { title: 'One Model, Four Surfaces', description: 'The same model drives the database, the REST API, the UI people work in and the tools agents call. There is no second schema to keep in sync.', icon: Layers },
+    { title: 'People and Agents Together', description: 'People get dashboards, forms and grids generated from the model. AI chats and coding agents connect through MCP servers and a CLI.', icon: Users },
+    { title: 'Guardrails by Default', description: 'An agent acts under the same permissions, validation rules and row level rules as any person. Granting access never means handing over unrestricted SQL.', icon: Shield },
+    { title: 'Open Source', description: 'The core, the web app, the identity provider and the self-hosted stack are all released under the MIT license.', icon: Code },
+    { title: 'Run It Your Way', description: 'Self-host the whole stack for free, run the core on managed Postgres such as Neon or Supabase, or let the managed cloud operate it.', icon: Server },
 ];
-
-const aboutBenefits = [
-    { title: 'Lightning Fast', description: 'Optimized for speed with zero-js by default and island architecture.', icon: Zap },
-    { title: 'Secure by Design', description: 'Built with best practices and modern security standards in mind.', icon: Shield },
-    { title: 'Fully Responsive', description: 'Looks perfect on any device, from mobile phones to 4k desktops.', icon: Smartphone },
-    { title: 'SEO Optimized', description: 'Sitemap, meta tags, and open graph support ready to go.', icon: Globe },
-    { title: 'Developer Friendly', description: 'TypeScript, Tailwind, and configured tooling for a great DX.', icon: Code },
-    { title: 'Component Based', description: 'Modular architecture using React and Astro components.', icon: Layers },
-];
-
-const teamMembers = [
-    {
-        name: 'Joseph Semantius',
-        role: 'Pilot & Chief Engineer',
-        github: "https://github.com/gladtek",
-        linkedin: "https://linkedin.com/company/gladtek"
-    },
-    {
-        name: 'Dr. Amelia Brand',
-        role: 'Chief Scientist',
-        twitter: "https://github.com/gladtek",
-        linkedin: "https://linkedin.com/company/gladtek"
-    },
-    {
-        name: 'Murphy Semantius',
-        role: 'Lead Physicist',
-        linkedin: "https://linkedin.com/company/gladtek"
-    },
-    {
-        name: 'TARS',
-        role: 'AI & Automation Lead',
-        github: "https://github.com/gladtek"
-    }
-];
-
 ---
 
 <Layout title="About - Semantius Agentic Data Platform" description="Why Semantius exists: one semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.">
-<PageHeader title='We Are <span class="text-primary">Explorers</span>' description='Our mission is to find a new home for humanity among the stars, ensuring the survival of our species.' />
+<PageHeader title='Why <span class="text-primary">Semantius</span> Exists' description='One semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.' />
 
-  <ContentSection title='The Mission'>
-    <Text>It started with the Blight. The world didn't need more engineers; it needed farmers. But we knew looking down at the dirt wasn't the answer. We had to look up.</Text>
-    <Text>The Lazarus missions gave us hope. Twelve rangers sent into the unknown to find habitable worlds. We built the Endurance not just to explore, but to see if we could survive.</Text>
-    <Text>Today, we stand on the precipice of a new dimension. We are the caretakers of the future, driven by love that transcends time and space.</Text>
+  <ContentSection title='The Third Option'>
+    <Text>Business data now has two kinds of readers: the people who run the business and the AI agents that act for them. Until now, a team that needed both had two choices.</Text>
+    <Text>It could buy a SaaS product and bend the business to fit it, with the data locked inside. Or it could build something custom and maintain that code forever.</Text>
+    <Text>Semantius is the third option. You describe your domain once as a semantic model: the entities, fields, relationships, roles and permissions. The database, the API, the UI and the guardrails for agents all follow from that model, and change when it changes.</Text>
   </ContentSection>
-
-  <Container class="py-24">
-    <Heading level={2} class="text-center mb-12">Our Journey</Heading>
-    <Timeline items={timelineItems} />
-  </Container>
 
   <Section>
       <Container>
-          <div class="mb-24">
-             <Heading level={2} class="text-center mb-12">Why Leave Earth?</Heading>
-             <FeaturesList>
-                {aboutBenefits.map((benefit) => (
-                    <FeatureItem title={benefit.title} description={benefit.description}>
-                        <benefit.icon slot="icon" className="w-6 h-6" />
-                    </FeatureItem>
-                ))}
-             </FeaturesList>
-          </div>
-
-          <div>
-            <TeamSection title='Meet the Team'>
-              {teamMembers.map((member) => (
-                <TeamMember
-                    name={member.name}
-                    role={member.role}
-                    github={member.github}
-                    linkedin={member.linkedin}
-                    twitter={member.twitter}
-                />
-              ))}
-            </TeamSection>
-          </div>
+          <Heading level={2} class="text-center mb-12">What Semantius Stands For</Heading>
+          <FeaturesList>
+             {principles.map((p) => (
+                 <FeatureItem title={p.title} description={p.description}>
+                     <p.icon slot="icon" className="w-6 h-6" />
+                 </FeatureItem>
+             ))}
+          </FeaturesList>
       </Container>
   </Section>
+
+  <ContentSection title='Who Builds It'>
+    <Text>Semantius is built by adenin. The source is developed in the open on <a href={ACTION_LINKS.social.github} class="text-primary hover:underline">GitHub</a>, where you can read the code and follow every release.</Text>
+    <div class="flex flex-wrap gap-4 pt-4">
+      <Button href="/docs/overview">Get Started</Button>
+      <Button href="/blueprints" variant="outline">Explore Blueprints</Button>
+    </div>
+  </ContentSection>
 </Layout>

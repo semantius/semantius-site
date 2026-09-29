@@ -4,7 +4,6 @@ import Layout from '~/layouts/Layout.astro';
 import { getCollection, render } from 'astro:content';
 import ChangelogItem from '~/components/blog/ChangelogItem.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
-import CTA from '~/components/sections/CTA.astro';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 
@@ -44,14 +43,6 @@ const entries = (await getCollection('changelog'))
                     )
                 })}
             </div>
-
-            {/* <CTA
-                variant="boxed"
-                title='Want to stay updated?'
-                description='Follow us on LinkedIn or subscribe to our newsletter for the latest library releases.'
-                primaryBtn={{ text: 'Follow on LinkedIn', href: 'https://linkedin.com/company/gladtek' }}
-                secondaryBtn={{ text: 'Join Newsletter', href: 'https://linkedin.com/company/gladtek' }}
-            /> */}
         </Container>
     </Section>
 </Layout>

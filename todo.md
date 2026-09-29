@@ -16,7 +16,9 @@ commercial terms:
 > "We accept all major credit cards, **PayPal**, and **wire transfers** for Enterprise"
 > "Yes, we have a **30-day money-back guarantee**"
 
-while every price on the same page renders as `X/month`.
+while every price on the same page renders as `X/month`. The same trial is also
+promised by the homepage CTA ("14-day free trial for Pro", in `index.astro`) and
+by the default `disclaimer` in `apps/web/src/components/sections/CTA.astro`.
 
 **Contained, not fixed.** `/pricing` is in `EXCLUDED` in
 `apps/web/src/lib/dualmark/excluded.ts`, so no `/pricing.md` twin exists and the
@@ -30,6 +32,32 @@ entry from `EXCLUDED` and the exception note in `public/robots.txt`. Nothing els
 needs changing; `twinUrl()` already falls back correctly.
 
 Needs a human decision on the actual trial, payment and refund terms.
+
+---
+
+## 🔴 Open: the contact form discards every message
+
+`apps/web/src/pages/contact.astro` renders `ContactForm.jsx`, whose submit
+handler waits two seconds, shows a success message and sends nothing. The
+homepage "Contact Sales" button and the 404 page both lead there, so a sales
+inquiry typed into it is lost while the visitor is told it arrived.
+
+The rest of the page is still template filler, except the email address
+(`hello@semantius.com`, from `siteConfig.contact` in
+`apps/web/src/site.config.ts`):
+
+- the phone `+1 (555) 123-4567`, "Mon-Fri 9am-6pm PST"
+- the office "Endurance / Interstellar Space Station"
+- an "Enterprise Support" box whose "Contact Sales" link is `href="#"`
+
+**To close it:** wire the form to something that delivers and prove it with a
+test message, or remove the form and let the mailto link carry the page. Remove
+the phone and office unless real ones exist. Then reword the header "Fill out
+the form below or reach out directly": `/contact.md` repeats it with no form
+underneath, because form controls are stripped from the markdown copies on
+purpose.
+
+Needs a human decision on how contact requests should arrive.
 
 ---
 
@@ -193,26 +221,8 @@ allowed to be short, so it should be exempt from that warning. A warning that
 fires on correct files is one people learn to scroll past - which is how several
 items on this page went unnoticed for months.
 
-#### 5. The contact page promises a form its markdown copy cannot contain
+#### 5. Housekeeping
 
-`/contact.md` says "Fill out the form below" and then has no form. The missing
-form is correct: form controls are deliberately removed from the markdown
-copies, because an agent reading a text file cannot fill one in. The sentence is
-what is wrong.
-
-Fix the page itself first, though - its contact details are still template
-placeholders: `support@interstellar.com`, `+1 (555) 123-4567`, and "Endurance /
-Interstellar Space Station". Then reword the sentence so it is true in both
-versions, for instance by giving the email address in the text instead of
-pointing at a form.
-
-#### 6. Housekeeping
-
-- **Licence attribution.** `apps/web/README.md` does not mention that part of
-  this code is adapted from the dualmark project under Apache-2.0. Everything
-  else that license requires is already in place: the license text is vendored,
-  `NOTICE` exists, the upstream commit is pinned, and the individual files carry
-  headers. Only the README line is missing.
 - **Four exported functions that nothing calls.** `toHtmlPath`,
   `isMarkdownPath` and `toMarkdownUrl` in
   `apps/web/src/lib/dualmark/paths.ts`, and `allOverridePaths` in

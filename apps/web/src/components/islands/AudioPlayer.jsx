@@ -12,7 +12,7 @@ export default function AudioPlayer({ src, title = "AUDIO_LOG_01" }) {
   
   const audioRef = useRef(null);
   
-  // Random data stream for TARS effect
+  // Random data stream for the HUD readout
   const [dataStream, setDataStream] = useState("00.00.00");
 
   useEffect(() => {
@@ -161,7 +161,7 @@ export default function AudioPlayer({ src, title = "AUDIO_LOG_01" }) {
                 {/* HUD Header */}
                 <div className="flex justify-between items-start mb-4 text-zinc-400 border-b border-zinc-800 pb-2">
                     <div className="flex flex-col">
-                        <span className="text-[10px]">TARS_AUDIO_MODULE_V1</span>
+                        <span className="text-[10px]">AUDIO</span>
                         <span className="text-amber-500 font-bold">{sysStatus}</span>
                     </div>
                     <div className="text-right flex flex-col items-end">
@@ -201,7 +201,7 @@ export default function AudioPlayer({ src, title = "AUDIO_LOG_01" }) {
                             </span>
                         </div>
 
-                        {/* Histogram Waveform - Animated TARS Style */}
+                        {/* Animated histogram waveform */}
                         <div className="relative h-6 flex items-end gap-[2px] bg-zinc-900 border-t border-zinc-800 pt-1">
                             {Array.from({ length: 50 }).map((_, i) => (
                                 <motion.div

@@ -291,7 +291,7 @@ export function markdownTwins() {
 					// suffix is site chrome and repeating it in every twin wastes
 					// tokens and blurs what the page is about.
 					// Both shapes occur: "About - Semantius ..." and the home page's
-					// "Semantius | Engineered for the Unknown". Stripping only the
+					// "Semantius | The Open Source ...". Stripping only the
 					// suffix left the home twin titled with browser-tab chrome.
 					const title = decodeEntities(rawTitle ?? pagePath)
 						.replace(/\s*[-|]\s*Semantius.*$/, '')
@@ -302,8 +302,8 @@ export function markdownTwins() {
 					// The extracted body usually opens with the page's own <h1>, which
 					// would give the twin two h1s alongside the one docHeader emits.
 					// Lift it out and prefer it as the title: the visible heading
-					// ("We Are Explorers") says more about the page than the <title>
-					// tag ("About"), which exists for browser tabs and search results.
+					// ("Product Updates") says more about the page than the <title>
+					// tag ("Changelog"), which exists for browser tabs and search results.
 					// ATX (# Title) and setext (Title over ===). remark-stringify
 					// falls back to setext when a heading contains a hard break, and
 					// the home page's H1 does, so an ATX-only match left the twin

@@ -6,7 +6,6 @@ import Hero from '~/components/sections/Hero.astro';
 import Section from '~/components/layout/Section.astro';
 import LatestPosts from '~/components/sections/LatestPosts.astro';
 import CTA from '~/components/sections/CTA.astro';
-import FAQ from '~/components/sections/FAQ.astro';
 import OpenSourceNotification from '~/components/common/OpenSourceNotification.astro';
 import Container from '~/components/ui/Container.astro';
 import Grid from '~/components/ui/Grid.astro';
@@ -49,17 +48,9 @@ const pillars = [
     },
 ];
 
-const homeFaqs = [
-  { question: 'Is this boilerplate free to use?', answer: 'Yes! The core template is open-source and free to use for personal and commercial projects. We also offer a Pro version with advanced features and dedicated support.' },
-  { question: 'Do I need to know React?', answer: 'While we use React for interactive islands, you can use any framework you prefer (Vue, Svelte, Solid) or just sticking to vanilla JS. Astro is framework-agnostic by design.' },
-  { question: 'How does the search functionality work?', answer: 'We use Pagefind, a static search library that indexes the site at build time. The browser fetches only the small index chunks that match your query, so results are instant with no search server or API key.' },
-  { question: 'Can I deploy this to Vercel/Netlify?', answer: 'Absolutely. The template is pre-configured with adapters for Vercel, Netlify, and Cloudflare Pages. Just push to GitHub and connect your repository.' },
-  { question: "What makes this 'premium'?", answer: 'Beyond the design, we include production-grade setups for SEO, analytics, sitemaps, RSS feeds, open graph images, dark mode, and accessibility out of the box.' },
-];
-
 ---
 
-<Layout title="Semantius | Engineered for the Unknown" description="Define your domain model and deploy a governed PostgreSQL backend: REST APIs, an admin UI for your team, and guardrails for your agents. Open source, MIT licensed, self-hosted or managed.">
+<Layout title="Semantius | The Open Source Agentic Data Platform" description="Define your domain model and deploy a governed PostgreSQL backend: REST APIs, an admin UI for your team, and guardrails for your agents. Open source, MIT licensed, self-hosted or managed.">
     <Schema item={{
             "@context": "https://schema.org",
             "@type": "WebSite",
@@ -149,12 +140,6 @@ const homeFaqs = [
     </Section>
 
     <LatestPosts count={6}/>
-
-    {/*
-    <Section class="py-0 overflow-visible">
-    <FAQ items={homeFaqs} />
-    </Section>
-    */}
 
     <CTA
         title='Ready to <br /><span class="text-primary">Launch?</span>'
