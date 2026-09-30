@@ -23,15 +23,10 @@ const {
 const plainText = (html: string) =>
   html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
 
-// An answer that still carries a TBD placeholder (see components/pricing/tbd.ts)
-// stays on the page but out of the structured data: JSON-LD is what search
-// engines quote, and "TBD" is not an answer.
-const answered = items.filter((item) => !item.answer.includes('data-tbd='));
-
 const schema = {
   "@context": "https://schema.org",
   "@type": "FAQPage",
-  "mainEntity": answered.map(item => ({
+  "mainEntity": items.map(item => ({
     "@type": "Question",
     "name": item.question,
     "acceptedAnswer": {
@@ -42,7 +37,7 @@ const schema = {
 };
 ---
 
-{answered.length > 0 && <Schema item={schema} />}
+<Schema item={schema} />
 
 <section class="py-24 relative overflow-hidden" id="faq">
     <div class="max-w-3xl mx-auto px-6 relative z-10">

@@ -8,18 +8,23 @@ import Container from '~/components/ui/Container.astro';
 import Button from '~/components/ui/Button.astro';
 import PlanCard from '~/components/pricing/PlanCard.astro';
 import PricingCell from '~/components/pricing/PricingCell.astro';
-import Tbd from '~/components/pricing/Tbd.astro';
-import { tbdHtml } from '~/components/pricing/tbd';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Check } from 'lucide-react';
 import { siteConfig } from '~/site.config';
 import {
+  AT_ZERO_CREDITS,
   CLOUD_PLANS,
   CREDIT_RATES,
+  HAS_YEARLY,
+  HOURLY_RATE,
+  PRO_BREAK_EVEN_CREDITS,
+  RESPONSE_TARGETS,
+  SERVICES,
+  SUPPORT_COVERAGE,
+  SUPPORT_HOURS,
+  SUPPORT_TIERS,
   TOP_UP_PACKS,
   WORKED_EXAMPLES,
   count,
-  isPending,
-  pending,
   usageCredits,
   usd,
   type Cell,
@@ -35,12 +40,11 @@ const planByKey = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p])) as Reco
 
 const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell }[] = [
   { label: 'Price, monthly', cell: (p) => `${usd(p.monthlyPrice)} per month` },
-  {
-    label: 'Price, yearly',
-    hint: 'paid upfront for 12 months',
-    cell: (p) => (p.yearlyPrice === null ? null : isPending(p.yearlyPrice) ? p.yearlyPrice : usd(p.yearlyPrice)),
-  },
-  { label: 'Credits included', hint: 'granted each month', cell: (p) => (isPending(p.credits) ? p.credits : count(p.credits)) },
+  // Shown once the founder sets a yearly price (see HAS_YEARLY).
+  ...(HAS_YEARLY
+    ? [{ label: 'Price, yearly', hint: 'paid upfront for 12 months', cell: (p: CloudPlan) => (p.yearlyPrice === null ? null : usd(p.yearlyPrice)) }]
+    : []),
+  { label: 'Credits included', hint: 'granted each month', cell: (p) => count(p.credits) },
   { label: 'Users', hint: 'people and agents each count as one', cell: (p) => (p.userLimit === null ? 'No limit' : String(p.userLimit)) },
   { label: 'Maximum compute', cell: (p) => `${p.maxComputeUnits} compute ${p.maxComputeUnits === 1 ? 'unit' : 'units'}` },
   { label: 'Data storage limit', cell: (p) => p.storageLimit ?? 'Unlimited, paid in credits' },
@@ -51,12 +55,14 @@ const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell 
 
 const selfHostedParts = [
   { name: 'pg_semantius', href: '/docs/pg-semantius', text: 'the PostgreSQL extension at the core, which enforces permissions, row-level security and the audit trail inside the database.' },
-  { name: 'The app', text: 'the web app where people work with the data, with forms, grids and dashboards generated from the model.' },
+  // No "dashboards": the self-hosted stack ships without Cube, and the app
+  // hides its dashboard features there.
+  { name: 'The app', text: 'the web app where people work with the data, with forms and grids generated from the model.' },
   { name: 'The identity provider', href: '/docs/self-hosted/semantius-idp', text: 'sign-in and personal API keys, through semantius-idp.' },
   { name: 'The self-hosted stack', href: '/docs/self-hosted', text: 'the whole platform as one Docker Compose project.' },
   { name: 'The agent CLI', href: '/docs/cli', text: 'the command-line tool for scripting, automation and headless agents.' },
-  { name: 'The agent skills', href: '/docs/agent-skills', text: 'instructions that teach coding agents to work with Semantius models.' },
-  { name: 'The models', text: 'ready-made semantic data models.' },
+  { name: 'The agent skills', href: '/docs/agent-skills', text: 'the instructions that teach coding agents to use the CLI with your platform.' },
+  // The ready-made models stay off this page while blueprints are out of the message.
 ];
 
 const email = siteConfig.contact.email;
@@ -76,7 +82,7 @@ const faqs = [
   },
   {
     question: 'Do unused credits roll over?',
-    answer: 'No. Monthly credits expire at the end of each month, on yearly plans too. Top-up credits expire 12 months after purchase.',
+    answer: 'No. Monthly credits expire at the end of each month, and top-up credits expire 12 months after purchase.',
   },
   {
     question: 'Can I be charged more than my plan?',
@@ -84,7 +90,7 @@ const faqs = [
   },
   {
     question: 'What happens when I run out?',
-    answer: `You get a warning when your credits run low. What happens at zero credits: ${tbdHtml('what happens at zero credits')}`,
+    answer: AT_ZERO_CREDITS,
   },
   {
     question: 'Can I leave?',
@@ -95,8 +101,8 @@ const faqs = [
     answer: 'Yes. Everything you run yourself is free and open source under the MIT license. See the <a href="#self-hosted">Self-hosted tab</a>.',
   },
   {
-    question: 'Can I get a refund?',
-    answer: `Top-ups are non-refundable. Refunds on yearly plans: ${tbdHtml('refunds on yearly plans')} The EU right of withdrawal: ${tbdHtml('EU consumer withdrawal wording, to check with the merchant of record')}`,
+    question: 'Are top-ups refundable?',
+    answer: 'No. A top-up cannot be refunded once bought, and the same applies to self-hosted support fees.',
   },
 ];
 
@@ -155,6 +161,7 @@ const td = 'py-3 px-4 text-sm align-top';
         <a role="tab" id="tab-self-hosted" href="#self-hosted" aria-controls="self-hosted" aria-selected="false" tabindex="-1" data-tab="self-hosted"
           class={`px-6 py-2.5 rounded-full text-sm font-medium transition-colors text-muted-foreground hover:text-foreground aria-selected:bg-primary aria-selected:text-white ${focusRing}`}>Self-hosted</a>
       </div>
+      {HAS_YEARLY && (
       <div class="pricing-billing flex items-center gap-3 justify-self-center md:justify-self-end">
         <span id="billing-label" class="text-sm text-muted-foreground">Billing</span>
         <div role="group" aria-labelledby="billing-label" class="inline-flex p-0.5 rounded-full border border-foreground/10 bg-foreground/5">
@@ -164,6 +171,7 @@ const td = 'py-3 px-4 text-sm align-top';
             class={`px-3.5 py-1 rounded-full text-sm cursor-pointer transition-colors text-muted-foreground hover:text-foreground aria-pressed:bg-background aria-pressed:text-foreground aria-pressed:shadow-sm ${focusRing}`}>Yearly</button>
         </div>
       </div>
+      )}
     </div>
 
     {/* Runs before the panels are parsed, so a /pricing#self-hosted visit never
@@ -189,9 +197,11 @@ const td = 'py-3 px-4 text-sm align-top';
 
       {/* Sits under the billing toggle. Its space is kept while Monthly is
           selected, so switching periods does not move the cards. */}
-      <p class="min-h-5 mb-6 text-sm text-muted-foreground text-center md:text-right" data-yearly-note>
-        Yearly plans are paid upfront for 12 months. Credits are still granted each month.
-      </p>
+      {HAS_YEARLY && (
+        <p class="min-h-5 mb-6 text-sm text-muted-foreground text-center md:text-right" data-yearly-note>
+          Yearly plans are paid upfront for 12 months. Credits are still granted each month.
+        </p>
+      )}
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
         {CLOUD_PLANS.map((plan) => <PlanCard plan={plan} />)}
@@ -242,14 +252,12 @@ const td = 'py-3 px-4 text-sm align-top';
           <h3 id="how-credits-work" class={sectionTitle}>How Credits Work</h3>
           <div class="space-y-4 max-w-3xl leading-relaxed text-muted-foreground">
             <p>Every cloud plan includes credits each month, and everything your platform uses is paid for in credits. A <strong class="text-foreground">compute unit</strong> is a fraction of a virtual CPU plus 1 GB of memory, and <strong class="text-foreground">one credit buys one compute unit for 15 minutes</strong>.</p>
-            <p>The database pauses when it is idle, and compute is only counted while it runs. So compute depends on how long the database is active, not on how many people use it. How long it waits before pausing, and how long it takes to wake up: <Tbd note="idle time before the database pauses, and typical wake-up time" /></p>
+            <p>The database pauses when it is idle, and compute is only counted while it runs. So compute depends on how long the database is active, not on how many people use it. It pauses after a short idle period and wakes again when it is next used.</p>
           </div>
-          <ul class="mt-6 grid gap-3 sm:grid-cols-2 text-sm">
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Monthly credits expire at the end of each month.</strong> They do not roll over, on yearly plans either.</li>
+          <ul class="mt-6 grid gap-3 md:grid-cols-3 text-sm">
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Monthly credits expire at the end of each month.</strong> They do not roll over.</li>
             <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Spending is limited to the credits you hold.</strong> Top-ups are bought manually, so there are no unexpected charges.</li>
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>You get a warning when credits run low.</strong> The point at which it is sent: <Tbd note="low-credit warning threshold" /></li>
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>What happens at zero credits:</strong> <Tbd note="what happens at zero credits" /></li>
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5 sm:col-span-2"><strong>The order credits are used in:</strong> <Tbd note="order in which monthly and top-up credits are used" /></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Running out.</strong> {AT_ZERO_CREDITS}</li>
           </ul>
         </section>
 
@@ -310,8 +318,7 @@ const td = 'py-3 px-4 text-sm align-top';
 
         <section>
           <h3 id="examples" class={sectionTitle}>Worked Examples</h3>
-          <p class="mb-4 text-sm"><Tbd note="worked examples: usage assumptions and results" /> <span class="text-muted-foreground">These examples are pending confirmation.</span></p>
-          <p class={lede}>Compute depends on how long the database is active, not on the number of users. Here is what three setups would use in a month, at the rates above.</p>
+          <p class={lede}>Compute depends on how long the database is active, not on the number of users. These three setups are illustrative: the usage is assumed, and the credits are worked out from the rates above. Each one shows the plan that costs least for it.</p>
           <div class="grid gap-6 lg:grid-cols-3">
             {WORKED_EXAMPLES.map((ex) => {
               const c = usageCredits(ex.usage);
@@ -350,6 +357,7 @@ const td = 'py-3 px-4 text-sm align-top';
               );
             })}
           </div>
+          <p class="mt-6 text-sm text-muted-foreground"><strong class="text-foreground">Choosing between Starter and Pro:</strong> above about {PRO_BREAK_EVEN_CREDITS} credits a month, Pro costs less than Starter with top-ups.</p>
         </section>
       </div>
     </section>
@@ -390,35 +398,122 @@ const td = 'py-3 px-4 text-sm align-top';
 
         <section>
           <h3 id="support-plans" class={sectionTitle}>Support Plans</h3>
-          <p class={lede}>The software is free, and support is sold separately. It comes as an entry plan and a main plan above it.</p>
-          <div class="grid gap-6 md:grid-cols-2">
-            {[
-              { tier: 'Entry Plan', name: pending('entry support plan name'), price: pending('entry support plan price') },
-              { tier: 'Main Plan', name: pending('main support plan name'), price: pending('main support plan price') },
-            ].map((plan) => (
-              <article class="rounded-3xl border border-foreground/10 bg-foreground/2 p-8">
-                <h4 class="text-xl font-bold mb-4">{plan.tier}</h4>
-                <p class="text-sm text-muted-foreground mb-2">Name: <Tbd note={plan.name.tbd} /></p>
-                <p class="text-sm text-muted-foreground">Price: <Tbd note={plan.price.tbd} /></p>
+          <p class={lede}>The software is free, and support is sold separately. Paid plans have no incident counting: raise as many issues as you need, with no cap on the hours spent on one.</p>
+          <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {SUPPORT_TIERS.map((tier) => (
+              <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
+                <h4 class="text-lg font-bold mb-3">{tier.name}</h4>
+                <p class="mb-5 flex flex-wrap items-baseline gap-x-2 min-h-10">
+                  {typeof tier.price === 'number' ? (
+                    <><span class="text-3xl font-display font-bold">{usd(tier.price)}</span><span class="text-sm text-muted-foreground">per year</span></>
+                  ) : (
+                    <span class="text-2xl font-display font-bold">{tier.price}</span>
+                  )}
+                </p>
+                <ul class="space-y-2.5 text-sm text-muted-foreground flex-1">
+                  {tier.lines.map((line) => (
+                    <li class="flex gap-2.5"><Check className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden="true" /><span>{line}</span></li>
+                  ))}
+                </ul>
+                {tier.link && <a href={tier.link.href} class="mt-5 text-sm font-medium text-primary hover:underline">{tier.link.label}</a>}
               </article>
             ))}
           </div>
-          <ul class="mt-6 grid gap-3 sm:grid-cols-3 text-sm">
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No incident counting.</strong> <span class="text-muted-foreground">Neither plan limits how many issues you raise.</span></li>
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No cap per incident.</strong> <span class="text-muted-foreground">There is no limit on the hours spent on one issue.</span></li>
-            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Prices in US dollars.</strong> <span class="text-muted-foreground">Every support price is in USD.</span></li>
-          </ul>
-          <p class="mt-6 text-sm text-muted-foreground">To ask about a support plan, email <a href={`mailto:${email}`} class="font-medium text-primary hover:underline">{email}</a>.</p>
+          <p class="mt-6 text-sm text-muted-foreground">Prices are in US dollars, billed annually in advance. P1 is the most urgent kind of request; the response targets are below. To buy a plan or a service, email <a href={`mailto:${email}`} class="font-medium text-primary hover:underline">{email}</a>.</p>
+        </section>
+
+        <section>
+          <h3 id="support-hours" class={sectionTitle}>Hours and Response Targets</h3>
+          <p class={lede}>Support works during business hours, <strong class="text-foreground">{SUPPORT_HOURS}</strong>, except published closure dates. A request that arrives outside those hours counts from the start of the next business hour.</p>
+          <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
+            <table class="w-full text-left border-collapse min-w-140">
+              <thead>
+                <tr class="border-b border-foreground/10 bg-foreground/3">
+                  <th scope="col" class={th}>Severity</th>
+                  <th scope="col" class={th}>What it means</th>
+                  <th scope="col" class={th}>Standard</th>
+                  <th scope="col" class={th}>Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                {RESPONSE_TARGETS.map((t) => (
+                  <tr class="border-b border-foreground/10 last:border-b-0">
+                    <th scope="row" class={`${td} font-semibold`}>{t.severity}</th>
+                    <td class={td}>{t.meaning}</td>
+                    <td class={td}>{t.standard}</td>
+                    <td class={td}>{t.priority}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div class="mt-6 space-y-3 max-w-3xl text-sm text-muted-foreground leading-relaxed">
+            <p><strong class="text-foreground">These are response targets, not resolution times, and there is no uptime SLA.</strong> Semantius does not operate your infrastructure. The commitment is that a person who wrote the code reads your problem within the stated time; how long a fix takes depends on your environment.</p>
+            <p><strong class="text-foreground">There is no out-of-hours or 24/7 cover on any plan.</strong></p>
+          </div>
+        </section>
+
+        <section>
+          <h3 id="coverage" class={sectionTitle}>What Support Covers</h3>
+          <p class={lede}>Support covers the Semantius code and the published deployment. Getting your own system designed, modeled and live is a service: a Deployment Review, or hourly work.</p>
+          <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
+            <table class="w-full table-fixed text-left border-collapse min-w-140">
+              <colgroup>
+                <col />
+                <col class="w-28" />
+                <col class="w-36" />
+              </colgroup>
+              <thead>
+                <tr class="border-b border-foreground/10 bg-foreground/3">
+                  <th scope="col" class={th}>Activity</th>
+                  <th scope="col" class={th}>Support</th>
+                  <th scope="col" class={th}>Services</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SUPPORT_COVERAGE.map((row) => (
+                  <tr class="border-b border-foreground/10 last:border-b-0">
+                    <th scope="row" class={`${td} font-normal`}>{row.activity}</th>
+                    <td class={td}><PricingCell value={row.support} /></td>
+                    <td class={td}><PricingCell value={row.services} /></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
 
         <section>
           <h3 id="services" class={sectionTitle}>Services</h3>
-          <p class={lede}>Work outside the support scope is billed at <strong class="text-foreground">$250 an hour</strong>. The services on offer, and how hours are bought: <Tbd note="self-hosted services, and how out-of-scope hours are sold" /></p>
+          <p class={lede}>Two deployment sessions, and hourly work for anything outside the support scope.</p>
+          <div class="grid gap-6 md:grid-cols-3">
+            {SERVICES.map((service) => (
+              <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
+                <h4 class="text-lg font-bold mb-2">{service.name}</h4>
+                <p class="mb-4"><span class="text-2xl font-display font-bold">{usd(service.price)}</span> <span class="text-sm text-muted-foreground">{service.scope}</span></p>
+                <p class="text-sm text-muted-foreground leading-relaxed">{service.text}</p>
+              </article>
+            ))}
+            <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
+              <h4 class="text-lg font-bold mb-2">Hourly Work</h4>
+              <p class="mb-4"><span class="text-2xl font-display font-bold">{usd(HOURLY_RATE)}</span> <span class="text-sm text-muted-foreground">an hour</span></p>
+              <p class="text-sm text-muted-foreground leading-relaxed">For work outside the support scope, sold in prepaid blocks of 5 hours.</p>
+            </article>
+          </div>
         </section>
 
         <section>
-          <h3 id="support-hours" class={sectionTitle}>Support Hours</h3>
-          <p class={lede}>Support is available during business hours, <strong class="text-foreground">09:00 to 17:00 US Eastern</strong>.</p>
+          <h3 id="support-terms" class={sectionTitle}>Support Terms</h3>
+          <ul class="grid gap-3 sm:grid-cols-2 text-sm">
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Billed annually in advance.</strong> <span class="text-muted-foreground">Prices are in US dollars.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No service credits.</strong> <span class="text-muted-foreground">A missed target is not refunded automatically, though Semantius may compensate it at its discretion. Fees are not refundable.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Named contacts only.</strong> <span class="text-muted-foreground">Requests are accepted from your named contacts.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Liability is capped.</strong> <span class="text-muted-foreground">It is limited to the fees you paid in the preceding 12 months.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>No IP indemnification on these plans.</strong> <span class="text-muted-foreground">Cover against claims that the software infringes someone else's intellectual property needs an Enterprise agreement.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Two releases supported.</strong> <span class="text-muted-foreground">Support covers the current release and the one before it.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Closure dates are published in advance.</strong> <span class="text-muted-foreground">Those days do not count as business hours.</span></li>
+            <li class="rounded-2xl border border-foreground/10 bg-foreground/2 p-5"><strong>Renewal is optional.</strong> <span class="text-muted-foreground">Either party may decline to renew, without giving a reason.</span></li>
+          </ul>
         </section>
 
         <a href="#cloud" data-pagefind-ignore class="group flex items-center justify-between gap-6 rounded-3xl border border-foreground/10 bg-foreground/2 p-8 hover:border-primary/30 transition-colors">

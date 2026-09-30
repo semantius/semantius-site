@@ -1,14 +1,13 @@
 ---
 import { Check } from 'lucide-react';
-import Tbd from './Tbd.astro';
-import PricingCell from './PricingCell.astro';
-import { count, isPending, usd, type CloudPlan } from '~/data/pricing';
+import { SIGN_UP_URL, count, usd, type CloudPlan } from '~/data/pricing';
 
 interface Props {
   plan: CloudPlan;
 }
 
 const { plan } = Astro.props;
+const available = plan.status === 'available';
 
 const lines = [
   plan.userLimit === null ? 'No limit on users' : `Up to ${plan.userLimit} users, people and agents alike`,
@@ -16,12 +15,17 @@ const lines = [
   plan.storageLimit === null ? 'Unlimited data storage, paid in credits' : `Up to ${plan.storageLimit} of data storage`,
   ...(plan.topUps ? ['Top-ups available'] : []),
   ...(plan.webhookReceivers ? ['Webhook receivers'] : []),
+  plan.support === 'Support' ? 'Support' : `Support: ${plan.support.toLowerCase()}`,
 ];
-const support = typeof plan.support === 'string' ? `Support: ${plan.support.toLowerCase()}` : plan.support;
 ---
 
 <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-8">
-  <h3 class="text-xl font-bold mb-2">{plan.name}</h3>
+  <div class="flex items-center justify-between gap-3 mb-2">
+    <h3 class="text-xl font-bold">{plan.name}</h3>
+    {!available && (
+      <span class="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary whitespace-nowrap">Coming soon</span>
+    )}
+  </div>
   <p class="text-sm text-muted-foreground mb-6 md:min-h-10">{plan.summary}</p>
 
   {/* Both periods are in the HTML, so the markdown twin and search carry both;
@@ -33,9 +37,7 @@ const support = typeof plan.support === 'string' ? `Support: ${plan.support.toLo
     </p>
     {plan.yearlyPrice !== null && (
       <p class="flex items-baseline gap-2" data-period="yearly">
-        <span class="text-4xl font-display font-bold">
-          {isPending(plan.yearlyPrice) ? <Tbd note={plan.yearlyPrice.tbd} /> : usd(plan.yearlyPrice)}
-        </span>
+        <span class="text-4xl font-display font-bold">{usd(plan.yearlyPrice)}</span>
         <span class="text-muted-foreground">per year, paid upfront</span>
       </p>
     )}
@@ -44,7 +46,7 @@ const support = typeof plan.support === 'string' ? `Support: ${plan.support.toLo
   <ul class="space-y-3 mb-8 flex-1 text-sm">
     <li class="flex gap-3 font-medium">
       <Check className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
-      <span>{isPending(plan.credits) ? <><Tbd note={plan.credits.tbd} /> credits each month</> : `${count(plan.credits)} credits each month`}</span>
+      <span>{count(plan.credits)} credits each month</span>
     </li>
     {lines.map((line) => (
       <li class="flex gap-3 text-muted-foreground">
@@ -52,21 +54,20 @@ const support = typeof plan.support === 'string' ? `Support: ${plan.support.toLo
         <span>{line}</span>
       </li>
     ))}
-    <li class="flex gap-3 text-muted-foreground">
-      <Check className="w-4 h-4 mt-0.5 text-primary shrink-0" aria-hidden="true" />
-      <PricingCell value={support} />
-    </li>
   </ul>
 
-  {/* The cloud opens through the wait list until the public beta, the same
-      overlay the header's Sign up button and the announcement banner open.
-      No query parameters: the app's sign-up page reads none of them. */}
+  {/* An available plan signs up in the app. A coming-soon plan offers the
+      wait list, the same overlay the header's Sign up button opens. */}
   <a
-    href="#signup"
+    href={available ? SIGN_UP_URL : '#signup'}
     data-plan={plan.key}
     data-pagefind-ignore
-    class="pricing-plan-cta block w-full rounded-xl px-6 py-3 text-center font-medium transition-colors bg-primary text-white hover:bg-primary/90"
+    class={`pricing-plan-cta block w-full rounded-xl px-6 py-3 text-center font-medium transition-colors ${
+      available
+        ? 'bg-primary text-white hover:bg-primary/90'
+        : 'border border-foreground/15 hover:bg-foreground/5'
+    }`}
   >
-    Join the wait list
+    {available ? 'Sign up' : 'Join the wait list'}
   </a>
 </article>

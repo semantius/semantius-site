@@ -1,7 +1,6 @@
 ---
 import { Check, Minus } from 'lucide-react';
-import Tbd from './Tbd.astro';
-import { isPending, type Cell } from '~/data/pricing';
+import type { Cell } from '~/data/pricing';
 
 interface Props {
   value: Cell;
@@ -20,8 +19,6 @@ const { value } = Astro.props;
   <span class="flex h-5 items-center"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">No</span></span>
 ) : value === null ? (
   <span class="flex h-5 items-center"><Minus className="w-4 h-4 text-foreground/30 shrink-0" aria-hidden="true" /><span class="sr-only">Not applicable</span></span>
-) : isPending(value) ? (
-  <span>{value.text && <>{value.text}, </>}<Tbd note={value.tbd} /></span>
 ) : (
   <span>{value}</span>
 )}
