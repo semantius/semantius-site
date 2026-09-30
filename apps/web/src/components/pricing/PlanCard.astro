@@ -30,16 +30,19 @@ const lines = [
 
   {/* Both periods are in the HTML, so the markdown twin and search carry both;
       the billing toggle on the page decides which one is displayed. */}
-  <div class="mb-8 min-h-12">
+  <div class="mb-8 min-h-16">
     <p class="flex items-baseline gap-2" data-period={plan.yearlyPrice === null ? undefined : 'monthly'}>
       <span class="text-4xl font-display font-bold">{usd(plan.monthlyPrice)}</span>
       <span class="text-muted-foreground">per month</span>
     </p>
     {plan.yearlyPrice !== null && (
-      <p class="flex items-baseline gap-2" data-period="yearly">
-        <span class="text-4xl font-display font-bold">{usd(plan.yearlyPrice)}</span>
-        <span class="text-muted-foreground">per year, paid upfront</span>
-      </p>
+      <div data-period="yearly">
+        <p class="flex items-baseline gap-2">
+          <span class="text-4xl font-display font-bold">{usd(plan.yearlyPrice)}</span>
+          <span class="text-muted-foreground">per month, billed yearly</span>
+        </p>
+        <p class="mt-1 text-sm text-muted-foreground">{usd(plan.yearlyPrice * 12)} paid upfront for 12 months</p>
+      </div>
     )}
   </div>
 

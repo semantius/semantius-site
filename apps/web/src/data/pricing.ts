@@ -43,8 +43,9 @@ export interface CloudPlan {
 	/** USD per month, billed monthly. */
 	monthlyPrice: number;
 	/**
-	 * USD, paid upfront for 12 months. `null` until the founder sets it. The
-	 * billing toggle and the yearly table row appear once any plan has one.
+	 * USD per month on yearly billing (the founder's "Y" price), paid upfront
+	 * for 12 months. `null`: no yearly option. The billing toggle and the
+	 * yearly table row appear once any plan has one.
 	 */
 	yearlyPrice: number | null;
 	/** Credits granted each month. */
@@ -81,7 +82,7 @@ export const CLOUD_PLANS: CloudPlan[] = [
 		summary: 'For teams of any size, with no limit on users.',
 		status: 'coming-soon',
 		monthlyPrice: 24,
-		yearlyPrice: null,
+		yearlyPrice: 20,
 		credits: 250,
 		userLimit: null,
 		maxComputeUnits: 4,
@@ -98,7 +99,7 @@ export const CLOUD_PLANS: CloudPlan[] = [
 		summary: 'For larger workloads, with up to 32 compute units and no storage limit.',
 		status: 'coming-soon',
 		monthlyPrice: 45,
-		yearlyPrice: null,
+		yearlyPrice: 37,
 		credits: 500,
 		userLimit: null,
 		maxComputeUnits: 32,

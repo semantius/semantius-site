@@ -13,9 +13,6 @@ The page publishes only decided terms: an undecided detail is left out, never
 shown as a placeholder. These are missing on purpose, and each has a home in
 `apps/web/src/data/pricing.ts` for when it is decided:
 
-- **Yearly prices** for Starter and Pro (round figures, about 17% below twelve
-  monthly payments). Setting `yearlyPrice` brings back the Monthly/Yearly
-  toggle and the yearly table row on its own.
 - **Starter and Pro support targets.** Both plans say "Support" until then.
 - **Idle time before the database pauses, and the wake-up time.** The page
   says "a short idle period".

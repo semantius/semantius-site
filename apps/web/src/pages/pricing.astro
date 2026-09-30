@@ -42,7 +42,7 @@ const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell 
   { label: 'Price, monthly', cell: (p) => `${usd(p.monthlyPrice)} per month` },
   // Shown once the founder sets a yearly price (see HAS_YEARLY).
   ...(HAS_YEARLY
-    ? [{ label: 'Price, yearly', hint: 'paid upfront for 12 months', cell: (p: CloudPlan) => (p.yearlyPrice === null ? null : usd(p.yearlyPrice)) }]
+    ? [{ label: 'Price, yearly', hint: 'paid upfront for 12 months', cell: (p: CloudPlan) => (p.yearlyPrice === null ? null : `${usd(p.yearlyPrice)} per month (${usd(p.yearlyPrice * 12)} upfront)`) }]
     : []),
   { label: 'Credits included', hint: 'granted each month', cell: (p) => count(p.credits) },
   { label: 'Users', hint: 'people and agents each count as one', cell: (p) => (p.userLimit === null ? 'No limit' : String(p.userLimit)) },
