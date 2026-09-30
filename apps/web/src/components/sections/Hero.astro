@@ -26,6 +26,7 @@ const { badge, title, highlight, description, primaryCta, secondaryCta } = Astro
 
   <div class="container mx-auto px-6 relative z-10 text-center">
     <div class="hero-content opacity-0 translate-y-5">
+      <slot name="top" />
       {badge && (
         <Badge class="mb-6 border-foreground/10">
           {badge}

@@ -4,36 +4,124 @@ import Layout from '~/layouts/Layout.astro';
 import Schema from '~/components/layout/Schema.astro';
 import Section from '~/components/layout/Section.astro';
 import Hero from '~/components/sections/Hero.astro';
+import FAQ from '~/components/sections/FAQ.astro';
 import CTA from '~/components/sections/CTA.astro';
 import Container from '~/components/ui/Container.astro';
-import Placeholder from '~/components/common/Placeholder.astro';
-import { cloudOffers } from '~/data/pricing';
+import { CLOUD_PLANS, cloudOffers, usd } from '~/data/pricing';
 
-// Built from the founder's home page specification (v0). Its order: the claim,
-// What it is (at most 3 sections), How it works (at most 5), paths for other
-// readers, the sign-up call to action. Everything not decided yet is a
-// Placeholder, which keeps the page off production (see Placeholder.astro).
+// The copy is the founder's home page specification (v0), word for word.
 
-// Both sign-up buttons on the page. `#signup` opens the same wait list overlay
-// as the header's Sign up button. The target and label at launch are not
-// decided; change them here and both buttons follow.
-const signUp = { text: 'Sign up', href: '#signup' };
+// Both sign-up buttons. `#signup` opens the sign-up overlay, the same one the
+// header's Sign up button opens.
+const signUp = { text: 'Sign up free', href: '#signup' };
 
-const otherReaders = ['For IT', 'For builders', 'Comparisons'];
+// Prices and the user limit come from the pricing data, so this page and
+// /pricing cannot state different figures.
+const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p]));
+const freeUsers = plan.free.userLimit;
+const starter = usd(plan.starter.monthlyPrice);
+const pro = usd(plan.pro.monthlyPrice);
+
+const whatItIs = [
+    {
+        title: 'Your business, in one place',
+        text: 'Clients, projects, jobs, bookings and the steps each one goes through, kept in one system your agent sets up for you, instead of scattered across spreadsheets, email and text messages.',
+    },
+    {
+        title: 'An agent that does the routine work',
+        text: "Your agent works in Semantius under its own login, like a new hire. It keeps records current, moves work to the next step and answers your questions, and it can only do what you've allowed.",
+    },
+    {
+        title: 'An app for your people, with only their part',
+        text: "Your team opens it in the browser on a phone, tablet or laptop, with nothing to install. A technician sees today's jobs, not your prices. A cleaner sees the turnovers, not the payouts.",
+    },
+];
+
+// `html` is trusted markup written here, for the italic example prompt.
+const steps = [
+    {
+        title: 'Sign up and connect your agent',
+        html: 'Create your free account, then tell your agent to connect to it. It works with any agent that has its own computer, such as Muse, Claude Code, Codex, OpenClaw or Hermes Agent.',
+    },
+    {
+        title: 'Tell it what your business runs on',
+        html: 'For example: <em>"Set up our clients, projects, deadlines and approvals, and bring in the client list from this spreadsheet."</em> Your agent sets up the records, the steps and who can see what, and imports what you keep today from CSV exports.',
+    },
+    {
+        title: 'Add your people',
+        html: 'The app is there as soon as your agent has set things up. No screens to design, no forms to build, and nothing for your team to install.',
+    },
+    {
+        title: 'Approvals that follow your process',
+        html: 'Quotes, purchase requests, client sign-offs: work moves through the steps you set, and only the right person can move it on. Every change is recorded with the login that made it, whether a person or an agent.',
+    },
+    {
+        title: 'It changes when your business does',
+        html: 'Need a new field, a new step or a whole new area? Ask your agent. The app follows on its own, with no code to maintain.',
+    },
+];
+
+const underTheHood = [
+    { text: 'How it works for IT and developers', href: '/features' },
+    { text: 'Documentation', href: '/docs/overview' },
+    { text: 'GitHub', href: 'https://github.com/Semantius' },
+];
+
+const faqs = [
+    {
+        question: 'Which agents work with Semantius?',
+        answer: 'Any agent that has its own computer, such as Muse, Claude Code, Codex, OpenClaw or Hermes Agent.',
+    },
+    {
+        question: 'Do I need to write code?',
+        answer: 'No. Your agent does the setup and the daily work, and your people use the app.',
+    },
+    {
+        question: 'Can my agent do whatever it wants?',
+        answer: 'No. It works under its own login and can only do what its role allows. Only the people and agents you give permission to can change how the system is set up.',
+    },
+    {
+        question: 'Does it work on phones?',
+        answer: "Yes, in the browser on phones, tablets and laptops. There's nothing to install.",
+    },
+    {
+        question: 'Can I bring in my spreadsheets?',
+        answer: 'Yes. Your agent imports CSV exports from Google Sheets, Excel or Airtable.',
+    },
+    {
+        question: 'What does it cost?',
+        answer: `Free for up to ${freeUsers} users, people and agents. Starter is ${starter} a month and Pro is ${pro} a month, with no per-user pricing. You only spend the credits you have, so there are no surprise charges. <a href="/pricing">See pricing</a>.`,
+    },
+    {
+        question: 'What happens if I reach a limit?',
+        answer: 'You get a warning first. When a plan\'s limits are reached, your workspace stops rather than charging you more.',
+    },
+    {
+        question: 'Who helps if something goes wrong?',
+        answer: 'Paid plans include support. The Free plan comes with the documentation.',
+    },
+    {
+        question: 'Is it open source, and can I take my data with me?',
+        answer: 'Yes. The core and the app are MIT-licensed. You can export the whole system, with its data, rules and permissions, and run it on your own server.',
+    },
+];
+
+const h2 = 'text-3xl md:text-5xl font-display font-bold';
+const link = 'font-medium text-primary hover:underline underline-offset-4';
 ---
 
 <Layout
-    title="Semantius | The Agent-First Data Platform"
-    description="Tell the agent you already use what your business runs on. It sets up the system in Semantius and works in it every day. Your people log into a web app that works on their phones."
+    title="Semantius: the agent-first data platform"
+    description="Tell the agent you already use what your business runs on. It sets up the system and runs it every day, and your people get an app on their phones."
 >
-    {/* No SearchAction: the site has no /search page, only the search overlay. */}
+    {/* No SearchAction: the site has no /search page. No aggregateRating or
+        review markup: there are no reviews to cite. */}
     <Schema item={{
             "@context": "https://schema.org",
             "@type": "WebSite",
             "name": "Semantius",
             "url": Astro.site,
         }} />
-    {/* No aggregateRating or review markup: there are no reviews to cite. */}
     <Schema item={{
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
@@ -49,34 +137,73 @@ const otherReaders = ['For IT', 'For builders', 'Comparisons'];
         highlight="your people get the app"
         description="Tell the agent you already use, such as Muse or Claude Code, what your business runs on: clients and projects, jobs and crews, or bookings and turnovers. It sets up the system in Semantius and then works in it every day, keeping records current and moving work along. Your people log into a web app that works on their phones, and each sees only what their role allows."
         primaryCta={signUp}
-    />
+    >
+        {/* The page is not approved for www.semantius.com yet. */}
+        <div slot="top" class="mb-3" data-pagefind-ignore>
+            <span class="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Preview</span>
+        </div>
+    </Hero>
 
-    <Section id="what-it-is" class="py-8! md:py-12!">
-        <Container class="max-w-5xl">
-            <Placeholder label="What it is" note="Up to 3 sections. The copy is not decided yet." />
+    <Section id="what-it-is" class="py-16! md:py-24!">
+        <Container>
+            <h2 class={`${h2} text-center mb-12`}>What Semantius is</h2>
+            <ul class="grid gap-6 md:grid-cols-3">
+                {whatItIs.map((item) => (
+                    <li class="p-8 rounded-3xl bg-foreground/2 border border-foreground/10">
+                        <h3 class="text-xl font-bold mb-3">{item.title}</h3>
+                        <p class="text-foreground/70 leading-relaxed">{item.text}</p>
+                    </li>
+                ))}
+            </ul>
         </Container>
     </Section>
 
-    <Section id="how-it-works" class="py-8! md:py-12!">
-        <Container class="max-w-5xl">
-            <Placeholder label="How it works" note="Up to 5 sections, written once What it is is settled. The copy is not decided yet." />
+    <Section id="how-it-works" class="py-16! md:py-24!">
+        <Container class="max-w-3xl">
+            <h2 class={`${h2} text-center mb-12`}>How it works</h2>
+            <ol class="space-y-8">
+                {steps.map((step, i) => (
+                    <li class="flex gap-5">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary" aria-hidden="true">{i + 1}</span>
+                        <div>
+                            <h3 class="text-xl font-bold mb-2">{step.title}</h3>
+                            <p class="text-foreground/70 leading-relaxed" set:html={step.html} />
+                        </div>
+                    </li>
+                ))}
+            </ol>
         </Container>
     </Section>
 
-    <Section id="other-readers" class="py-8! md:py-12!">
-        <Container class="max-w-5xl">
-            <Placeholder label="Paths for other readers" note="Three links. Their target pages are not decided yet.">
-                <ul class="mt-4 flex flex-wrap gap-3">
-                    {otherReaders.map((label) => (
-                        <li class="rounded-full border border-dashed border-foreground/25 px-4 py-2 text-sm font-medium">{label}</li>
+    <Section id="under-the-hood" class="py-16! md:py-24!">
+        <Container class="max-w-3xl">
+            <div class="p-8 md:p-10 rounded-3xl bg-foreground/2 border border-foreground/10">
+                <h2 class="text-2xl md:text-3xl font-display font-bold mb-4">Under the hood</h2>
+                <p class="text-foreground/70 leading-relaxed mb-6">Semantius runs on open-source Postgres. Permissions, business rules and the audit log live in the database itself, so every person, app and agent goes through the same rules. The core and the app are MIT-licensed, and you can run them yourself.</p>
+                <ul class="flex flex-col sm:flex-row sm:flex-wrap gap-x-8 gap-y-3">
+                    {underTheHood.map((l) => (
+                        <li><a href={l.href} class={link}>{l.text}</a></li>
                     ))}
                 </ul>
-            </Placeholder>
+            </div>
         </Container>
     </Section>
 
-    <CTA primaryBtn={signUp}>
-        <Placeholder class="mb-10" label="Final call to action" note="The heading and text above the button are not decided yet." />
-    </CTA>
+    <Section id="pricing" class="py-8! md:py-12!">
+        <Container class="max-w-3xl text-center">
+            <p class="text-lg">
+                Free for up to {freeUsers} users, people and agents. Paid plans from {starter} a month, with no per-user pricing and no surprise charges.
+            </p>
+            <p class="mt-3"><a href="/pricing" class={link}>See pricing</a></p>
+        </Container>
+    </Section>
+
+    <FAQ title="Questions" items={faqs} />
+
+    <CTA
+        title="Give your agent something to run"
+        description="Tell it what your business runs on. Your people get the app."
+        primaryBtn={signUp}
+    />
 
 </Layout>

@@ -90,20 +90,23 @@ a backslash line continuation.** The `\` plus newline arrives collapsed, leaving
 one long line with triple spaces (that is how the `psql -c ... -c ...` snippets
 broke once). Use Write or Edit for such content.
 
-## Copy that is not decided yet
+## Working from the founder's page specifications
 
-The founder's page specifications mark items Decided, Proposed or TBD. Build only
-what is Decided (plus the spec's stated interim defaults), and never write your own
-copy for the rest. Two conventions, and which applies depends on the page:
+**Stop and ask; never infer.** This is the founder's standing instruction. When a
+spec leaves anything open (a title, a label, a link target, a section, a rendering
+detail) or two of its rules conflict, ask before building. Do not write your own
+copy, and do not remove content the spec does not name, however good the reason.
+List everything you asked about in the hand-back. A home page built from a spec
+with gaps once shipped an invented title, button label and meta description, and
+removed a section the spec never mentioned; the founder rejected all of it.
 
-- **Pricing facts are left out**, never shown as a placeholder (`data/pricing.ts`
-  says why: an estimate there reads as a commitment).
-- **Anything else is a `<Placeholder>`** (`components/common/Placeholder.astro`),
-  never a plain "TBD" in the copy. The component carries `data-copy-placeholder`,
-  and the production branch of `workplace/deploy-wrangler.sh` refuses to deploy
-  while any built page contains it. Pushing to `main` deploys production, so that
-  guard is what keeps an unapproved page off www.semantius.com. Plain text would
-  slip past it.
+- **Use the spec's copy word for word.** Where it conflicts with the house voice
+  above (contractions, sentence-case headings), the spec wins on that page.
+- **A section with no decided content is left out**, never shown as a placeholder
+  box. The same goes for undecided pricing facts (`data/pricing.ts` says why).
+- **Nothing technical keeps a preview page off production.** Pushing to `main`
+  deploys www.semantius.com, so a page the founder has not approved must not be
+  merged, whatever branch it is on.
 
 ## Content that does not originate in this repo
 

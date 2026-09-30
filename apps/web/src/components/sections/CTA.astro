@@ -3,8 +3,7 @@ import Button from '~/components/ui/Button.astro';
 
 // No copy defaults: an optional part renders only when the page passes it.
 // The template's defaults used to put "Contact Sales" and a trial promise
-// back on the page whenever a prop was left out. Content in the default slot
-// renders between the description and the buttons.
+// back on the page whenever a prop was left out.
 interface Props {
   /** HTML, so a line can carry a highlighted span. */
   title?: string;
@@ -50,8 +49,6 @@ const isBoxed = variant === 'boxed';
               {description}
           </p>
         )}
-
-        <slot />
 
         <div class="flex flex-col sm:flex-row gap-4 justify-center items-center relative z-10">
             <Button href={primaryBtn.href} size="lg" class={isBoxed ? "bg-white text-primary hover:bg-white/90 shadow-none border-none border-transparent px-8 py-3" : "px-10 py-5 text-lg rounded-full"}>
