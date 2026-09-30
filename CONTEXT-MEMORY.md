@@ -90,6 +90,21 @@ a backslash line continuation.** The `\` plus newline arrives collapsed, leaving
 one long line with triple spaces (that is how the `psql -c ... -c ...` snippets
 broke once). Use Write or Edit for such content.
 
+## Copy that is not decided yet
+
+The founder's page specifications mark items Decided, Proposed or TBD. Build only
+what is Decided (plus the spec's stated interim defaults), and never write your own
+copy for the rest. Two conventions, and which applies depends on the page:
+
+- **Pricing facts are left out**, never shown as a placeholder (`data/pricing.ts`
+  says why: an estimate there reads as a commitment).
+- **Anything else is a `<Placeholder>`** (`components/common/Placeholder.astro`),
+  never a plain "TBD" in the copy. The component carries `data-copy-placeholder`,
+  and the production branch of `workplace/deploy-wrangler.sh` refuses to deploy
+  while any built page contains it. Pushing to `main` deploys production, so that
+  guard is what keeps an unapproved page off www.semantius.com. Plain text would
+  slip past it.
+
 ## Content that does not originate in this repo
 
 `blueprints/`, `skill-specs/` and `skills/` are **mirrors**. They are generated and
@@ -295,8 +310,10 @@ Derive values with:
 
 `agent-browser screenshot --full screenshots/<name>.png` prints `✓ Screenshot saved to ...`
 and then exits 2 without writing anything: the success line is not proof the file exists.
-Pass a full Windows path instead (`C:\dev\semantius.com\screenshots\<name>.png`), and always
-`ls` the file afterwards before treating the verification step as done.
+Pass a full path with forward slashes instead (`C:/dev/semantius.com/screenshots/<name>.png`),
+and always `ls` the file afterwards before treating the verification step as done. Backslashes
+break in the Bash tool: in `"C:\\dev\\...\\$TS-name.png"` the `\$` escapes the variable, and
+the file lands in the repo root named literally `screenshots$TS-name.png`.
 
 Its **default viewport is 1243 CSS px wide**, below Tailwind's `xl` (1280px),
 so a default screenshot lands in the band where the docs' right-hand column is
