@@ -24,6 +24,7 @@ import {
   SUPPORT_TIERS,
   TOP_UP_PACKS,
   WORKED_EXAMPLES,
+  cloudOffers,
   count,
   usageCredits,
   usd,
@@ -118,7 +119,8 @@ const td = 'py-3 px-4 text-sm align-top';
   title="Pricing - Semantius, the Agent-First Data Platform"
   description="Semantius cloud plans: Free, Starter at $24 a month and Pro at $45 a month, paid in credits for what your database uses, not per user. Self-hosting is free and MIT licensed."
 >
-  {/* Must match the plan cards exactly, which is why both read CLOUD_PLANS.
+  {/* Must match the plan cards exactly, which is why both read CLOUD_PLANS
+      (the offers through cloudOffers, which the home page uses too).
       No aggregateRating or review markup: there are no reviews to cite. */}
   <Schema item={{
     "@context": "https://schema.org",
@@ -126,22 +128,7 @@ const td = 'py-3 px-4 text-sm align-top';
     "name": "Semantius",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Web",
-    "offers": CLOUD_PLANS.map((plan) => ({
-      "@type": "Offer",
-      "name": plan.name,
-      "price": String(plan.monthlyPrice),
-      "priceCurrency": "USD",
-      "description": plan.summary,
-      "url": new URL('/pricing', Astro.site).toString(),
-      ...(plan.monthlyPrice > 0 && {
-        "priceSpecification": {
-          "@type": "UnitPriceSpecification",
-          "price": String(plan.monthlyPrice),
-          "priceCurrency": "USD",
-          "billingDuration": "P1M",
-        },
-      }),
-    })),
+    "offers": cloudOffers(Astro.site),
   }} />
 
   <PageHeader

@@ -112,6 +112,29 @@ export const CLOUD_PLANS: CloudPlan[] = [
 
 export const HAS_YEARLY = CLOUD_PLANS.some((p) => p.yearlyPrice !== null);
 
+/**
+ * The cloud plans as schema.org offers, for the SoftwareApplication JSON-LD on
+ * /pricing and on the home page. One mapping, so the two cannot state
+ * different prices.
+ */
+export const cloudOffers = (site: URL | undefined) =>
+	CLOUD_PLANS.map((plan) => ({
+		'@type': 'Offer',
+		name: plan.name,
+		price: String(plan.monthlyPrice),
+		priceCurrency: 'USD',
+		description: plan.summary,
+		url: new URL('/pricing', site).toString(),
+		...(plan.monthlyPrice > 0 && {
+			priceSpecification: {
+				'@type': 'UnitPriceSpecification',
+				price: String(plan.monthlyPrice),
+				priceCurrency: 'USD',
+				billingDuration: 'P1M',
+			},
+		}),
+	}));
+
 /* -------------------------------------------------------------------------- */
 /* Credits                                                                    */
 /* -------------------------------------------------------------------------- */

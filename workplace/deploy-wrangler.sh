@@ -40,6 +40,16 @@ fi
 if [[ "$*" == *"--prod"* ]] || [[ "$*" == *"--production"* ]]; then
   echo "🚀 [PRODUCTION] Deploying live: $REPO_NAME"
 
+  # A Placeholder component (apps/web/src/components/common/Placeholder.astro)
+  # stands in for copy that is not decided yet. A page carrying one belongs on
+  # a preview until it is signed off, never on www.semantius.com.
+  PLACEHOLDER_PAGES=$(grep -rl --include='*.html' 'data-copy-placeholder' "$SCRIPT_DIR/../apps/web/dist/client" || true)
+  if [[ -n "$PLACEHOLDER_PAGES" ]]; then
+    echo "❌ Refusing a production deploy: these pages still carry placeholders:" >&2
+    echo "$PLACEHOLDER_PAGES" >&2
+    exit 1
+  fi
+
   pnpm wrangler deploy --config "$SCRIPT_DIR/wrangler.jsonc" || { echo "❌ Deployment failed" >&2; exit 1; }
 
   DEPLOY_URL="https://semantius-site.$CF_SUBDOMAIN.workers.dev"

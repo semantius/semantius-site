@@ -2,23 +2,20 @@
 import Button from '~/components/ui/Button.astro';
 import Badge from '~/components/ui/Badge.astro';
 
+// No copy defaults: an optional part renders only when the page passes it.
+// The template's defaults used to put its own badge, pitch and a second
+// button back on the page whenever a prop was left out.
 interface Props {
   badge?: string;
-  title?: string;
+  title: string;
+  /** Second line of the heading, in the primary color. */
   highlight?: string;
   description?: string;
-  primaryCta?: { text: string; href: string };
+  primaryCta: { text: string; href: string };
   secondaryCta?: { text: string; href: string };
 }
 
-const {
-  badge = 'The Open Source Agentic Data Platform',
-  title = 'Model your domain,',
-  highlight = 'deploy the platform.',
-  description = 'Define your domain model and deploy a governed PostgreSQL backend: REST APIs, an admin UI for your team, and guardrails for your agents.',
-  primaryCta = { text: 'Get Started', href: "/docs" },
-  secondaryCta = { text: 'Check our features', href: "/docs/overview" }
-} = Astro.props;
+const { badge, title, highlight, description, primaryCta, secondaryCta } = Astro.props;
 ---
 
 <section class="relative overflow-hidden pt-32 pb-16 md:pt-40 md:pb-20 bg-background">
@@ -29,41 +26,46 @@ const {
 
   <div class="container mx-auto px-6 relative z-10 text-center">
     <div class="hero-content opacity-0 translate-y-5">
-      <Badge class="mb-6 border-foreground/10">
-        {badge}
-      </Badge>
+      {badge && (
+        <Badge class="mb-6 border-foreground/10">
+          {badge}
+        </Badge>
+      )}
       <h1 class="text-5xl md:text-7xl font-bold tracking-tight mb-8 text-foreground">
-        {title} <br />
-        <span class="text-primary">
-           {highlight}
-        </span>
+        {/* The explicit space survives HTML compression, which drops the
+            newline here, so search and copied text do not read "it,your". */}
+        {title}{highlight && ' '}
+        {highlight && <br />}
+        {highlight && <span class="text-primary">{highlight}</span>}
       </h1>
-      <p class="text-xl text-foreground/70 max-w-2xl mx-auto mb-10">
-        {description}
-      </p>
-      
+      {description && (
+        <p class="text-xl text-foreground/70 max-w-2xl mx-auto mb-10">
+          {description}
+        </p>
+      )}
+
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
         <Button
           href={primaryCta.href}
           class="px-8 py-4 rounded-full text-base"
-          aria-label={`${primaryCta.text} - ${title} ${highlight}`}
           data-ph-event="hero_cta_clicked"
           data-ph-cta={primaryCta.text}
           data-ph-variant="primary"
         >
           {primaryCta.text}
         </Button>
-        <Button
-          href={secondaryCta.href}
-          variant="secondary"
-          class="px-8 py-4 rounded-full text-base backdrop-blur-sm"
-          aria-label={`${secondaryCta.text} about our features`}
-          data-ph-event="hero_cta_clicked"
-          data-ph-cta={secondaryCta.text}
-          data-ph-variant="secondary"
-        >
-          {secondaryCta.text}
-        </Button>
+        {secondaryCta && (
+          <Button
+            href={secondaryCta.href}
+            variant="secondary"
+            class="px-8 py-4 rounded-full text-base backdrop-blur-sm"
+            data-ph-event="hero_cta_clicked"
+            data-ph-cta={secondaryCta.text}
+            data-ph-variant="secondary"
+          >
+            {secondaryCta.text}
+          </Button>
+        )}
       </div>
     </div>
   </div>
