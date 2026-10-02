@@ -10,6 +10,10 @@ import {
 } from '~/lib/routes';
 import { twinUrl } from '~/lib/dualmark/nav';
 import { buildDocsTree, getDocsCollectionNavs, tabPages } from '~/lib/docs-tree';
+import { SOLUTIONS } from '~/data/solutions';
+import { SAMPLE_PROMPTS, promptPath } from '~/data/sample-prompts';
+import { SPECIFICATION } from '~/data/specification';
+import { INSTALL_CLI, INSTALL_SKILL, OPENCLAW_NOTE } from '~/data/install-steps';
 
 export const prerender = true;
 
@@ -52,6 +56,28 @@ export const GET: APIRoute = async ({ site }) => {
 		if (lines.length === 0) return;
 		out.push(`## ${title}`, '', ...lines, '');
 	};
+
+	// The founder's v1 specification, §10. The summaries are not written yet
+	// (home-tbd.md, A5).
+	const summaryTbd = 'TBD: one-sentence summary with its qualifier. Not written yet.';
+	section('Pages', [
+		`- [Home](${md('/')}): ${summaryTbd}`,
+		...Object.values(SOLUTIONS).map((s) => `- [${s.name}](${md(s.path)}): ${summaryTbd}`),
+		...SAMPLE_PROMPTS.map((p) => `- [${p.heading}](${md(promptPath(p.slug))}): ${summaryTbd}`),
+	]);
+	section('Specification', [
+		'| | |',
+		'|---|---|',
+		...SPECIFICATION.map(([name, value]) => `| ${name} | ${value} |`),
+	]);
+	section('Install', [
+		`1. Install the CLI: \`${INSTALL_CLI}\``,
+		`2. Install the skill: \`${INSTALL_SKILL}\`. ${OPENCLAW_NOTE}`,
+	]);
+	section('Agents it works with', [
+		'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grokbot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
+	]);
+	section('What Semantius is not', ['- Not analytics.', '- Not an agent.', '- Not a code generator.']);
 
 	// Docs, grouped by nav tab so the structure matches what a reader sees.
 	const navs = getDocsCollectionNavs(buildDocsTree(docs));

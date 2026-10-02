@@ -1,0 +1,31 @@
+---
+/**
+ * A visible TBD label for a gap in the founder's v1 specification. Every gap is
+ * listed in home-tbd.md at the repo root.
+ */
+import { twMerge } from 'tailwind-merge';
+import clsx from 'clsx';
+
+interface Props {
+  /** What is missing. */
+  note: string;
+  /** A dashed box standing in for a whole block, instead of an inline label. */
+  block?: boolean;
+  class?: string;
+}
+
+const { note, block = false, class: className } = Astro.props;
+const chip = 'inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300';
+---
+
+{block ? (
+  <div class={twMerge(clsx('rounded-2xl border-2 border-dashed border-amber-500/40 bg-amber-500/5 p-5 text-left', className))}>
+    <span class={chip}>TBD</span>
+    <p class="mt-2 text-sm text-foreground/70">{note}</p>
+  </div>
+) : (
+  <span class={twMerge(clsx('inline-flex flex-wrap items-center gap-1.5 align-middle text-xs text-foreground/60', className))}>
+    <span class={chip}>TBD</span>
+    <span>{note}</span>
+  </span>
+)}

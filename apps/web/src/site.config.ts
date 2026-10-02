@@ -1,4 +1,4 @@
-
+import { SOLUTIONS } from '~/data/solutions';
 
 export const siteConfig = {
   name: 'Semantius',
@@ -78,12 +78,17 @@ export const NAV_LINKS = [
       { href: '/pricing', label: 'Pricing', description: 'Cloud plans and self-hosting', icon: 'CreditCard' },
     ]
   },
+  // The three landing pages under their names in the founder's v1 spec (§2).
+  {
+    href: SOLUTIONS.guardrails.path,
+    label: 'Solutions',
+    children: Object.values(SOLUTIONS).map((s) => ({ href: s.path, label: s.name })),
+  },
+  // Docs, Blog and Changelog only (v1 spec, §9).
   {
     href: '/docs',
     label: 'Resources',
     children: [
-      { href: '/skills', label: 'Skills', description: 'Agent skill library', icon: 'Wand2' },
-      { href: '/blueprints', label: 'Semantic Blueprints', description: 'Semantic blueprint library', icon: 'Database' },
       { href: '/docs', label: 'Docs', description: 'Start building today', icon: 'Book', localize: false },
       { href: '/blog', label: 'Blog', description: 'Latest updates & guides', icon: 'Newspaper' },
       { href: '/changelog', label: 'Changelog', description: 'New features & fixes', icon: 'FileClock' },

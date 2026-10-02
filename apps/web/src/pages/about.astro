@@ -12,6 +12,7 @@ import Text from '~/components/ui/Text.astro';
 import Button from '~/components/ui/Button.astro';
 import { Database, Layers, Users, Shield, Code, Server } from 'lucide-react';
 import { ACTION_LINKS } from '~/site.config';
+import Tbd from '~/components/common/Tbd.astro';
 
 // Every claim here is also made in src/data/llms-intro.md and on the home
 // page. Keep them in step: this page is what llms.txt calls "why Semantius exists".
@@ -27,6 +28,14 @@ const principles = [
 
 <Layout title="About - Semantius Agentic Data Platform" description="Why Semantius exists: one semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.">
 <PageHeader title='Why <span class="text-primary">Semantius</span> Exists' description='One semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.' />
+
+  {/* The paragraph from the founder's v1 specification, §4.11. */}
+  <Section class="py-8!">
+      <Container class="max-w-3xl">
+          <p class="text-lg leading-relaxed">Semantius is a product of adenin Technologies, building business software since 1999. Everything you run yourself is MIT-licensed, so your system keeps working whatever happens.</p>
+          <Tbd class="mt-3" note="Add this paragraph to the page, or replace the page with it?" />
+      </Container>
+  </Section>
 
   <ContentSection title='The Third Option'>
     <Text>Business data now has two kinds of readers: the people who run the business and the AI agents that act for them. Until now, a team that needed both had two choices.</Text>

@@ -1,0 +1,23 @@
+---
+// A landing page's three docs links (founder's v1 spec, §5 to §7). A page that
+// does not exist yet shows its label with a TBD note (home-tbd.md, A3).
+import Tbd from '~/components/common/Tbd.astro';
+
+interface Props {
+  links: { label: string; href?: string }[];
+}
+
+const { links } = Astro.props;
+---
+
+<ul class="flex flex-col gap-x-8 gap-y-3 sm:flex-row sm:flex-wrap sm:items-center">
+  {links.map((l) => (
+    <li>
+      {l.href ? (
+        <a href={l.href} class="font-medium text-primary underline-offset-4 hover:underline">{l.label}</a>
+      ) : (
+        <span class="inline-flex flex-wrap items-center gap-2 font-medium">{l.label} <Tbd note="No docs page exists yet." /></span>
+      )}
+    </li>
+  ))}
+</ul>

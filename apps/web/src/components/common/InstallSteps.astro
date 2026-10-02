@@ -1,0 +1,18 @@
+---
+// The two install steps (founder's v1 spec, §4.5): under the hub demo, on Agent
+// guardrails and on every sample-prompt page.
+import Command from '~/components/common/Command.astro';
+import { INSTALL_CLI, INSTALL_SKILL, OPENCLAW_NOTE } from '~/data/install-steps';
+---
+
+<ol class="space-y-6 text-left">
+  <li>
+    <p class="font-semibold mb-2">1. Install the CLI</p>
+    <Command command={INSTALL_CLI} />
+  </li>
+  <li>
+    <p class="font-semibold mb-2">2. Install the skill</p>
+    <Command command={INSTALL_SKILL} />
+    <p class="mt-2 text-sm text-foreground/70">{OPENCLAW_NOTE}</p>
+  </li>
+</ol>

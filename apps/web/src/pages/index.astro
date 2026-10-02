@@ -3,119 +3,149 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import Schema from '~/components/layout/Schema.astro';
 import Section from '~/components/layout/Section.astro';
-import Hero from '~/components/sections/Hero.astro';
 import FAQ from '~/components/sections/FAQ.astro';
 import CTA from '~/components/sections/CTA.astro';
+import DemoCode from '~/components/sections/DemoCode.astro';
+import DataModelGraphic from '~/components/sections/DataModelGraphic.astro';
 import Container from '~/components/ui/Container.astro';
-import { CLOUD_PLANS, cloudOffers, usd } from '~/data/pricing';
+import Badge from '~/components/ui/Badge.astro';
+import Button from '~/components/ui/Button.astro';
+import Command from '~/components/common/Command.astro';
+import CopyText from '~/components/common/CopyText.astro';
+import InstallSteps from '~/components/common/InstallSteps.astro';
+import Tbd from '~/components/common/Tbd.astro';
+import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers, usd } from '~/data/pricing';
+import { SAMPLE_PROMPTS, promptPath } from '~/data/sample-prompts';
+import { SOLUTIONS } from '~/data/solutions';
+import { ACTION_LINKS } from '~/site.config';
 
-// The copy is the founder's home page specification (v0), word for word.
+// The founder's v1 specification, §4, with the copy as given. Where the build
+// departs from it, home-deviations.md says how and why; open gaps carry a TBD
+// label and are listed in home-tbd.md.
 
-// Both sign-up buttons. `#signup` opens the sign-up overlay, the same one the
-// header's Sign up button opens.
-const signUp = { text: 'Sign up free', href: '#signup' };
+const startFree = { text: 'Start free', href: SIGN_UP_URL };
+
+const HERO_PROMPT =
+    "I've signed up for Semantius. Install the Semantius CLI and skill, connect to my workspace, then ask me what my business runs on and set it up.";
+const DEMO_PROMPT =
+    'Prepare a quote for 40 hours of design work for our new client, and get it approved.';
 
 // Prices and the user limit come from the pricing data, so this page and
 // /pricing cannot state different figures.
 const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p]));
-const freeUsers = plan.free.userLimit;
-const starter = usd(plan.starter.monthlyPrice);
-const pro = usd(plan.pro.monthlyPrice);
+const pricingLine = `Free is open now, for up to ${plan.free.userLimit} users, people and agents. Starter (${usd(plan.starter.monthlyPrice)} a month) and Pro (${usd(plan.pro.monthlyPrice)} a month) open soon, not priced per user, with no surprise charges. Your Free workspace upgrades in place.`;
 
 const whatItIs = [
     {
-        title: 'Your business, in one place',
-        text: 'Clients, projects, jobs, bookings and the steps each one goes through, kept in one system your agent sets up for you, instead of scattered across spreadsheets, email and text messages.',
+        title: 'Rules that hold every time.',
+        text: 'Who may see what, which values are valid, which step comes next and who has to sign off are defined once in your data model and checked in the database on every change, from the app or any agent.',
+        emphasis: "Your agent is probabilistic. The checks on your records aren't.",
     },
     {
-        title: 'An agent that does the routine work',
-        text: "Your agent works in Semantius under its own login, like a new hire. It keeps records current, moves work to the next step and answers your questions, and it can only do what you've allowed.",
+        title: 'Agents as accountable users.',
+        text: 'Each agent gets its own login and role, not the keys to everything. Every change is on record: who made it, person or agent, and when.',
     },
     {
-        title: 'An app for your people, with only their part',
-        text: "Your team opens it in the browser on a phone, tablet or laptop, with nothing to install. A technician sees today's jobs, not your prices. A cleaner sees the turnovers, not the payouts.",
+        title: 'People in the loop.',
+        text: 'Your team approves what matters and sees only their part, in the browser on their phones, with nothing to install. The app comes from the same model your agents use.',
     },
 ];
 
-// `html` is trusted markup written here, for the italic example prompt.
-const steps = [
+const proofStrip = ['Open source (MIT)', 'Runs inside Postgres', '3,000+ automated tests', 'Free to start'];
+
+const routingCards = [
     {
-        title: 'Sign up and connect your agent',
-        html: 'Create your free account, then tell your agent to connect to it. It works with any agent that has its own computer, such as Muse, Claude Code, Codex, OpenClaw or Hermes Agent.',
+        question: 'Can your agent go around your rules?',
+        line: 'Not through any app, API or agent login. Your rules run inside Postgres, and every change is on record.',
+        solution: SOLUTIONS.guardrails,
     },
     {
-        title: 'Tell it what your business runs on',
-        html: 'For example: <em>"Set up our clients, projects, deadlines and approvals, and bring in the client list from this spreadsheet."</em> Your agent sets up the records, the steps and who can see what, and imports what you keep today from CSV exports.',
+        question: "Can your agent connect a support ticket to the customer's usage and the deal behind it?",
+        line: "Not when each lives in a different tool. In Semantius they're linked records in one model, under the same rules for every person and agent. Paid plans aren't priced per user.",
+        solution: SOLUTIONS.crm,
     },
     {
-        title: 'Add your people',
-        html: 'The app is there as soon as your agent has set things up. No screens to design, no forms to build, and nothing for your team to install.',
-    },
-    {
-        title: 'Approvals that follow your process',
-        html: 'Quotes, purchase requests, client sign-offs: work moves through the steps you set, and only the right person can move it on. Every change is recorded with the login that made it, whether a person or an agent.',
-    },
-    {
-        title: 'It changes when your business does',
-        html: 'Need a new field, a new step or a whole new area? Ask your agent. The app follows on its own, with no code to maintain.',
+        question: 'Outgrown Airtable, Retool or Bubble?',
+        line: 'Keep the speed, add the rules. Your agent shapes a real Postgres model, the API and the app follow, and the rules travel with the data into every app and agent login. No frontend code to maintain.',
+        solution: SOLUTIONS.apps,
     },
 ];
 
-const underTheHood = [
-    { text: 'How it works for IT and developers', href: '/features' },
-    { text: 'Documentation', href: '/docs/overview' },
-    { text: 'GitHub', href: 'https://github.com/Semantius' },
+const demoSteps = [
+    { title: 'Tell your agent:', text: `"${DEMO_PROMPT}"` },
+    {
+        title: 'Semantius holds the line:',
+        text: "the agent works under its own login, and its role has no permission to approve quotes. It prepares the quote and sends it for sign-off; when it tries to set it to approved, that's refused, and it's told the permission is missing. The quote waits for the owner.",
+    },
+    {
+        title: 'Your team sees it:',
+        text: "the owner approves the quote from their phone; a team member's phone shows only their own projects.",
+    },
+    { title: 'Every change on record:', text: 'the log lines showing who did what, and when.', tbd: 'The log lines from the recorded demo. Not recorded yet.' },
 ];
 
 const faqs = [
     {
-        question: 'Which agents work with Semantius?',
-        answer: 'Any agent that has its own computer, such as Muse, Claude Code, Codex, OpenClaw or Hermes Agent.',
+        question: "Why not keep business rules in the agent's prompt?",
+        answer: 'A prompt is followed most of the time. In Semantius, every change is checked against your rules in the database, whoever makes it.',
     },
     {
-        question: 'Do I need to write code?',
-        answer: 'No. Your agent does the setup and the daily work, and your people use the app.',
+        question: "Why can't my agent connect a support ticket to the customer's usage and deal status?",
+        answer: 'Because each lives in a different tool with its own IDs, so the agent matches by name and guesses. In Semantius, tickets, accounts, usage and deals are records in one model with enforced relationships, so the agent follows the link instead of guessing.',
+    },
+    {
+        question: 'How does data from my other tools get in?',
+        answer: 'At the start, your agent imports it, for example from CSV exports. With incoming webhooks on Pro, new events arrive in real time, mapped to your records and fields.',
+    },
+    {
+        question: 'Which agent do I need?',
+        answer: 'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grokbot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
     },
     {
         question: 'Can my agent do whatever it wants?',
         answer: 'No. It works under its own login and can only do what its role allows. Only the people and agents you give permission to can change how the system is set up.',
     },
     {
-        question: 'Does it work on phones?',
-        answer: "Yes, in the browser on phones, tablets and laptops. There's nothing to install.",
+        question: 'What happens when an agent breaks a rule?',
+        answer: 'The change is refused, and the record stays as it was. Your agent is told it lacks the permission, and it can look up in your model who has it.',
     },
     {
-        question: 'Can I bring in my spreadsheets?',
-        answer: 'Yes. Your agent imports CSV exports from Google Sheets, Excel or Airtable.',
+        question: 'Does my team need to install anything?',
+        answer: 'No. It runs in the browser on phones, tablets and laptops.',
     },
     {
-        question: 'What does it cost?',
-        answer: `Free for up to ${freeUsers} users, people and agents. Starter is ${starter} a month and Pro is ${pro} a month, with no per-user pricing. You only spend the credits you have, so there are no surprise charges. <a href="/pricing">See pricing</a>.`,
+        question: 'Can my people sign in with Microsoft or Google?',
+        answer: 'Yes. In the cloud, people sign in with their Google or Microsoft 365 account. Self-hosted, you connect your own Microsoft Entra ID or any identity provider that has a JWKS endpoint.',
     },
     {
-        question: 'What happens if I reach a limit?',
-        answer: 'You get a warning first. When a plan\'s limits are reached, your workspace stops rather than charging you more.',
+        question: 'What happens when I reach a limit?',
+        answer: "You get a warning first. If your workspace reaches its limits, it pauses with all your data kept, until your next month's credits arrive, you top up, or you move to a larger plan. Each plan's limits are on the pricing page.",
     },
     {
         question: 'Who helps if something goes wrong?',
-        answer: 'Paid plans include support. The Free plan comes with the documentation.',
+        answer: 'Free: the documentation. Starter and Pro: support. Self-hosted: paid support plans.',
     },
     {
-        question: 'Is it open source, and can I take my data with me?',
-        answer: 'Yes. The core and the app are MIT-licensed. You can export the whole system, with its data, rules and permissions, and run it on your own server.',
+        question: 'How is it different from Directus, Supabase or Airtable?',
+        answer: 'Everything you run yourself in Semantius is MIT, at any company size; Directus needs a commercial license once you reach 50 employees or $5M in revenue, even self-hosted. Directus enforces its permissions in its app server, so they apply to everyone who goes through Directus; Semantius enforces them in Postgres, so they also hold for another app, a script or a SQL client connected straight to the database. Supabase gives you Postgres and row-level security you write yourself; Semantius gives you the model, rules, roles, approval steps and app, defined once. In Airtable, rules live in the app and an agent usually gets one broad API key; in Semantius each agent has its own login and role, checked in the database.',
+    },
+    {
+        question: 'What does it cost?',
+        answer: pricingLine,
     },
 ];
+
+const github = ACTION_LINKS.social.github;
+const freeOffer = cloudOffers(Astro.site).filter((o) => o.name === plan.free.name);
 
 const h2 = 'text-3xl md:text-5xl font-display font-bold';
 const link = 'font-medium text-primary hover:underline underline-offset-4';
 ---
 
 <Layout
-    title="Semantius: the agent-first data platform"
-    description="Tell the agent you already use what your business runs on. It sets up the system and runs it every day, and your people get an app on their phones."
+    title="Semantius: the agent-first data platform on open-source Postgres"
+    description="The system of record for your AI agents: business rules, approvals and permissions enforced in Postgres for every person, app and agent. Open source. Free to start."
 >
-    {/* No SearchAction: the site has no /search page. No aggregateRating or
-        review markup: there are no reviews to cite. */}
     <Schema item={{
             "@context": "https://schema.org",
             "@type": "WebSite",
@@ -128,22 +158,48 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
             "name": "Semantius",
             "operatingSystem": "Web",
             "applicationCategory": "DeveloperApplication",
-            "offers": cloudOffers(Astro.site),
+            "license": "https://opensource.org/licenses/MIT",
+            "codeRepository": github,
+            "isAccessibleForFree": true,
+            "offers": freeOffer,
+        }} />
+    <Schema item={{
+            "@context": "https://schema.org",
+            "@type": "SoftwareSourceCode",
+            "name": "Semantius",
+            "codeRepository": github,
+            "license": "https://opensource.org/licenses/MIT",
         }} />
 
-    <Hero
-        badge="The agent-first data platform"
-        title="Your agent runs it,"
-        highlight="your people get the app"
-        description="Tell the agent you already use, such as Muse or Claude Code, what your business runs on: clients and projects, jobs and crews, or bookings and turnovers. It sets up the system in Semantius and then works in it every day, keeping records current and moving work along. Your people log into a web app that works on their phones, and each sees only what their role allows."
-        primaryCta={signUp}
-    >
-        {/* The page is not approved for www.semantius.com yet. */}
-        <div slot="top" class="mb-3" data-pagefind-ignore>
-            <span class="inline-flex items-center rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide text-amber-700 dark:text-amber-300">Preview</span>
-        </div>
-    </Hero>
+    {/* 4.1 Hero: inverts the site theme (theme-inverse in components.css). */}
+    <section class="theme-inverse bg-background text-foreground pt-32 pb-20 md:pt-40 md:pb-28">
+        <Container class="grid gap-14 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+            <div>
+                <Badge class="mb-6 border-foreground/10">The agent-first data platform</Badge>
+                <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Your AI agents are ready. Don't let your data hold them back.</h1>
+                <p class="mt-6 text-2xl md:text-3xl font-semibold">Stop stuffing business rules into fragile prompts.</p>
+                <p class="mt-5 text-lg text-foreground/85">Who sees which clients, which quotes need your sign-off, what counts as done: your agent follows them most of the time. Semantius makes them hold every time.</p>
+                <p class="mt-4 text-foreground/75">Semantius is the system of record your agents work in: your records, rules, approval steps and permissions, checked in the database on every change, where you've defined them.</p>
+                <p class="mt-4 text-foreground/75">Tell your always-on agent, such as Meta Muse, OpenAI Dots or Grokbot, what your business runs on. It sets everything up under its own login, and your people get the app on their phones, each seeing only their part.</p>
+                <div class="mt-8 flex flex-col sm:flex-row gap-4">
+                    <Button href={startFree.href} size="lg" class="rounded-full">{startFree.text}</Button>
+                    <Button href={`${SOLUTIONS.guardrails.path}#specification`} variant="outline" size="lg" class="rounded-full border-foreground/30">Read the architecture</Button>
+                </div>
+                <p class="mt-5"><CopyText text={HERO_PROMPT} label="or copy the prompt for your agent" /></p>
+            </div>
+            <DataModelGraphic />
+        </Container>
+    </section>
 
+    {/* 4.2 Why now */}
+    <Section id="why-now" class="py-16! md:py-24!">
+        <Container class="max-w-3xl text-center">
+            <h2 class={h2}>Always-on agents just arrived. They still don't have a system of record.</h2>
+            <p class="mt-6 text-lg text-foreground/70 leading-relaxed">Agents like Meta Muse, OpenAI Dots and Grokbot now live on their own computer and are always on. Semantius gives them the records, the rules and the accountability a business runs on.</p>
+        </Container>
+    </Section>
+
+    {/* 4.3 What Semantius is */}
     <Section id="what-it-is" class="py-16! md:py-24!">
         <Container>
             <h2 class={`${h2} text-center mb-12`}>What Semantius is</h2>
@@ -151,59 +207,110 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
                 {whatItIs.map((item) => (
                     <li class="p-8 rounded-3xl bg-foreground/2 border border-foreground/10">
                         <h3 class="text-xl font-bold mb-3">{item.title}</h3>
-                        <p class="text-foreground/70 leading-relaxed">{item.text}</p>
+                        <p class="text-foreground/70 leading-relaxed">
+                            {item.text}
+                            {item.emphasis && <> <em>{item.emphasis}</em></>}
+                        </p>
+                    </li>
+                ))}
+            </ul>
+            <p class="mt-10 max-w-3xl mx-auto text-center text-lg text-foreground/80">Not generated code, a model. Rules, roles and steps are part of the data model, so every app, API and agent inherits them. Secure and extensible by definition.</p>
+            <ul class="mt-8 flex flex-wrap justify-center gap-3">
+                {proofStrip.map((item) => (
+                    <li class="rounded-full border border-foreground/15 px-4 py-1.5 text-sm font-medium">{item}</li>
+                ))}
+            </ul>
+        </Container>
+    </Section>
+
+    {/* 4.4 Routing cards */}
+    <Section id="routing" class="py-16! md:py-24!">
+        <Container>
+            <ul class="grid gap-6 md:grid-cols-3">
+                {routingCards.map((card) => (
+                    <li class="flex flex-col p-8 rounded-3xl bg-foreground/2 border border-foreground/10">
+                        <h3 class="text-xl font-bold mb-3">{card.question}</h3>
+                        <p class="text-foreground/70 leading-relaxed mb-6">{card.line}</p>
+                        <Button href={card.solution.path} variant="outline" class="mt-auto self-start rounded-full">{card.solution.linkLabel}</Button>
                     </li>
                 ))}
             </ul>
         </Container>
     </Section>
 
-    <Section id="how-it-works" class="py-16! md:py-24!">
-        <Container class="max-w-3xl">
-            <h2 class={`${h2} text-center mb-12`}>How it works</h2>
-            <ol class="space-y-8">
-                {steps.map((step, i) => (
+    {/* 4.5 Demo */}
+    <Section id="demo" class="py-16! md:py-24!">
+        <Container class="max-w-4xl">
+            <h2 class={`${h2} text-center mb-12`}>Demo</h2>
+            <Tbd block class="mb-10" note="The recorded walkthrough of the four steps below. No recording exists yet." />
+            <ol class="space-y-6">
+                {demoSteps.map((step, i) => (
                     <li class="flex gap-5">
                         <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/10 font-bold text-primary" aria-hidden="true">{i + 1}</span>
                         <div>
-                            <h3 class="text-xl font-bold mb-2">{step.title}</h3>
-                            <p class="text-foreground/70 leading-relaxed" set:html={step.html} />
+                            <p class="text-foreground/80 leading-relaxed"><strong class="text-foreground">{step.title}</strong> {step.text}</p>
+                            {step.tbd && <Tbd block class="mt-3" note={step.tbd} />}
                         </div>
                     </li>
                 ))}
             </ol>
-        </Container>
-    </Section>
-
-    <Section id="under-the-hood" class="py-16! md:py-24!">
-        <Container class="max-w-3xl">
-            <div class="p-8 md:p-10 rounded-3xl bg-foreground/2 border border-foreground/10">
-                <h2 class="text-2xl md:text-3xl font-display font-bold mb-4">Under the hood</h2>
-                <p class="text-foreground/70 leading-relaxed mb-6">Semantius runs on open-source Postgres. Permissions, business rules and the audit log live in the database itself, so every person, app and agent goes through the same rules. The core and the app are MIT-licensed, and you can run them yourself.</p>
-                <ul class="flex flex-col sm:flex-row sm:flex-wrap gap-x-8 gap-y-3">
-                    {underTheHood.map((l) => (
-                        <li><a href={l.href} class={link}>{l.text}</a></li>
-                    ))}
-                </ul>
+            <div class="mt-10">
+                <DemoCode />
+            </div>
+            <div class="mt-10">
+                <InstallSteps />
+                <div class="mt-6">
+                    <Command mode="chat" command={DEMO_PROMPT} />
+                </div>
+            </div>
+            <div class="mt-8 text-center">
+                <Button href={startFree.href} size="lg" class="rounded-full">{startFree.text}</Button>
             </div>
         </Container>
     </Section>
 
-    <Section id="pricing" class="py-8! md:py-12!">
-        <Container class="max-w-3xl text-center">
-            <p class="text-lg">
-                Free for up to {freeUsers} users, people and agents. Paid plans from {starter} a month, with no per-user pricing and no surprise charges.
-            </p>
-            <p class="mt-3"><a href="/pricing" class={link}>See pricing</a></p>
+    {/* 4.6 Yours to keep */}
+    <Section id="yours-to-keep" class="py-16! md:py-24!">
+        <Container class="max-w-3xl">
+            <h2 class={`${h2} mb-6`}>Yours to keep</h2>
+            <p class="text-lg text-foreground/70 leading-relaxed">Most tools let you export a spreadsheet. With Semantius you keep the whole system: the data, the rules, the permissions and the app. Everything you run yourself is MIT: the Postgres extension, the app, the sign-in server, the CLI and the agent skills. Export one module or everything at any time, move it from testing to production or onto a customer's server, or run all of it yourself with the Docker Compose or Dokploy template.</p>
+            <p class="mt-6"><a href="/docs/self-hosted" class={link}>Self-hosting</a></p>
         </Container>
     </Section>
 
+    {/* 4.7 Give your agent one of these */}
+    <Section id="prompts" class="py-16! md:py-24!">
+        <Container>
+            <h2 class={`${h2} text-center mb-6`}>Give your agent one of these</h2>
+            <p class="max-w-3xl mx-auto text-center text-lg text-foreground/70 mb-12">Your agent works from a business analyst's and a data architect's playbook, so it sets up the records, the rules and who sees what properly.</p>
+            <ul class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {SAMPLE_PROMPTS.map((p) => (
+                    <li class="flex flex-col p-6 rounded-3xl bg-foreground/2 border border-foreground/10">
+                        <h3 class="text-lg font-bold mb-4"><a href={promptPath(p.slug)} class="hover:text-primary hover:underline underline-offset-4">{p.heading}</a></h3>
+                        <Command mode="chat" command={p.prompt} />
+                    </li>
+                ))}
+            </ul>
+        </Container>
+    </Section>
+
+    {/* 4.8 Pricing line */}
+    <Section id="pricing" class="py-8! md:py-12!">
+        <Container class="max-w-3xl text-center">
+            <p class="text-lg">{pricingLine}</p>
+            <p class="mt-3 flex justify-center gap-6">
+                <a href="#signup" class={link}>Notify me</a>
+                <a href="/pricing" class={link}>See pricing</a>
+            </p>
+        </Container>
+    </Section>
+
+    {/* 4.9 Questions */}
     <FAQ title="Questions" items={faqs} />
 
+    {/* 4.10 Final call to action */}
     <CTA
-        title="Give your agent something to run"
-        description="Tell it what your business runs on. Your people get the app."
-        primaryBtn={signUp}
+        title="Your agents are ready. Give them a system of record."
+        primaryBtn={startFree}
     />
-
 </Layout>

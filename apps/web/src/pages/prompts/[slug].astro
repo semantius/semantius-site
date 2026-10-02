@@ -1,0 +1,35 @@
+---
+export const prerender = true;
+import Layout from '~/layouts/Layout.astro';
+import Container from '~/components/ui/Container.astro';
+import Button from '~/components/ui/Button.astro';
+import Command from '~/components/common/Command.astro';
+import InstallSteps from '~/components/common/InstallSteps.astro';
+import Tbd from '~/components/common/Tbd.astro';
+import { SIGN_UP_URL } from '~/data/pricing';
+import { SAMPLE_PROMPTS, promptPath, promptTitle, type SamplePrompt } from '~/data/sample-prompts';
+
+// The six sample-prompt pages of the founder's v1 specification, §8.
+// Departures: home-deviations.md. Open gaps: home-tbd.md.
+
+export function getStaticPaths() {
+    return SAMPLE_PROMPTS.map((p) => ({ params: { slug: p.slug }, props: { prompt: p } }));
+}
+
+const { prompt } = Astro.props as { prompt: SamplePrompt };
+---
+
+<Layout
+    title={promptTitle(prompt)}
+    breadcrumbs={[{ name: 'Home', href: '/' }, { name: prompt.heading, href: promptPath(prompt.slug) }]}
+>
+    <section class="pt-32 pb-24 md:pt-40">
+        <Container class="max-w-3xl space-y-10">
+            <h1 class="text-4xl md:text-5xl font-bold tracking-tight">{prompt.heading}</h1>
+            <Command mode="chat" command={prompt.prompt} />
+            <Tbd block note="What the result includes, in three short bullets. Not written yet." />
+            <InstallSteps />
+            <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+        </Container>
+    </section>
+</Layout>

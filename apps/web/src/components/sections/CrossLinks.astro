@@ -1,0 +1,23 @@
+---
+// Each landing page links the other two and /pricing (founder's v1 spec, §10),
+// with labels the spec already uses: the hub cards' buttons and "See pricing".
+import { SOLUTIONS, type SolutionKey } from '~/data/solutions';
+
+interface Props {
+  current: SolutionKey;
+}
+
+const { current } = Astro.props;
+const links = [
+  ...(Object.keys(SOLUTIONS) as SolutionKey[])
+    .filter((key) => key !== current)
+    .map((key) => ({ href: SOLUTIONS[key].path, label: SOLUTIONS[key].linkLabel })),
+  { href: '/pricing', label: 'See pricing' },
+];
+---
+
+<ul class="flex flex-col gap-x-8 gap-y-3 sm:flex-row sm:flex-wrap">
+  {links.map((l) => (
+    <li><a href={l.href} class="font-medium text-primary underline-offset-4 hover:underline">{l.label}</a></li>
+  ))}
+</ul>

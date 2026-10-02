@@ -1,0 +1,170 @@
+---
+export const prerender = true;
+import Layout from '~/layouts/Layout.astro';
+import Schema from '~/components/layout/Schema.astro';
+import Section from '~/components/layout/Section.astro';
+import Container from '~/components/ui/Container.astro';
+import Button from '~/components/ui/Button.astro';
+import InstallSteps from '~/components/common/InstallSteps.astro';
+import DemoCode from '~/components/sections/DemoCode.astro';
+import DocsLinks from '~/components/sections/DocsLinks.astro';
+import CrossLinks from '~/components/sections/CrossLinks.astro';
+import { SIGN_UP_URL } from '~/data/pricing';
+import { SOLUTIONS } from '~/data/solutions';
+import { SPECIFICATION } from '~/data/specification';
+import { ACTION_LINKS } from '~/site.config';
+
+// The founder's v1 specification, §5, with the copy as given.
+// Departures: home-deviations.md. Open gaps: home-tbd.md.
+
+const page = SOLUTIONS.guardrails;
+const h1 = 'Give your agent a login, not the keys to everything.';
+
+const guaranteed = [
+    'Only valid data under your rules',
+    'No broken references',
+    'Only defined steps',
+    'Only the allowed role takes a step',
+    'Only the person who has to approve can approve',
+    'Every change logged',
+    'No app, API or agent login can go around the rules',
+];
+
+const notGuaranteed = [
+    'That the agent chose the right action',
+    'That a valid value is the right one',
+    "That a role doesn't take a wrong action it's allowed to take",
+    'Protection from a database superuser or table owner, who can bypass row-level security',
+];
+
+const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
+const prose = 'text-lg text-foreground/75 leading-relaxed';
+---
+
+<Layout
+    title="AI agent permissions and business rules, enforced in Postgres | Semantius"
+    breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
+>
+    <Schema item={{
+            "@context": "https://schema.org",
+            "@type": "TechArticle",
+            "headline": h1,
+            "author": { "@type": "Organization", "name": "Semantius" },
+            "publisher": { "@type": "Organization", "name": "Semantius" },
+        }} />
+
+    <section class="pt-32 pb-12 md:pt-40">
+        <Container class="max-w-4xl">
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">{h1}</h1>
+            <p class="mt-6 text-xl text-foreground/75 leading-relaxed">Your agent follows your rules most of the time. Your business needs every time. Data in Postgres isn't enough; the rules have to live there too.</p>
+        </Container>
+    </section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Deterministic checks, bounded outcomes</h2>
+            <p class={prose}>The same change, from the same role, against the same record, always gets the same answer.</p>
+            <div class="mt-8 grid gap-6 md:grid-cols-2">
+                <div class="p-6 rounded-2xl border border-foreground/10 bg-foreground/2">
+                    <h3 class="text-xl font-bold mb-4">Guaranteed, where defined</h3>
+                    <ul class="list-disc pl-5 space-y-2 text-foreground/80">
+                        {guaranteed.map((item) => <li>{item}</li>)}
+                    </ul>
+                </div>
+                <div class="p-6 rounded-2xl border border-foreground/10 bg-foreground/2">
+                    <h3 class="text-xl font-bold mb-4">Not guaranteed</h3>
+                    <ul class="list-disc pl-5 space-y-2 text-foreground/80">
+                        {notGuaranteed.map((item) => <li>{item}</li>)}
+                    </ul>
+                </div>
+            </div>
+        </Container>
+    </Section>
+
+    <Section id="specification" class="py-12! scroll-mt-28">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Specification</h2>
+            <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
+                <table class="w-full text-left text-sm md:text-base">
+                    <tbody>
+                        {SPECIFICATION.map(([name, value]) => (
+                            <tr class="border-b border-foreground/10 last:border-b-0">
+                                <th scope="row" class="p-4 align-top font-semibold whitespace-nowrap">{name}</th>
+                                <td class="p-4 text-foreground/80">{value}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Refusals with a reason</h2>
+            <p class={prose}>A refused change comes back with the reason, a missing permission, and the agent can query the model to see who holds it.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>The Directus difference</h2>
+            <ol class="space-y-6 text-foreground/80 leading-relaxed">
+                <li>
+                    <strong class="text-foreground">1. The license.</strong> Everything you run yourself is MIT, at any company size. Directus is free for companies with fewer than 50 employees and under $5M in revenue; above that, it needs a commercial license, even self-hosted. Directus has changed its license twice since 2023. What's released under MIT stays MIT.
+                </li>
+                <li>
+                    <strong class="text-foreground">2. Where the rules hold, by how the caller connects:</strong>
+                    <ul class="mt-3 list-disc pl-5 space-y-2">
+                        <li>Through the platform's own API, with its own login: both enforce their rules</li>
+                        <li>Straight to the database, from another app, a script or a SQL client: Directus's permissions don't apply, because they run in its app server; Semantius's do, because they run in Postgres</li>
+                        <li>With the database owner's or a superuser's connection: both are bypassed</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong class="text-foreground">3. Leaving.</strong> Directus keeps your tables, but its permissions, Flows and app settings do nothing without its app server. An exported Semantius database keeps enforcing its rules.
+                </li>
+            </ol>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Models as files</h2>
+            <p class={prose}>Export a module as JSON, review it in a pull request, and promote it from development to production.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Moving from another system</h2>
+            <p class={prose}>Export your data, and your agent imports it into the Semantius model. Semantius works on its own model; it doesn't attach to existing tables.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Demo</h2>
+            <DemoCode open />
+            <div class="mt-8">
+                <InstallSteps />
+            </div>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl space-y-8">
+            <DocsLinks links={[
+                { label: 'Rules and validation', href: '/docs/business-logic' },
+                { label: 'Row-level security' },
+                { label: 'The CLI', href: '/docs/cli' },
+            ]} />
+            <CrossLinks current="guardrails" />
+            <div class="flex flex-col sm:flex-row gap-4">
+                <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+                <Button href="/docs/agent-skills/installation" variant="outline" size="lg" class="rounded-full">Install the skill</Button>
+                <Button href={ACTION_LINKS.social.github} variant="outline" size="lg" class="rounded-full">GitHub</Button>
+            </div>
+        </Container>
+    </Section>
+</Layout>

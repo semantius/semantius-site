@@ -1,0 +1,53 @@
+---
+/**
+ * The hub hero's graphic (founder's v1 spec, §4.1): one node, "Your data
+ * model", with three outputs. The switch relabels the outputs with their
+ * technical names.
+ */
+const outputs = [
+  { plain: 'Your records and rules', tech: 'PostgreSQL + JSONLogic' },
+  { plain: 'Your agents, each with its own login', tech: 'PostgREST + CLI' },
+  { plain: 'Your people in the loop', tech: 'React app' },
+];
+---
+
+<figure class="data-model-graphic mx-auto w-full max-w-md" data-technical="false">
+  <div class="mx-auto w-fit rounded-2xl border-2 border-primary bg-primary/10 px-6 py-4 text-center text-lg font-bold">
+    Your data model
+  </div>
+  <div class="mx-auto h-6 w-0.5 bg-primary/60" aria-hidden="true"></div>
+  <div class="relative sm:pt-6">
+    {/* The bar joins the centers of the outer cards; on a phone the cards stack. */}
+    <span class="absolute top-0 left-[16.67%] right-[16.67%] hidden h-0.5 bg-primary/60 sm:block" aria-hidden="true"></span>
+    <ul class="grid gap-3 sm:grid-cols-3">
+      {outputs.map((o) => (
+        <li class="relative rounded-xl border border-foreground/15 bg-foreground/5 p-4 text-center">
+          <span class="absolute -top-6 left-1/2 hidden h-6 w-0.5 -translate-x-1/2 bg-primary/60 sm:block" aria-hidden="true"></span>
+          <span class="plain-name block font-semibold">{o.plain}</span>
+          <span class="tech-name hidden font-mono text-sm font-semibold">{o.tech}</span>
+        </li>
+      ))}
+    </ul>
+  </div>
+  <figcaption class="mt-5 flex justify-center">
+    <label class="inline-flex cursor-pointer items-center gap-3 text-sm text-foreground/80">
+      <input type="checkbox" role="switch" class="peer sr-only" data-technical-toggle />
+      <span class="relative h-6 w-11 rounded-full bg-foreground/20 transition-colors peer-checked:bg-primary peer-focus-visible:ring-2 peer-focus-visible:ring-primary after:absolute after:left-0.5 after:top-0.5 after:h-5 after:w-5 after:rounded-full after:bg-background after:transition-transform peer-checked:after:translate-x-5" aria-hidden="true"></span>
+      Show the technical names
+    </label>
+  </figcaption>
+</figure>
+
+<style>
+  .data-model-graphic[data-technical='true'] .plain-name { display: none; }
+  .data-model-graphic[data-technical='true'] .tech-name { display: block; }
+</style>
+
+<script>
+  document.querySelectorAll<HTMLInputElement>('[data-technical-toggle]').forEach((toggle) => {
+    const figure = toggle.closest<HTMLElement>('.data-model-graphic');
+    toggle.addEventListener('change', () => {
+      if (figure) figure.dataset.technical = String(toggle.checked);
+    });
+  });
+</script>
