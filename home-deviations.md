@@ -70,7 +70,8 @@ each. Open questions are in `home-tbd.md`, not here.
     large subtitle under the H1, the third line and body as paragraphs. The
     spec gives no layout.
 17. **The hero graphic's toggle is a switch labeled "Show the technical names".**
-    On a phone the three outputs stack under the node, without connector lines.
+    On a phone the three outputs stack under the node. Only the line below the
+    node remains; the bar and the lines down to each output are hidden.
 18. **The two copy buttons that are not command boxes show "Copied" for a
     moment:** the hero's "or copy the prompt for your agent" and the CRM page's
     "Build your CRM with your agent". The command boxes already do this, and
@@ -78,7 +79,10 @@ each. Open questions are in `home-tbd.md`, not here.
 19. **The hub keeps v0's `WebSite` structured data,** which the spec does not
     name. Its `SoftwareApplication` keeps v0's `operatingSystem` ("Web") and
     `applicationCategory` ("DeveloperApplication"), and states the license as
-    `https://opensource.org/licenses/MIT`.
+    `https://opensource.org/licenses/MIT`. The Free offer is the one /pricing
+    publishes, from `data/pricing.ts`: name, price, currency, URL and the
+    plan's summary, "For personal projects and small groups of up to 5 users."
+    `SoftwareSourceCode` carries the name "Semantius" and the same license.
 20. **The Agent guardrails `TechArticle` carries a headline (the H1) and
     Semantius as author and publisher.** The spec names the type only. It has no
     date, because the spec gives none.
@@ -98,3 +102,26 @@ each. Open questions are in `home-tbd.md`, not here.
     are outlined.
 24. **The footer says "Docs quickstart"** for §4.11's "the docs quickstart".
     The other footer labels are the spec's words.
+
+## Found by the Review of the Build
+
+These were in the build without being listed. They are listed now, unchanged.
+
+25. **The install commands have Copy buttons.** §4.5 asks for a copy button
+    only for the demo prompt. Both commands are in the docs' command box, which
+    always has one, on the hub, Agent guardrails and every prompt page.
+26. **The FAQ answers open and close.** Each question is a collapsed panel,
+    as on /pricing and in v0, from the existing FAQ component. The spec says
+    nothing on this.
+27. **Bold lead-ins are H3 headings:** the "What Semantius is" titles, the
+    routing card questions, the prompt card titles, the footer group titles,
+    and "Guaranteed, where defined" and "Not guaranteed" on Agent guardrails,
+    which also drop their closing colons.
+28. **llms.txt links each page to its markdown copy** (for example
+    `/solutions/crm.md`), as every other link in that file does, where §10 says
+    "each page's URL". "What Semantius is not" is three short sentences, one
+    per item.
+29. **The markdown copies open with a location line the site writes for every
+    page:** "Solutions > ..." and "Prompts > ..." followed by the page's H1. It
+    is not the Home > Page trail of item 6. It comes from the existing twin
+    writer (`lib/dualmark/integration.ts`), which this build does not change.

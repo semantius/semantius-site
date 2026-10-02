@@ -11,11 +11,13 @@ item must be resolved before the branch goes live.
   in `home-deviations.md`.
 
 Item numbers continue those of the first review of the spec, so A1 to C14 mean
-the same as before. A7 and B15 are new.
+the same as before. A7, B15 to B17 and C18 are new; B16, B17 and C18 came from
+the review of the build.
 
 **Preview:** https://homev-20261002144016-semantius-site.ma532.workers.dev
 
-Pages that carry TBD labels (the footer, A4, is on every page):
+Pages that carry TBD labels. The footer is on every page and carries A3 (the
+docs quickstart) and A4.
 
 - [Hub](https://homev-20261002144016-semantius-site.ma532.workers.dev/): A1
 - [Agent guardrails](https://homev-20261002144016-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3
@@ -64,10 +66,11 @@ empty group. Pages: the footer of every page.
 
 **A5. llms.txt (§10).** Not written: the paragraph on what Semantius is, and
 each page's one-sentence summary with its qualifier (hub, three landing pages,
-six prompt pages). Also open: whether the current product text in
-`apps/web/src/data/llms-intro.md` goes (it names MCP servers, dashboards, Neon
-and Supabase), and whether the generated index of docs, blueprints, skills and
-blog posts stays below the new content. Page: `/llms.txt`.
+six prompt pages). Also open: whether removing the old product text from
+`apps/web/src/data/llms-intro.md` is right (it named MCP servers, dashboards,
+Neon and Supabase; removed in this build, `home-deviations.md` 21), and
+whether the generated index of docs, blueprints, skills and blog posts stays
+below the new content. Page: `/llms.txt`.
 
 **A6. /about (§4.11).** The paragraph is added at the top of the existing page,
 with a TBD label. Open: whether it replaces the page instead. The page's other
@@ -86,16 +89,21 @@ cannot be placed without sentences from you.
 
 - **Hub:** "a UI for your team". "PostgreSQL" appears only in the graphic's
   technical names.
-- **Agent guardrails:** "AI agent guardrails", "deterministic guardrails for AI
-  agents", "system of record for AI agents", "database for always-on AI
-  agents", "human-in-the-loop approvals", "Directus alternative".
-- **CRM and operations:** no agent is named ("build a CRM with Meta Muse, OpenAI
-  Dots or Grokbot"), "one customer record across sales and support", "Power
-  Apps alternative".
-- **Apps:** "self-hosted Airtable alternative for AI agents", "relational
-  Airtable replacement", "SmartSuite alternative", "auto-generated React UI
-  from Postgres", "PostgREST admin UI", "Retool alternative", "Bubble
+- **Agent guardrails:** "enforce AI agent permissions in Postgres", "AI agent
+  guardrails", "deterministic guardrails for AI agents", "system of record for
+  AI agents", "database for always-on AI agents", "JSONLogic in PostgreSQL",
+  "row-level security for AI agents", "human-in-the-loop approvals", "Directus
   alternative".
+- **CRM and operations:** "custom CRM built with your AI agent"; no agent is
+  named ("build a CRM with Meta Muse, OpenAI Dots or Grokbot"); "one customer
+  record across sales and support"; "Power Apps alternative".
+- **Apps:** "open-source Airtable alternative", "self-hosted Airtable
+  alternative for AI agents", "relational Airtable replacement", "SmartSuite
+  alternative", "auto-generated React UI from Postgres", "PostgREST admin UI",
+  "Retool alternative", "Bubble alternative".
+
+Some of these are close to a page's title (for example "Open-source Airtable
+alternative" in the Apps title), but none is in the page's copy.
 
 **B8. llms.txt, "what Semantius is not" (§10).** "Not analytics, not an agent"
 collides with the never-write list (§3): "analytics", and "not another agent"
@@ -123,13 +131,39 @@ in `/features`, the rest of `/about` and much of the docs (a whole MCP
 connectors section); "analytics" in several docs pages; Neon and Supabase in
 `/about` and the pg_semantius docs. The generated index kept in `/llms.txt`
 (A5) repeats some of it: the MCP connectors docs, "analytics" in a blueprint's
-description, and "the only" in a blog post's.
+description, and "the only" in a blog post's. `/about` also has a second
+category term in its title, "About - Semantius Agentic Data Platform" (§3
+allows only "the agent-first data platform"), which `/llms.txt` repeats, and
+its copy says "the people who run the business", close to the banned "run your
+business".
 
 **B15. Sign-up paths contradict "Free is open now".** The spec's Start free
-buttons go to the Free sign-up. The header's Sign up button and the announcement
-banner (kept on every page by your answer to D18) both open the wait list, and
-the banner says the public beta starts in late October. The spec covers neither
-the header button nor the banner text.
+buttons go to the Free sign-up. Three other paths do not:
+
+- the header's Sign up button (wide screens) opens the wait list;
+- the announcement banner (kept on every page by your answer to D18) opens the
+  wait list and says the public beta starts in late October;
+- on a phone, the menu's Sign up button links to `/docs/overview`.
+
+The spec covers none of them.
+
+**B16. The hub's copy lacks qualifiers the spec requires.** §3 says a claim on
+the hub carries its short qualifier, and §10 that every claim carries its
+qualifier. The hub copy, used word for word, lacks several of the §3 table's:
+
+- "There are no built-in connectors to other tools" (the FAQ on getting data
+  in);
+- "No offline mode and no installable app" (the FAQ on installing, and "with
+  nothing to install");
+- "Pro cloud features aren't MIT" ("Yours to keep");
+- "Not for the database owner or a superuser, in either" (the Directus FAQ);
+- "The outcome is bounded, not determined" ("Your agent is probabilistic. The
+  checks on your records aren't.").
+
+**B17. Technical detail on the hub.** §2 puts all technical detail on Agent
+guardrails and plain words on the hub. The hub's own copy has technical terms:
+the FAQ names Microsoft Entra ID, JWKS endpoints and row-level security, and
+the hero graphic and the demo carry the technical names and the code.
 
 ## C. Built as Specified: the Spec Differs From the Product
 
@@ -154,3 +188,7 @@ Windows has its own installer (PowerShell), which the spec does not show.
   self-hosted." MSCL permits internal use at any company size, and puts
   "protected functionality" behind a license key. Above the threshold, what a
   company pays for is that key, not the right to run Directus.
+
+**C18. Self-hosted support (§4.9).** The FAQ answers "Self-hosted: paid support
+plans." `/pricing` also offers a free Community tier on GitHub Discussions
+(`apps/web/src/data/pricing.ts`, `SUPPORT_TIERS`).
