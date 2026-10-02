@@ -107,15 +107,13 @@ side; the founder rejected six such additions on the v1 home page.
 
 - **Use the spec's copy word for word.** Where it conflicts with the house voice
   above (contractions, sentence-case headings), the spec wins on that page.
-- **A section with no decided content is left out**, never shown as a placeholder
-  box, unless the founder asks for TBD labels on a preview branch; then the gap
-  shows `components/common/Tbd.astro`. The same goes for undecided pricing facts
-  (`data/pricing.ts` says why).
-- **On the home page preview branches, TBD labels are intentional and stay.**
-  Every gap keeps its visible TBD until its content exists, including a gap a
-  change request creates, such as a docs link with no page. A change request's
-  "no empty placeholders" rule does not remove a built TBD, and never propose
-  dropping one: the founder rejected that reading of a change request outright.
+- **Mark every gap with a visible TBD that says what is missing**
+  (`components/common/Tbd.astro`). Never hide an element, leave out a section or
+  drop a link because its content does not exist yet, and never propose removing
+  a built TBD. A TBD stays until its content exists. This is the founder's rule.
+  "No placeholders, leave it out" was Claude's own unrequested rule: it got into
+  this file and from here into two specs, which then contradicted the founder.
+  If a spec contains such a rule, flag it as a contradiction; do not apply it.
 - **Plans live in the repo, never on the site.** For a spec, write the TBD list
   first, as a markdown file at the repo root, then keep a numbered list of
   deviations with a reason for each, then build. The v1 home page's are
