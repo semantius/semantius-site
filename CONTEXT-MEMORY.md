@@ -100,10 +100,21 @@ List everything you asked about in the hand-back. A home page built from a spec
 with gaps once shipped an invented title, button label and meta description, and
 removed a section the spec never mentioned; the founder rejected all of it.
 
+**Wait for an explicit go, and build only what was approved.** Answering your
+questions is not a go to build. Anything beyond the spec and those answers (a
+deploy guard, a behavior, a visual extra) is proposed first, never added on the
+side; the founder rejected six such additions on the v1 home page.
+
 - **Use the spec's copy word for word.** Where it conflicts with the house voice
   above (contractions, sentence-case headings), the spec wins on that page.
 - **A section with no decided content is left out**, never shown as a placeholder
-  box. The same goes for undecided pricing facts (`data/pricing.ts` says why).
+  box, unless the founder asks for TBD labels on a preview branch; then the gap
+  shows `components/common/Tbd.astro`. The same goes for undecided pricing facts
+  (`data/pricing.ts` says why).
+- **Plans live in the repo, never on the site.** For a spec, write the TBD list
+  first, as a markdown file at the repo root, then keep a numbered list of
+  deviations with a reason for each, then build. The v1 home page's are
+  `home-tbd.md` and `home-deviations.md`.
 - **Nothing technical keeps a preview page off production.** Pushing to `main`
   deploys www.semantius.com, so a page the founder has not approved must not be
   merged, whatever branch it is on.

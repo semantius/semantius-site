@@ -13,7 +13,23 @@ item must be resolved before the branch goes live.
 Item numbers continue those of the first review of the spec, so A1 to C14 mean
 the same as before. A7 and B15 are new.
 
-**Preview:** added after the first preview deploy.
+**Preview:** https://homev-20261002144016-semantius-site.ma532.workers.dev
+
+Pages that carry TBD labels (the footer, A4, is on every page):
+
+- [Hub](https://homev-20261002144016-semantius-site.ma532.workers.dev/): A1
+- [Agent guardrails](https://homev-20261002144016-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3
+- [CRM and operations](https://homev-20261002144016-semantius-site.ma532.workers.dev/solutions/crm): A3
+- [Apps](https://homev-20261002144016-semantius-site.ma532.workers.dev/solutions/airtable-alternative): A3
+- Sample prompts, A2:
+  [agency](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/agency-client-tracker),
+  [field service](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/field-service-jobs),
+  [rentals](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/rental-turnovers),
+  [punch list](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/punch-list),
+  [purchase approvals](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/purchase-approvals),
+  [equipment register](https://homev-20261002144016-semantius-site.ma532.workers.dev/prompts/equipment-register)
+- [/about](https://homev-20261002144016-semantius-site.ma532.workers.dev/about): A6
+- [/llms.txt](https://homev-20261002144016-semantius-site.ma532.workers.dev/llms.txt): A5, as TBD text
 
 ## A. Gaps: Content That Does Not Exist
 
