@@ -6,8 +6,8 @@ import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 import Button from '~/components/ui/Button.astro';
 import Badge from '~/components/ui/Badge.astro';
-import Tbd from '~/components/common/Tbd.astro';
 import LiveDemo from '~/components/sections/LiveDemo.astro';
+import PromptCards from '~/components/sections/PromptCards.astro';
 import DocsLinks from '~/components/sections/DocsLinks.astro';
 import CrossLinks from '~/components/sections/CrossLinks.astro';
 import { SIGN_UP_URL } from '~/data/pricing';
@@ -15,12 +15,47 @@ import { SOLUTIONS } from '~/data/solutions';
 import { SPECIFICATION } from '~/data/specification';
 import { ACTION_LINKS } from '~/site.config';
 
-// The founder's v1 specification, §5, with the copy as given, as amended by
-// change request 1, §10.1, and change request 2, §1.
-// Departures: home-deviations.md. Open gaps: home-tbd.md.
+// Change request 3, §3: the page rebuilt for the "agents" search intent, with
+// the copy as given. Part 1 is for IT and developers, part 2 for owners, in
+// plain words. Departures: home-deviations.md. Open gaps: home-tbd.md.
 
 const page = SOLUTIONS.guardrails;
 const h1 = 'Give your agent a login, not the keys to everything.';
+
+const challenges = [
+    {
+        title: 'It forgets between sessions.',
+        text: "Every session starts cold, so field names, formats and conventions drift, and each agent's notes become a memory nobody else can use. In Semantius, every record type, field and relationship carries its description, and your agent can read the model at the start of every session, so each session can start from the same understanding, as good as the descriptions in it. What one agent records, the next agent and your team see too, as far as their role allows. It helps your agent find its way; it doesn't make it right.",
+    },
+    {
+        title: 'It sees your business in pieces.',
+        text: 'When customers, orders and tickets live in different tools, your agent matches them by name and guesses the connections. In Semantius, the records your business runs on live in one connected model, linked by ID, with full-text search across them, once your data has been moved in. There are no built-in connectors to other tools.',
+    },
+    {
+        title: 'It writes what looks right, not what is right.',
+        text: "A status spelled differently, an ID that doesn't exist, a total added up wrong. Semantius checks every write against your rules, your value lists and the links between records, so invalid values and broken links are refused, and totals and other derived values can be computed by the database instead of by your agent. Your agent writes records, not whole files. A value that passes your rules but is wrong still gets through, picking the wrong existing record is still possible, and two writes to the same record can still overwrite each other.",
+    },
+    {
+        title: 'It follows your rules most of the time.',
+        text: "A rule in a prompt fades over a long session, and text inside a record can try to override it. In Semantius, the rules live in the database and are checked on every write, from any app, API or agent login, and text in a record can't widen what a role allows. What the agent can still do is whatever its role allows, which can be broad. When a change is refused, your agent gets the reason and can look up who has the permission. Self-hosted, direct database access bypasses these rules, and so does a database owner or superuser.",
+    },
+    {
+        title: 'It does more than you asked.',
+        text: '"Clean up the pipeline" can turn into deleting deals. In Semantius, each agent works under its own login and role, and records move only through the steps you\'ve set up. Human-in-the-loop approvals mean that, where you\'ve set them up, only the right person can move a quote, a purchase request or a client sign-off on. A wrong action that its role allows still goes through.',
+    },
+    {
+        title: 'It sees more than it should.',
+        text: "A folder or a shared spreadsheet has no permissions, and an agent with one broad key sees everything: prices, payouts, every client. In Semantius, each agent and each person reads only what their role allows, checked in the database for every app, API and agent login, where you've defined it.",
+    },
+    {
+        title: 'Afterwards, nobody can tell what it did.',
+        text: 'Work done while nobody watches spreads errors before anyone notices. In Semantius, every change to data and to the model is logged: who made it, person or agent, and when. It tells agents apart when each agent has its own login.',
+    },
+    {
+        title: 'It has to know when to act.',
+        text: 'An always-on agent checks in regularly, but it needs to know what changed. Semantius puts the changes that matter, such as a new record, a status change or an approval waiting, into queues with event and rule triggers, and your agent picks them up on its next check.',
+    },
+];
 
 const guaranteed = [
     'Only valid data under your rules',
@@ -39,18 +74,22 @@ const notGuaranteed = [
     'Protection from a database superuser or table owner, who can bypass row-level security',
 ];
 
-// The v1 hub FAQ's answer, moved here unchanged from the hub (change request
-// 2, §1). It replaces the section "The Directus difference" and takes as its
-// heading the label it carried on the hub.
-const comparedWith =
-    'Everything you run yourself in Semantius is MIT, at any company size; Directus needs a commercial license once you reach 50 employees or $5M in revenue, even self-hosted. Directus enforces its permissions in its app server, so they apply to everyone who goes through Directus; Semantius enforces them in Postgres, so they also hold for another app, a script or a SQL client connected straight to the database. Supabase gives you Postgres and row-level security you write yourself; Semantius gives you the model, rules, roles, approval steps and app, defined once. In Airtable, rules live in the app and an agent usually gets one broad API key; in Semantius each agent has its own login and role, checked in the database.';
+// Three of the CRM page's five "For IT" bullets (change request 3, §3.1).
+const forIt = [
+    'Every agent your staff bring meets the same rules',
+    'Who changed what, and when',
+    'People sign in with their Microsoft 365 or Google account',
+];
 
 const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
+const h3 = 'text-2xl font-bold mb-4';
 const prose = 'text-lg text-foreground/75 leading-relaxed';
+const link = 'font-medium text-primary underline-offset-4 hover:underline';
 ---
 
 <Layout
-    title="AI agent permissions and business rules, enforced in Postgres | Semantius"
+    title="AI agent guardrails: permissions and business rules enforced in Postgres | Semantius"
+    description="AI agent permissions and business rules, enforced in Postgres for every app, API and agent login: each agent gets its own login, approvals go to the right person, and every change is on record."
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
 >
     <Schema item={{
@@ -65,35 +104,64 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
         <Container class="max-w-4xl">
             <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">{h1}</h1>
-            <p class="mt-6 text-xl text-foreground/75 leading-relaxed">Your agent follows your rules most of the time. Your business needs every time. Data in Postgres isn't enough; the rules have to live there too.</p>
-            <Tbd block class="mt-6" note='The sentence that carries the search term "secure database runtime for LLMs". Change request 1 asks for the term in the page copy but gives no sentence.' />
+            <p class="mt-6 text-xl text-foreground/75 leading-relaxed">You wouldn't give a new hire every password and no rules. Semantius gives your agent what a good employee gets: its own login, the records it needs, clear steps, and someone who approves what matters. Your people work in the same system, in the browser on their phones.</p>
+            <ul class="mt-6 flex flex-col gap-2 sm:flex-row sm:gap-8">
+                <li><a href="#challenges" class={link}>Where agents struggle, and what Semantius does about it</a></li>
+                <li><a href="#routine-work" class={link}>Let your agent do the routine work</a></li>
+            </ul>
         </Container>
     </section>
 
-    <Section class="py-12!">
+    {/* Part 1: for IT and developers. */}
+    <Section id="challenges" class="py-12! scroll-mt-28">
         <Container class="max-w-4xl">
-            <h2 class={h2}>Deterministic checks, bounded outcomes</h2>
+            <h2 class={h2}>Where agents struggle, and what Semantius does about it</h2>
+            <p class={prose}>Semantius is the system of record your AI agents work in. Agents are good at understanding what you want, and bad at being exact, careful and consistent every single time. Semantius catches some of those mistakes, such as invalid values, broken links and steps or actions your rules forbid: your agent proposes, and the rules you define decide what reaches your records.</p>
+
+            {challenges.map((c) => (
+                <>
+                    <h3 class="mt-10 mb-3 text-xl font-bold">{c.title}</h3>
+                    <p class={prose}>{c.text}</p>
+                </>
+            ))}
+
+            <h3 class={`mt-14 ${h3}`}>Deterministic checks, bounded outcomes</h3>
             <p class={prose}>The same change, from the same role, against the same record, always gets the same answer.</p>
             <div class="mt-8 grid gap-6 md:grid-cols-2">
                 <div class="p-6 rounded-2xl border border-foreground/10 bg-foreground/2">
-                    <h3 class="text-xl font-bold mb-4">Guaranteed, where defined</h3>
+                    <h4 class="text-xl font-bold mb-4">Guaranteed, where defined</h4>
                     <ul class="list-disc pl-5 space-y-2 text-foreground/80">
                         {guaranteed.map((item) => <li>{item}</li>)}
                     </ul>
                 </div>
                 <div class="p-6 rounded-2xl border border-foreground/10 bg-foreground/2">
-                    <h3 class="text-xl font-bold mb-4">Not guaranteed</h3>
+                    <h4 class="text-xl font-bold mb-4">Not guaranteed</h4>
                     <ul class="list-disc pl-5 space-y-2 text-foreground/80">
                         {notGuaranteed.map((item) => <li>{item}</li>)}
                     </ul>
                 </div>
             </div>
+
+            <h3 class={`mt-14 ${h3}`}>For IT</h3>
+            <ul class="list-disc pl-5 space-y-2 text-lg text-foreground/80">
+                {forIt.map((item) => <li>{item}</li>)}
+            </ul>
+
+            <h3 class={`mt-14 ${h3}`}>The visual face of your agents</h3>
+            <p class={prose}>Your agents work through the API; your people see the same records in the app generated from the model, including every change an agent made.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-6xl">
+            <LiveDemo headingLevel={3} headingClass="text-2xl md:text-3xl font-bold" />
         </Container>
     </Section>
 
     <Section id="specification" class="py-12! scroll-mt-28">
         <Container class="max-w-4xl">
-            <h2 class={h2}>Specification</h2>
+            <h3 class={h3}>Specification</h3>
+            <p class={`${prose} mb-6`}>The specification of Semantius as a secure database runtime for LLMs and AI agents.</p>
             <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
                 <table class="w-full text-left text-sm md:text-base">
                     <tbody>
@@ -109,44 +177,22 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
         </Container>
     </Section>
 
-    <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>The visual face of your agents</h2>
-            <p class={prose}>Your agents work through the API; your people see the same records in the app generated from the model, including every change an agent made.</p>
-        </Container>
-    </Section>
-
-    <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>Refusals with a reason</h2>
-            <p class={prose}>A refused change comes back with the reason, a missing permission, and the agent can query the model to see who holds it.</p>
-        </Container>
-    </Section>
-
-    <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>Compared with Directus, Supabase and Airtable</h2>
-            <p class={prose}>{comparedWith}</p>
-        </Container>
-    </Section>
-
-    <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>Models as files</h2>
-            <p class={prose}>Export a module as JSON, review it in a pull request, and promote it from development to production.</p>
-        </Container>
-    </Section>
-
-    <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>Moving from another system</h2>
-            <p class={prose}>Export your data, and your agent imports it into the Semantius model. Semantius works on its own model; it doesn't attach to existing tables.</p>
-        </Container>
-    </Section>
-
-    <Section class="py-12!">
+    {/* Part 2: for owners, in plain words. */}
+    <Section id="routine-work" class="py-12! scroll-mt-28">
         <Container class="max-w-6xl">
-            <LiveDemo headingClass="text-3xl md:text-4xl font-display font-bold" />
+            <div class="max-w-4xl">
+                <h2 class={h2}>Let your agent do the routine work</h2>
+                <p class={prose}>Tell your always-on agent, such as Meta Muse, OpenAI Dots or Grokbot, what your business runs on. It sets everything up under its own login, keeps your records current and moves work to the next step. Your people get the app in the browser on their phones, each seeing only their part, and they approve what matters.</p>
+                <h3 class={`mt-10 ${h3}`}>Start from one of these</h3>
+            </div>
+            <PromptCards
+                slugs={['agency-client-tracker', 'rental-turnovers', 'punch-list']}
+                titleLevel={4}
+                more={{ label: 'More examples for business teams', href: `${SOLUTIONS.businessApps.path}#prompts` }}
+            />
+            <div class="mt-8">
+                <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+            </div>
         </Container>
     </Section>
 
@@ -157,12 +203,12 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
                 { label: 'Row-level security' },
                 { label: 'The CLI', href: '/docs/cli' },
             ]} />
-            <CrossLinks current="guardrails" />
             <div class="flex flex-col sm:flex-row gap-4">
                 <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
                 <Button href="/docs/agent-skills/installation" variant="outline" size="lg" class="rounded-full">Install the skill</Button>
                 <Button href={ACTION_LINKS.social.github} variant="outline" size="lg" class="rounded-full">GitHub</Button>
             </div>
+            <CrossLinks current="guardrails" />
         </Container>
     </Section>
 </Layout>

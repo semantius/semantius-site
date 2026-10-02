@@ -57,13 +57,13 @@ export const GET: APIRoute = async ({ site }) => {
 		out.push(`## ${title}`, '', ...lines, '');
 	};
 
-	// The founder's v1 specification, §10, with the landing pages under their
-	// reader labels (change request 1, §11). The summaries are not written yet
-	// (home-tbd.md, A5).
+	// The founder's v1 specification, §10. The solution pages carry their reader
+	// labels and summaries (change request 3, §7); the hub's and the prompt
+	// pages' summaries are not written yet (home-tbd.md, A5).
 	const summaryTbd = 'TBD: one-sentence summary with its qualifier. Not written yet.';
 	section('Pages', [
 		`- [Home](${md('/')}): ${summaryTbd}`,
-		...Object.values(SOLUTIONS).map((s) => `- [${s.readerLabel}](${md(s.path)}): ${summaryTbd}`),
+		...Object.values(SOLUTIONS).map((s) => `- [${s.readerLabel}](${md(s.path)}): ${s.summary}`),
 		...SAMPLE_PROMPTS.map((p) => `- [${p.heading}](${md(promptPath(p.slug))}): ${summaryTbd}`),
 	]);
 	section('Specification', [

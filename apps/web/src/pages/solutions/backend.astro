@@ -1,0 +1,107 @@
+---
+export const prerender = true;
+import Layout from '~/layouts/Layout.astro';
+import Section from '~/components/layout/Section.astro';
+import Container from '~/components/ui/Container.astro';
+import Button from '~/components/ui/Button.astro';
+import Badge from '~/components/ui/Badge.astro';
+import DocsLinks from '~/components/sections/DocsLinks.astro';
+import CrossLinks from '~/components/sections/CrossLinks.astro';
+import { SIGN_UP_URL } from '~/data/pricing';
+import { SOLUTIONS } from '~/data/solutions';
+import { ACTION_LINKS } from '~/site.config';
+
+// Change request 3, §4: the page for the "build" search intent, for builders who
+// deliver systems for clients and developers of internal systems. MIT and
+// technology names are allowed here. Departures: home-deviations.md. Open gaps:
+// home-tbd.md.
+
+const page = SOLUTIONS.backend;
+
+// A point is a bold label and the text after it, as given.
+const theApp: [string, string][] = [
+    ['Screens come from the model,', " not hand-coded per table: there's no boilerplate to write or maintain."],
+    ['Self-hosted:', ' an MIT-licensed React app you can host on any static host or CDN.'],
+    ['In the cloud:', ' ready to use on desktop and mobile, in the browser.'],
+    ['Self-hosted, with your own branding:', ' theming, per-view overrides, chart plugins and config-driven menus.'],
+];
+
+const forBuilders: [string, string][] = [
+    ['Several clients, one account:', ' one account manages several independent, self-contained data platforms, one per client.'],
+    ['Hand-over:', " export a module and import it into the client's production or server, under MIT."],
+    ['License:', ' Everything you run yourself in Semantius is MIT at any company size, while Directus, since v12, uses MSCL 1.0, the Monospace Sustainable Core License.'],
+    ['Self-hosting:', ' on Docker Compose or Dokploy.'],
+    ["The client's sign-in:", " in the cloud, people sign in with their Google or Microsoft 365 account, with no Entra ID setup; self-hosted, the client's own Microsoft Entra ID or any identity provider with a JWKS endpoint."],
+    ['Models as files:', ' export a module as JSON, review it in a pull request, and promote it from development to production.'],
+    ['Moving from another system:', " export your data, and your agent imports it into the Semantius model. Semantius works on its own model; it doesn't attach to existing tables."],
+];
+
+const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
+const prose = 'text-lg text-foreground/75 leading-relaxed';
+const list = 'list-disc pl-5 space-y-3 text-lg text-foreground/80 leading-relaxed';
+const link = 'font-medium text-primary underline-offset-4 hover:underline';
+---
+
+<Layout
+    title="The back end with the rules built in: business rules, roles and approvals in Postgres | Semantius"
+    description="Business rules, roles and approval steps enforced in Postgres for every app, API and agent login, an API and an app that follow the model, and everything you self-host under MIT."
+    breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
+>
+    <section class="pt-44 pb-12 md:pt-40">
+        <Container class="max-w-4xl">
+            <Badge class="mb-6">{page.readerLabel}</Badge>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">The back end with the rules built in.</h1>
+            <div class="mt-6 space-y-4 text-xl text-foreground/75 leading-relaxed">
+                <p>Your agent shapes the model. The API, the app and the rules come from that one definition, and the rules are enforced in Postgres for every app, API and agent login, where you've defined them.</p>
+                <p>Everything you run yourself is MIT: the Postgres extension, the app, the sign-in server, the CLI and the agent skills. Pro cloud features aren't MIT.</p>
+                <p>For builders who want the speed of no-code and low-code tools, with the rules in the database.</p>
+            </div>
+        </Container>
+    </section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Day 30, not day 1</h2>
+            <div class="space-y-4">
+                <p class={prose}>Any tool can build an app on day one. When the business changes, your agent changes the model, and the API and the app follow, with no frontend code to maintain.</p>
+                <p class={prose}><strong class="text-foreground">Not generated code, a model.</strong> Rules, roles and steps are part of the data model, so every app, API and agent inherits them. Secure and extensible by definition.</p>
+                <p class={prose}>Business rules are short JSONLogic expressions, stored and evaluated in PostgreSQL.</p>
+            </div>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>The app</h2>
+            <ul class={list}>
+                {theApp.map(([bold, rest]) => <li><strong class="text-foreground">{bold}</strong>{rest}</li>)}
+            </ul>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>For builders</h2>
+            <ul class={list}>
+                {forBuilders.map(([bold, rest]) => <li><strong class="text-foreground">{bold}</strong>{rest}</li>)}
+            </ul>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl space-y-8">
+            <p><a href={`${SOLUTIONS.guardrails.path}#specification`} class={link}>Read the specification <span aria-hidden="true">→</span></a></p>
+            <DocsLinks links={[
+                { label: 'Customizing the app' },
+                { label: 'Module export' },
+                { label: 'Self-hosting', href: '/docs/self-hosted' },
+            ]} />
+            <div class="flex flex-col sm:flex-row gap-4">
+                <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+                <Button href="/docs/self-hosted/dokploy" variant="outline" size="lg" class="rounded-full">Self-host with Dokploy</Button>
+                <Button href={ACTION_LINKS.social.github} variant="outline" size="lg" class="rounded-full">GitHub</Button>
+            </div>
+            <CrossLinks current="backend" />
+        </Container>
+    </Section>
+</Layout>

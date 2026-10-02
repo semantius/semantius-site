@@ -1,0 +1,149 @@
+---
+export const prerender = true;
+import Layout from '~/layouts/Layout.astro';
+import Section from '~/components/layout/Section.astro';
+import Container from '~/components/ui/Container.astro';
+import Button from '~/components/ui/Button.astro';
+import Badge from '~/components/ui/Badge.astro';
+import PromptCards from '~/components/sections/PromptCards.astro';
+import DocsLinks from '~/components/sections/DocsLinks.astro';
+import CrossLinks from '~/components/sections/CrossLinks.astro';
+import { CLOUD_PLANS, SIGN_UP_URL, usd } from '~/data/pricing';
+import { SOLUTIONS } from '~/data/solutions';
+
+// Change request 3, §5: the page for the "outgrown SaaS" search intent, for
+// business teams that outgrew a tool. Plain words: no technology names, no
+// "MIT", no comparison sections. Departures: home-deviations.md. Open gaps:
+// home-tbd.md.
+
+const page = SOLUTIONS.businessApps;
+
+const connections = [
+    ['Software company', "A support ticket ↔ the customer's product usage ↔ the open deal"],
+    ['Manufacturer', "A warranty claim ↔ the machine's service history ↔ the open order"],
+    ['Field service', 'A service call ↔ the maintenance contract ↔ the open quote'],
+    ['Agency', 'A client request ↔ the hours on the project ↔ the retainer'],
+];
+
+// Prices and the user limit come from the pricing data, so this page and
+// /pricing cannot state different figures.
+const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p]));
+const price: [string, string][] = [
+    ['Plans', `Free is open now, for up to ${plan.free.userLimit} users, people and agents. Starter (${usd(plan.starter.monthlyPrice)} a month) and Pro (${usd(plan.pro.monthlyPrice)} a month) open soon, not priced per user, with no surprise charges. Your Free workspace upgrades in place.`],
+    ['Limits', "you get a warning first. At its limits, a workspace pauses with all your data kept, until the next month's credits arrive. On paid plans, you can also top up or move to a larger plan."],
+    ['Who helps', 'Free: the documentation. Starter and Pro: support.'],
+    ['Spending', 'limited to the credits you hold.'],
+    ['Backups', 'in the cloud, with point-in-time restore coming soon.'],
+];
+
+const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
+const prose = 'text-lg text-foreground/75 leading-relaxed';
+const link = 'font-medium text-primary underline-offset-4 hover:underline';
+---
+
+<Layout
+    title="Business apps your agent sets up, with real relationships and rules | Semantius"
+    description="Outgrown Airtable, monday or SmartSuite? Linked records with rules, a ready-to-use app for your whole team in the browser, and paid plans not priced per user."
+    breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
+>
+    <section class="pt-44 pb-12 md:pt-40">
+        <Container class="max-w-4xl">
+            <Badge class="mb-6">{page.readerLabel}</Badge>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Outgrown Airtable, monday or SmartSuite?</h1>
+            <p class="mt-6 text-2xl font-semibold leading-snug">Your records, with real relationships, a login for each person, and a price that doesn't grow per seat.</p>
+            <p class="mt-5 text-xl text-foreground/75 leading-relaxed">Your agent brings your records across and sets up the rules. Your team works in a ready-to-use app on desktop and mobile, in the browser, with nothing to install.</p>
+        </Container>
+    </section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Real records, with rules</h2>
+            <p class={prose}>Clients, jobs, orders and approvals become linked records, so a job can't point to a customer that doesn't exist, or a quote to a job that doesn't exist. Your rules are checked on every change, from the app or any agent's own login, where you've defined them.</p>
+            <h3 class="mt-10 mb-4 text-2xl font-bold">What your agent can connect</h3>
+            <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
+                <table class="w-full text-left text-sm md:text-base">
+                    <thead>
+                        <tr class="border-b border-foreground/10 bg-foreground/2">
+                            <th scope="col" class="p-4 font-semibold">Business</th>
+                            <th scope="col" class="p-4 font-semibold">What the agent connects</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {connections.map(([business, connects]) => (
+                            <tr class="border-b border-foreground/10 last:border-b-0">
+                                <th scope="row" class="p-4 align-top font-semibold whitespace-nowrap">{business}</th>
+                                <td class="p-4 text-foreground/80">{connects}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        </Container>
+    </Section>
+
+    <Section id="prompts" class="py-12! scroll-mt-28">
+        <Container class="max-w-6xl">
+            <h2 class={h2}>Start from one of these</h2>
+            <PromptCards
+                slugs={['field-service-jobs', 'purchase-approvals', 'equipment-register']}
+                titleLevel={3}
+                more={{ label: 'More examples for owners', href: `${SOLUTIONS.guardrails.path}#routine-work` }}
+            />
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>An app for the whole team</h2>
+            <p class={prose}>A ready-to-use app for desktop and mobile, in the browser, with nothing to install. Each person sees only their part, and people sign in with their Google or Microsoft 365 account.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Approvals that hold</h2>
+            <p class={prose}>Quotes, purchase requests and client sign-offs move only through the steps you set, and only the right person can move them on. Every change is on record: who made it, person or agent, and when.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Bring your data with you</h2>
+            <p class={prose}>Export what you have today from Airtable, monday, SmartSuite, Power Apps or your spreadsheets, and your agent imports it into your new model, for example from CSV files. There are no built-in connectors to other tools; with incoming webhooks on Pro, new events can arrive in real time.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>A price that doesn't grow per seat</h2>
+            <ul class="list-disc pl-5 space-y-3 text-lg text-foreground/80 leading-relaxed">
+                {price.map(([label, text]) => <li><strong class="text-foreground">{label}:</strong> {text}</li>)}
+            </ul>
+            <p class="mt-6 flex gap-6">
+                <a href="#signup" class={link}>Notify me</a>
+                <a href="/pricing" class={link}>See pricing</a>
+            </p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>Yours to keep</h2>
+            <p class={prose}>You keep the whole system: the data, the rules, the permissions and the app. Export it at any time.</p>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl space-y-8">
+            <DocsLinks links={[
+                { label: 'Importing data' },
+                { label: 'Approval steps' },
+            ]} />
+            <div class="flex flex-col sm:flex-row gap-4">
+                <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+                <Button href="/pricing" variant="outline" size="lg" class="rounded-full">See pricing</Button>
+            </div>
+            <CrossLinks current="businessApps" />
+        </Container>
+    </Section>
+</Layout>

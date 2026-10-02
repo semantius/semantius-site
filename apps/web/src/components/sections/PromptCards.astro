@@ -1,0 +1,32 @@
+---
+/**
+ * "Start from one of these": three of the six sample-prompt cards, with the
+ * intro line and a link to the other three (change request 3, §3.2 and §5.2).
+ * Each card is its title, linking to its /prompts page, and the prompt in a
+ * command box with a copy button. The section heading belongs to the page.
+ */
+import Command from '~/components/common/Command.astro';
+import { promptPath, samplePrompt } from '~/data/sample-prompts';
+
+interface Props {
+  slugs: string[];
+  /** One level below the page's heading for the section. */
+  titleLevel: 3 | 4;
+  more: { label: string; href: string };
+}
+
+const { slugs, titleLevel, more } = Astro.props;
+const Title = `h${titleLevel}` as const;
+const prompts = slugs.map(samplePrompt);
+---
+
+<p class="text-lg text-foreground/70 mb-8"><em>Your agent works from a business analyst's and a data architect's playbook, so it sets up the records, the rules and who sees what properly.</em></p>
+<ul class="grid gap-6 md:grid-cols-3">
+  {prompts.map((p) => (
+    <li class="flex flex-col p-6 rounded-3xl bg-foreground/2 border border-foreground/10">
+      <Title class="text-lg font-bold mb-4"><a href={promptPath(p.slug)} class="hover:text-primary hover:underline underline-offset-4">{p.heading}</a></Title>
+      <Command mode="chat" command={p.prompt} />
+    </li>
+  ))}
+</ul>
+<p class="mt-6"><a href={more.href} class="font-medium text-primary underline-offset-4 hover:underline">{more.label} <span aria-hidden="true">→</span></a></p>

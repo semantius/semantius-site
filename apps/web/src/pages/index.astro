@@ -13,7 +13,7 @@ import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 import { ACTION_LINKS } from '~/site.config';
 
-// The founder's v1 specification as amended by change requests 1 and 2, with
+// The founder's v1 specification as amended by change requests 1 to 3, with
 // the copy as given. Where the build departs from it, home-deviations.md says how and
 // why; open gaps carry a TBD label and are listed in home-tbd.md.
 //
@@ -23,34 +23,22 @@ import { ACTION_LINKS } from '~/site.config';
 // Once a live sandbox exists, this becomes "Deploy a live sandbox (1-click)".
 const startFree = { text: 'Start free', href: SIGN_UP_URL };
 
+// One card per search intent (change request 3, §2.1).
 const routingCards = [
     {
-        reader: SOLUTIONS.guardrails.readerLabel,
+        solution: SOLUTIONS.guardrails,
         question: 'Enforcing guardrails for your AI agents?',
-        line: 'Your rules live in the database and are checked on every write, from any app, API or agent login.',
-        href: SOLUTIONS.guardrails.path,
-        link: SOLUTIONS.guardrails.linkLabel,
+        line: "Give each agent its own login. Your rules are checked on every write, from any app, API or agent login, where you've defined them, and your team approves what matters.",
     },
     {
-        reader: SOLUTIONS.apps.readerLabel,
-        question: 'Need an Airtable alternative?',
-        line: 'Get a relational database with an app generated from your model, and rules every agent has to follow.',
-        href: SOLUTIONS.apps.path,
-        link: SOLUTIONS.apps.linkLabel,
+        solution: SOLUTIONS.backend,
+        question: 'Need a back end with the rules built in?',
+        line: "Your rules enforced in the database for every app, API and agent login, where you've defined them, and an API and an app that follow the model, with no code to maintain.",
     },
     {
-        reader: SOLUTIONS.crm.readerLabel,
-        question: 'Building a tailored CRM?',
-        line: "Consolidate sales, support and usage into one model, so your agent can connect a ticket to the customer's usage and the open deal.",
-        href: SOLUTIONS.crm.path,
-        link: SOLUTIONS.crm.linkLabel,
-    },
-    {
-        reader: 'For lean developers',
-        question: 'Sick of data middleware bloat?',
-        line: 'Skip the sync pipelines between your tools: one model, where your agents and your people work on the same records.',
-        href: '#specifications',
-        link: 'Read the architecture',
+        solution: SOLUTIONS.businessApps,
+        question: 'Outgrown Airtable, monday or SmartSuite?',
+        line: "Real relationships, rules that hold where you've defined them, and a ready-to-use app for your whole team, in the browser on desktop and mobile. Paid plans aren't priced per user.",
     },
 ];
 
@@ -196,14 +184,14 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
 
     {/* 3. Routing grid */}
     <Section id="routing" class="py-16! md:py-24!">
-        <Container class="max-w-5xl">
-            <ul class="grid gap-6 md:grid-cols-2">
+        <Container>
+            <ul class="grid gap-6 md:grid-cols-3">
                 {routingCards.map((card) => (
                     <li class="flex flex-col p-8 rounded-3xl bg-foreground/2 border border-foreground/10">
-                        <p class="text-sm font-semibold text-primary mb-2">{card.reader}</p>
+                        <p class="text-sm font-semibold text-primary mb-2">{card.solution.readerLabel}</p>
                         <h3 class="text-xl font-bold mb-3">{card.question}</h3>
                         <p class="text-foreground/70 leading-relaxed mb-6">{card.line}</p>
-                        <a href={card.href} class={`${link} mt-auto self-start`}>{card.link} <span aria-hidden="true">→</span></a>
+                        <a href={card.solution.path} class={`${link} mt-auto self-start`}>{card.solution.linkLabel} <span aria-hidden="true">→</span></a>
                     </li>
                 ))}
             </ul>

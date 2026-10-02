@@ -1,7 +1,7 @@
 ---
 /**
  * The live demo (change request 1, §4): on the hub, and whole on Agent
- * guardrails (§10.1). The left pane is the request and the model the agent
+ * guardrails (§10.1), where its heading is an H3 (change request 3, §3.1). The left pane is the request and the model the agent
  * built from it, the right pane what that one definition produces.
  *
  * Every artifact comes from one real Semantius workspace and is supplied, never
@@ -14,11 +14,13 @@ import Tbd from '~/components/common/Tbd.astro';
 import { SIGN_UP_URL } from '~/data/pricing';
 
 interface Props {
-  /** The page's own H2 style, so the heading matches the sections around it. */
+  /** The page's own heading style, so the heading matches the sections around it. */
   headingClass?: string;
+  headingLevel?: 2 | 3;
 }
 
-const { headingClass = 'text-3xl md:text-5xl font-display font-bold' } = Astro.props;
+const { headingClass = 'text-3xl md:text-5xl font-display font-bold', headingLevel = 2 } = Astro.props;
+const Heading = `h${headingLevel}` as const;
 
 const REQUEST = 'Set up quotes for our clients. I approve every quote; you prepare them.';
 
@@ -44,7 +46,7 @@ const pane = 'rounded-3xl border border-foreground/10 bg-foreground/2 p-6';
 ---
 
 <div class="live-demo">
-  <h2 class={`${headingClass} text-center mb-12`}>One definition. Three outputs. No code.</h2>
+  <Heading class={`${headingClass} text-center mb-12`}>One definition. Three outputs. No code.</Heading>
   <div class="grid gap-6 lg:grid-cols-2">
     <div class={pane}>
       <h3 class="text-lg font-bold mb-4">Active data dictionary</h3>

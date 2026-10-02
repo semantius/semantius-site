@@ -1,7 +1,7 @@
 /**
- * The six sample prompts (founder's v1 spec, §8). The CRM page's prompt cards
- * and copy button, the /prompts pages and llms.txt all read them from here, so
- * a prompt cannot differ between two places.
+ * The six sample prompts (founder's v1 spec, §8). The prompt cards on Agent
+ * guardrails and Business apps, the /prompts pages and llms.txt all read them
+ * from here, so a prompt cannot differ between two places.
  */
 export interface SamplePrompt {
 	slug: string;

@@ -1,21 +1,26 @@
-# Home Page v1.2: TBD List
+# Home Page v1.3: TBD List
 
 What is still open in the founder's v1 specification, as amended by change
-request 1 (the hub and the three landing pages) and change request 2 (the hub's
-specifications section), built on branch `home-v1.2`. Every item must be
-resolved before the branch goes live.
+request 1 (the hub and the landing pages), change request 2 (the hub's
+specifications section) and change request 3 (the solution pages, rebuilt by
+search intent), built on branch `home-v1.3`. Every item must be resolved before
+the branch goes live.
 
 - **Part A** lists gaps: content the spec relies on that does not exist. Each
   one shows a visible TBD label on the preview.
 - **Parts B and C** are built exactly as specified, but need a decision first.
 - **Part D** lists questions on the change requests that did not block the
   build.
-- Choices that depart from the spec, including your answers to D15 to D22, are
-  in `home-deviations.md`.
+- Choices that depart from the spec, including your answers, are in
+  `home-deviations.md`.
 
 An item keeps its number while it stays open, so A1 to C18 mean the same as in
 the review of the v1 build. B23 to B25 and D26 to D29 are new with change
-request 1; B30, B31, C32, D33 and D34 with change request 2.
+request 1; B30, B31, C32, D33 and D34 with change request 2; C35 and C36 with
+change request 3, which also reopens part of B9.
+
+The specs are in `C:\dev\pgext-research`: `homepage-spec-v1.md`,
+`homepage-spec-v1-cr1.md` to `-cr3.md` and `seo-intents-v0.md`.
 
 **Closed by change request 1:**
 
@@ -29,28 +34,42 @@ request 1; B30, B31, C32, D33 and D34 with change request 2.
 
 **Closed by change request 2:**
 
-- B9 and C18: the limits and support lines left the hub, their only place.
+- B9 and C18 on the hub: the limits and support lines left it.
 - B23: the hub's specification table is gone, so one table remains.
 - B16's "the outcome is bounded, not determined": "Outside these contracts"
   now says what the checks do not guarantee.
 
-**Preview:** https://homev-20261002173922-semantius-site.ma532.workers.dev
+**Closed by change request 3 and your answers to it:**
+
+- B7 for the solution pages: §7's term lists replace spec v1's, and each term is
+  in the given copy. The search-term TBD on Agent guardrails gave way to the
+  specification line.
+- B24: the prompt pages keep their install steps (`home-deviations.md`, 47).
+- C14 and D34: the Directus comparison is gone. Back end carries one license
+  line, from the facts you settled (§9).
+- D26: the six prompt cards are split three and three, by reader.
+- D27: the menu and the grid list the pages in the same order.
+- D29: the specs are in `C:\dev\pgext-research`.
+- A5 and A7 for the solution pages: their llms.txt summaries and meta
+  descriptions are given.
+
+**Preview:** PREVIEW_URL
 
 Pages that carry TBD labels. The footer is on every page and carries A4.
 
-- [Hub](https://homev-20261002173922-semantius-site.ma532.workers.dev/): A1
-- [Agent guardrails](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3, B7
-- [CRM and operations](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/crm): A3
-- [Apps](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/airtable-alternative): A3
+- [Hub](PREVIEW_URL/): A1
+- [Agent guardrails](PREVIEW_URL/solutions/agent-guardrails): A1, A3
+- [Back end](PREVIEW_URL/solutions/backend): A3
+- [Business apps](PREVIEW_URL/solutions/business-apps): A3
 - Sample prompts, A2:
-  [agency](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/agency-client-tracker),
-  [field service](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/field-service-jobs),
-  [rentals](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/rental-turnovers),
-  [punch list](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/punch-list),
-  [purchase approvals](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/purchase-approvals),
-  [equipment register](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/equipment-register)
-- [/about](https://homev-20261002173922-semantius-site.ma532.workers.dev/about): A6
-- [/llms.txt](https://homev-20261002173922-semantius-site.ma532.workers.dev/llms.txt): A5, as TBD text
+  [agency](PREVIEW_URL/prompts/agency-client-tracker),
+  [field service](PREVIEW_URL/prompts/field-service-jobs),
+  [rentals](PREVIEW_URL/prompts/rental-turnovers),
+  [punch list](PREVIEW_URL/prompts/punch-list),
+  [purchase approvals](PREVIEW_URL/prompts/purchase-approvals),
+  [equipment register](PREVIEW_URL/prompts/equipment-register)
+- [/about](PREVIEW_URL/about): A6
+- [/llms.txt](PREVIEW_URL/llms.txt): A5, as TBD text
 
 ## A. Gaps: Content That Does Not Exist
 
@@ -70,24 +89,26 @@ Also open:
   Approve button, or a refusal that does not name the permission. The v1 rule
   (the text changes to match the recording) went with the walkthrough.
 - If the refusal reaches the agent as a JSON error, showing it word for word
-  puts code on the page beyond the one rule (§13).
+  puts code on the page beyond the one rule.
 
 Pages: hub, Agent guardrails.
 
 **A2. What each sample prompt's result includes (§8).** Three short bullets per
 page, 18 in all. None are written. Pages: all six sample-prompt pages.
 
-**A3. Docs pages that do not exist (§5, §6, §7).** The landing pages keep their
-docs links (change request 1, §3 and §10). No page exists for:
+**A3. Docs pages that do not exist (change request 3, §3.3, §4.4 and §5.8).**
+Each link shows its label with a TBD. No page exists for:
 
 - row-level security (Agent guardrails). `/docs/business-logic` covers
   row-level filters, but there is no page on row-level security;
-- importing data (CRM and operations);
-- approval steps (CRM and operations);
-- customizing the app (Apps);
-- module export (Apps).
+- customizing the app (Back end);
+- module export (Back end);
+- importing data (Business apps);
+- approval steps (Business apps).
 
-The docs links that do resolve are listed in `home-deviations.md`.
+§5.8 gives Business apps two docs links "because no other existing docs page
+fits its readers", but neither of the two has a page. The docs links that do
+resolve are listed in `home-deviations.md`.
 
 **A4. Footer articles (change request 1, §8).** None of the four posts exists on
 the blog. Each title shows with a TBD label until its post is published.
@@ -101,9 +122,10 @@ the blog. Each title shows with a TBD label until its post is published.
 
 Pages: the footer of every page.
 
-**A5. llms.txt (§10).** The paragraph on what Semantius is now opens the file
-(change request 1, §11). Still not written: each page's one-sentence summary
-with its qualifier (hub, three landing pages, six prompt pages). Also open:
+**A5. llms.txt (§10).** The paragraph on what Semantius is opens the file
+(change request 1, §11), and the three solution pages carry their summaries
+(change request 3, §7). Still not written: the one-sentence summary with its
+qualifier for the hub and the six prompt pages. Also open:
 
 - whether removing the old product text from `apps/web/src/data/llms-intro.md`
   is right (it named MCP servers, dashboards, Neon and Supabase;
@@ -111,8 +133,8 @@ with its qualifier (hub, three landing pages, six prompt pages). Also open:
 - whether the generated index of docs, blueprints, skills and blog posts stays
   below the new content;
 - whether the section "Agents it works with" stays. It is the hub FAQ's answer
-  to "Which agent do I need?", the FAQ has left the hub, and the new paragraph
-  names the same agents.
+  to "Which agent do I need?", the FAQ has left the hub, and the opening
+  paragraph names the same agents.
 
 Page: `/llms.txt`.
 
@@ -120,40 +142,30 @@ Page: `/llms.txt`.
 with a TBD label. Open: whether it replaces the page instead. The page's other
 text names MCP servers, dashboards, Neon and Supabase. Page: `/about`.
 
-**A7. Meta descriptions (§10).** The spec gives a description for the hub only.
-The three landing pages and the six prompt pages fall back to the site-wide
+**A7. Meta descriptions (§10).** The six prompt pages fall back to the site-wide
 default description until theirs are written. A meta description has no place
 on the page, so this gap carries no visible label.
 
 ## B. Built as Specified: the Spec Contradicts Itself
 
-**B7. Search terms (§10) that are not in the copy.** The spec requires these
-terms in each page's copy, while forbidding added claims and keyword lists. They
-cannot be placed without sentences from you.
+**B7. Search terms not in the copy.**
 
-- **Hub:** "a UI for your team". The copy says "an app for your team".
-  "PostgreSQL" is now in the specifications section.
-- **Agent guardrails:** "enforce AI agent permissions in Postgres", "AI agent
-  guardrails", "deterministic guardrails for AI agents", "system of record for
-  AI agents", "database for always-on AI agents", "JSONLogic in PostgreSQL",
-  "row-level security for AI agents", "human-in-the-loop approvals", "Directus
-  alternative". Change request 1 (§10.1) adds "secure database runtime for
-  LLMs" to the page copy without a sentence, so the page shows a TBD label
-  under its lead.
-- **CRM and operations:** "custom CRM built with your AI agent"; no agent is
-  named ("build a CRM with Meta Muse, OpenAI Dots or Grokbot"); "one customer
-  record across sales and support"; "Power Apps alternative".
-- **Apps:** "open-source Airtable alternative", "self-hosted Airtable
-  alternative for AI agents", "relational Airtable replacement", "SmartSuite
-  alternative", "auto-generated React UI from Postgres", "PostgREST admin UI",
-  "Retool alternative", "Bubble alternative".
-
-Some of these are close to a page's title (for example "Open-source Airtable
-alternative" in the Apps title), but none is in the page's copy.
+- **Hub (spec v1 §10):** "a UI for your team". The copy says "an app for your
+  team".
+- **Change request 3, §7:** two terms are not in the copy word for word.
+  "Always-on agents": challenge 8 says "An always-on agent" and part 2 "your
+  always-on agent". "JSONLogic in PostgreSQL": §4.1 says "JSONLogic
+  expressions, stored and evaluated in PostgreSQL". §7 says not to add text for
+  a term, so both are built as given.
 
 **B8. llms.txt, "what Semantius is not" (§10).** "Not analytics, not an agent"
 collides with the never-write list (§3): "analytics", and "not another agent"
 spelled out. Built as specified.
+
+**B9. "Pauses" against "stops" (change request 3, §5.6).** Business apps says
+that at its limits "a workspace pauses with all your data kept"; `/pricing` says
+"your database stops". Reopened by change request 3. The other half of the old
+B9 is fixed: top-ups are now offered on paid plans only.
 
 **B10. Structured data (§10).**
 
@@ -167,7 +179,7 @@ spelled out. Built as specified.
   all three plans.
 
 **B11. "No page contains any wording from the Never write list" (§11).** Built
-for the pages in this spec. Elsewhere the site still uses banned wording: "MCP"
+for the pages in the specs. Elsewhere the site still uses banned wording: "MCP"
 in `/features`, the rest of `/about` and much of the docs (a whole MCP
 connectors section); "analytics" in several docs pages; Neon and Supabase in
 `/about` and the pg_semantius docs. The generated index kept in `/llms.txt`
@@ -178,33 +190,29 @@ allows only "the agent-first data platform"), which `/llms.txt` repeats, and
 its copy says "the people who run the business", close to the banned "run your
 business".
 
-**B15. The announcement banner contradicts "Free is open now".** Change request
-1 (§9) sends both Sign up buttons to the sign-up page and keeps the banner as it
-is. On every page, the banner opens the wait list and says the public beta
-starts in late October.
+**B15. The announcement banner contradicts "Free is open now".** Both Sign up
+buttons go to the sign-up page, and the banner stays as it is (change request
+1, §9). On every page, it opens the wait list and says the public beta starts
+in late October.
 
-**B16. The hub's copy lacks qualifiers the spec requires.** §3 says a claim on
-the hub carries its short qualifier, and §10 that every claim carries its
-qualifier. The change requests' copy, used word for word, lacks two of the §3
-table's:
+**B16. Copy that lacks a qualifier spec v1 §3 requires.** The change requests'
+copy, used word for word, lacks these:
 
-- "There are no built-in connectors to other tools" ("Real-time actions on live
-  records" and "Unified context ingestion" in the specifications section);
-- "Pro cloud features aren't MIT" ("Yours to keep").
+- **Hub:** "There are no built-in connectors to other tools" ("Real-time actions
+  on live records" and "Unified context ingestion"); "Pro cloud features
+  aren't MIT" ("Yours to keep"); "Free allows up to 5 users, and agents count
+  as users" (routing card 3, "Paid plans aren't priced per user").
+- **Business apps:** "No offline mode and no installable app" (the lead and "An
+  app for the whole team", "with nothing to install").
 
 The hub's "Outside these contracts" also lacks an item that Agent guardrails
 has (B31).
 
-**B24. Install commands on the prompt pages.** §13 says no page shows install
-commands. The change request does not mention the six sample-prompt pages,
-which still show the two install steps, so they are kept. If they go, C12 and
-C13 remain only in the llms.txt Install section.
-
-**B25. The hub's title and meta description say "Postgres".** §13 says the hub
-names no technology above the specifications section. Neither is visible copy,
-and the change request does not mention them, so both are unchanged: "Semantius:
-the agent-first data platform on open-source Postgres", and a description that
-says "enforced in Postgres".
+**B25. The hub's title and meta description say "Postgres".** The hub names no
+technology above the specifications section, but neither is visible copy, and
+no change request mentions them, so both are unchanged: "Semantius: the
+agent-first data platform on open-source Postgres", and a description that says
+"enforced in Postgres".
 
 **B30. "Dimensions and measures" (change request 2, §2).** The specifications
 section says every entity carries them and the agent can read them. In the
@@ -232,8 +240,7 @@ Needed: one list, or the two reconciled. Built as specified.
 **C12. The skill install command (§4.5).** The spec gives
 `npx skill install https://github.com/semantius/semantius-cli`. The docs and the
 rest of the site use `npx skills add semantius/semantius-cli --all --global`.
-Change request 1 took the install steps off the hub and Agent guardrails; the
-command remains on the six prompt pages and in llms.txt (B24).
+The command is on the six prompt pages and in llms.txt.
 
 **C13. No step connects the CLI to a workspace (§4.5, §11).** The two install
 steps never sign the CLI in. The docs get credentials through the Ops MCP
@@ -241,65 +248,33 @@ connector, a word the spec bans. The CLI's README now has `semantius login`, a
 browser sign-in. Windows has its own installer (PowerShell), which the spec does
 not show. Remains wherever C12 does.
 
-**C14. Directus's license, checked at the source.** On Agent guardrails, in
-the comparison change request 2 moved there from the hub ("Compared with
-Directus, Supabase and Airtable", the v1 FAQ answer unchanged).
-
-- Correct: Directus's pricing page says "Organizations under $5M in annual
-  revenue and fewer than 50 employees qualify for fully permissive access".
-- Correct: the license changed twice since 2023, to BSL 1.1 in April 2023 and to
-  the Monospace Sustainable Core License (MSCL-1.0-GPL) on May 28, 2026.
-- Not supported by the source: "Above that, it needs a commercial license, even
-  self-hosted." MSCL permits internal use at any company size, and puts
-  "protected functionality" behind a license key. Above the threshold, what a
-  company pays for is that key, not the right to run Directus.
-
 **C32. "JSON modules" as a way to bring data in (change request 2, §2).**
 "Existing data comes in through CSV import and JSON modules." The docs do not
-say that a module's JSON carries records, and Agent guardrails describes it as
-the model: "Export a module as JSON, review it in a pull request, and promote it
+say that a module's JSON carries records, and Back end describes it as the
+model: "export a module as JSON, review it in a pull request, and promote it
 from development to production." Needed: confirmation that a JSON module brings
 in existing data. Built as specified.
 
+**C35. The app's self-hosted features (change request 3, §4.2).** "Theming,
+per-view overrides, chart plugins and config-driven menus", and an app "you can
+host on any static host or CDN". The docs describe only an account-menu setting
+(`VITE_UI_CUSTOMIZER`, `/docs/self-hosted/settings`). Needed: confirmation.
+Built as specified.
+
+**C36. A docs page contradicts the access facts (change request 3, §9).**
+`/docs/pg-semantius` says: "Nothing can go around the rules. An agent, a
+script, a SQL client, and a second API all pass through the same checks." Your
+facts say access is only through the REST API, and direct database access
+bypasses Semantius. "Nothing can go around it" is also on the never-write list.
+Outside the home pages.
+
 ## D. Questions on the Change Requests
-
-**D26. The CRM page's six prompt cards (§10.2).** Two of them, turnovers for
-rentals and a punch list shared with a builder, are neither CRM nor operations,
-and four repeat the "Examples" list higher on the page. Built as specified: all
-six.
-
-**D27. Names and order.** The menu and the eyebrows use the reader labels; the
-breadcrumbs in the JSON-LD keep "Agent guardrails", "CRM and operations" and
-"Apps" (D20). The menu lists guardrails, CRM, Apps (§9), while the routing grid
-lists guardrails, Airtable alternative, CRM (§3). Built as specified.
 
 **D28. "Read the architecture manifesto" (§2)** leads to the specifications
 section, which change request 2 makes an explanation of the architecture. Still
 open: nothing on the page is called a manifesto. Built as specified.
 
-**D29. `homepage-spec-v1.md`,** which the change request names as the limit on
-claims, is not in the repo. The build added no claims beyond the change request
-and the copy already on the v1 pages.
-
-**D33. The hub no longer mentions pricing.** Change request 1 moved the v1
-pricing line (§4.8) into the specifications section, and change request 2
-removes it. The hub's body has no plans, no "Free is open now", and no link to
-Notify me or /pricing. The Start free buttons, the header's Product menu and the
-banner remain. Built as specified.
-
-**D34. "The Directus difference" on Agent guardrails (change request 2, §1).**
-The comparison replaces the whole section, heading and three items, under the
-label it carried on the hub, "Compared with Directus, Supabase and Airtable"
-(`home-deviations.md`, 42). The page lost three statements the comparison does
-not make:
-
-- "Directus has changed its license twice since 2023. What's released under MIT
-  stays MIT."
-- "Leaving. Directus keeps your tables, but its permissions, Flows and app
-  settings do nothing without its app server. An exported Semantius database
-  keeps enforcing its rules."
-- "With the database owner's or a superuser's connection: both are bypassed."
-  The page's "Not guaranteed" list still names the superuser and the table
-  owner.
-
-Needed: whether any of them comes back, and whether the heading is right.
+**D33. The hub's body has no pricing.** Change request 2 removed the plans from
+the hub. Business apps now carries them (change request 3, §5.6), and the hub's
+card 3 says "Paid plans aren't priced per user", but the hub links neither
+/pricing nor Notify me. Built as specified.
