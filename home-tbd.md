@@ -55,23 +55,23 @@ The specs are in `C:\dev\pgext-research`: `homepage-spec-v1.md`,
 - A5 and A7 for the solution pages: their llms.txt summaries and meta
   descriptions are given.
 
-**Preview:** https://homev-20261002225759-semantius-site.ma532.workers.dev
+**Preview:** https://homev-20261002233216-semantius-site.ma532.workers.dev
 
 Pages that carry TBD labels. The footer is on every page and carries A4.
 
-- [Hub](https://homev-20261002225759-semantius-site.ma532.workers.dev/): A1
-- [Agent guardrails](https://homev-20261002225759-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3
-- [Back end](https://homev-20261002225759-semantius-site.ma532.workers.dev/solutions/backend): A3
-- [Business apps](https://homev-20261002225759-semantius-site.ma532.workers.dev/solutions/business-apps): A3
+- [Hub](https://homev-20261002233216-semantius-site.ma532.workers.dev/): A1
+- [Agent guardrails](https://homev-20261002233216-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3
+- [Back end](https://homev-20261002233216-semantius-site.ma532.workers.dev/solutions/backend): A3
+- [Business apps](https://homev-20261002233216-semantius-site.ma532.workers.dev/solutions/business-apps): A3
 - Sample prompts, A2:
-  [agency](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/agency-client-tracker),
-  [field service](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/field-service-jobs),
-  [rentals](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/rental-turnovers),
-  [punch list](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/punch-list),
-  [purchase approvals](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/purchase-approvals),
-  [equipment register](https://homev-20261002225759-semantius-site.ma532.workers.dev/prompts/equipment-register)
-- [/about](https://homev-20261002225759-semantius-site.ma532.workers.dev/about): A6
-- [/llms.txt](https://homev-20261002225759-semantius-site.ma532.workers.dev/llms.txt): A5, as TBD text
+  [agency](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/agency-client-tracker),
+  [field service](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/field-service-jobs),
+  [rentals](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/rental-turnovers),
+  [punch list](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/punch-list),
+  [purchase approvals](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/purchase-approvals),
+  [equipment register](https://homev-20261002233216-semantius-site.ma532.workers.dev/prompts/equipment-register)
+- [/about](https://homev-20261002233216-semantius-site.ma532.workers.dev/about): A6
+- [/llms.txt](https://homev-20261002233216-semantius-site.ma532.workers.dev/llms.txt): A5, as TBD text
 
 ## A. Gaps: Content That Does Not Exist
 
