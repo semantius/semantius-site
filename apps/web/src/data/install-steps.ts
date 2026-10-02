@@ -1,6 +1,6 @@
 /**
- * The two install steps (founder's v1 spec, §4.5), shown under the hub demo, on
- * Agent guardrails and on every sample-prompt page, and listed in llms.txt.
+ * The two install steps (founder's v1 spec, §4.5), shown on every sample-prompt
+ * page and listed in llms.txt.
  *
  * The skill command is the spec's, which differs from the one the docs build in
  * `lib/skill-install.ts`. That conflict is open: home-tbd.md, C12.

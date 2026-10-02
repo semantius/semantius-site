@@ -5,8 +5,9 @@ import Schema from '~/components/layout/Schema.astro';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 import Button from '~/components/ui/Button.astro';
-import InstallSteps from '~/components/common/InstallSteps.astro';
-import DemoCode from '~/components/sections/DemoCode.astro';
+import Badge from '~/components/ui/Badge.astro';
+import Tbd from '~/components/common/Tbd.astro';
+import LiveDemo from '~/components/sections/LiveDemo.astro';
 import DocsLinks from '~/components/sections/DocsLinks.astro';
 import CrossLinks from '~/components/sections/CrossLinks.astro';
 import { SIGN_UP_URL } from '~/data/pricing';
@@ -14,7 +15,8 @@ import { SOLUTIONS } from '~/data/solutions';
 import { SPECIFICATION } from '~/data/specification';
 import { ACTION_LINKS } from '~/site.config';
 
-// The founder's v1 specification, §5, with the copy as given.
+// The founder's v1 specification, §5, with the copy as given, as amended by
+// change request 1, §10.1.
 // Departures: home-deviations.md. Open gaps: home-tbd.md.
 
 const page = SOLUTIONS.guardrails;
@@ -55,8 +57,10 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
 
     <section class="pt-44 pb-12 md:pt-40">
         <Container class="max-w-4xl">
+            <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">{h1}</h1>
             <p class="mt-6 text-xl text-foreground/75 leading-relaxed">Your agent follows your rules most of the time. Your business needs every time. Data in Postgres isn't enough; the rules have to live there too.</p>
+            <Tbd block class="mt-6" note='The sentence that carries the search term "secure database runtime for LLMs". Change request 1 asks for the term in the page copy but gives no sentence.' />
         </Container>
     </section>
 
@@ -96,6 +100,13 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
                     </tbody>
                 </table>
             </div>
+        </Container>
+    </Section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>The visual face of your agents</h2>
+            <p class={prose}>Your agents work through the API; your people see the same records in the app generated from the model, including every change an agent made.</p>
         </Container>
     </Section>
 
@@ -143,12 +154,8 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
     </Section>
 
     <Section class="py-12!">
-        <Container class="max-w-4xl">
-            <h2 class={h2}>Demo</h2>
-            <DemoCode open />
-            <div class="mt-8">
-                <InstallSteps />
-            </div>
+        <Container class="max-w-6xl">
+            <LiveDemo headingClass="text-3xl md:text-4xl font-display font-bold" />
         </Container>
     </Section>
 

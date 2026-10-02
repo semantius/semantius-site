@@ -1,7 +1,7 @@
 /**
- * The six sample prompts (founder's v1 spec, §8). The hub's prompt cards, the
- * /prompts pages, the CRM page's copy button and llms.txt all read them from
- * here, so a prompt cannot differ between two places.
+ * The six sample prompts (founder's v1 spec, §8). The CRM page's prompt cards
+ * and copy button, the /prompts pages and llms.txt all read them from here, so
+ * a prompt cannot differ between two places.
  */
 export interface SamplePrompt {
 	slug: string;

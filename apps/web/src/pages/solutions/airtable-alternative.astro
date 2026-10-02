@@ -3,13 +3,15 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
+import Badge from '~/components/ui/Badge.astro';
 import Button from '~/components/ui/Button.astro';
 import DocsLinks from '~/components/sections/DocsLinks.astro';
 import CrossLinks from '~/components/sections/CrossLinks.astro';
 import { SIGN_UP_URL } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 
-// The founder's v1 specification, §7, with the copy as given.
+// The founder's v1 specification, §7, with the copy as given, as amended by
+// change request 1, §10.3.
 // Departures: home-deviations.md. Open gaps: home-tbd.md.
 
 const page = SOLUTIONS.apps;
@@ -37,11 +39,19 @@ const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
 >
     <section class="pt-44 pb-12 md:pt-40">
         <Container class="max-w-4xl">
+            <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Day 30, not day 1.</h1>
             <p class="mt-6 text-2xl font-semibold leading-snug">Your Airtable base, with real relationships, a login for each person, and a price that doesn't grow per seat.</p>
             <p class="mt-5 text-xl text-foreground/75 leading-relaxed">Any tool can build an app on day one. When the business changes, your agent changes the model, and the API and the app follow, with no frontend code to maintain.</p>
         </Container>
     </section>
+
+    <Section class="py-12!">
+        <Container class="max-w-4xl">
+            <h2 class={h2}>No frontend tax</h2>
+            <p class="text-lg text-foreground/75 leading-relaxed">Design the structure in the active data dictionary; the API and the React app come out of it at the same time, with no boilerplate code to maintain.</p>
+        </Container>
+    </Section>
 
     <Section class="py-12!">
         <Container class="max-w-4xl">

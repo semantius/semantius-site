@@ -1,6 +1,6 @@
 # Semantius
 
-> TBD: one paragraph on what Semantius is (founder's v1 spec, section 10). Not written yet.
+> Semantius is the agent-first data platform: a system of record that AI agents and people work in together. A business's records, business rules (JSONLogic evaluated in PostgreSQL), approval steps and permissions live in Postgres and are checked on every change, from the app, the API or any agent's own login. Any agent that can run commands, such as the always-on agents Meta Muse, OpenAI Dots and Grokbot, or coding agents such as Claude Code, Codex, OpenClaw and Hermes Agent, sets the system up and works in it through the Semantius CLI and skill. People use a web app generated from the same model. The core is MIT-licensed and can be self-hosted.
 
 ## Machine-readable formats
 

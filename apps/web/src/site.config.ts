@@ -1,4 +1,5 @@
 import { SOLUTIONS } from '~/data/solutions';
+import { SIGN_UP_URL } from '~/data/pricing';
 
 export const siteConfig = {
   name: 'Semantius',
@@ -78,11 +79,11 @@ export const NAV_LINKS = [
       { href: '/pricing', label: 'Pricing', description: 'Cloud plans and self-hosting', icon: 'CreditCard' },
     ]
   },
-  // The three landing pages under their names in the founder's v1 spec (§2).
+  // The three landing pages under their reader labels (change request 1, §9).
   {
     href: SOLUTIONS.guardrails.path,
     label: 'Solutions',
-    children: Object.values(SOLUTIONS).map((s) => ({ href: s.path, label: s.name })),
+    children: Object.values(SOLUTIONS).map((s) => ({ href: s.path, label: s.readerLabel })),
   },
   // Docs, Blog and Changelog only (v1 spec, §9).
   {
@@ -106,7 +107,8 @@ export const NAV_LINKS = [
 ];
 
 export const ACTION_LINKS = {
-  primary: { label: 'Get Started', href: '/docs/overview' },
+  // The mobile menu's Sign up: the same sign-up page as "Start free" (change request 1, §9).
+  primary: { label: 'Sign up', href: SIGN_UP_URL },
   signIn: { label: 'Sign in', href: 'https://app.semantius.com/' },
   // Accounts Semantius actually owns. Every entry is published as the
   // Organization `sameAs` in Layout.astro, which tells search engines these

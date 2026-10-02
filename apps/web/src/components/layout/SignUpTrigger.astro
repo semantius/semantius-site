@@ -1,4 +1,10 @@
 ---
+// The header's Sign up link, which goes to the same sign-up page as "Start
+// free" (change request 1, §9), plus the wait list overlay. The overlay no
+// longer has a button of its own: it opens on any "#signup" link, which the
+// announcement banner, the hub's "Notify me" and /pricing's coming-soon plans use.
+import { SIGN_UP_URL } from '~/data/pricing';
+
 interface Props {
   triggerLabel?: string;
   waitlistKey?: string;
@@ -7,19 +13,17 @@ interface Props {
 const { triggerLabel = 'Sign up', waitlistKey = '' } = Astro.props;
 ---
 
-<button
-  type="button"
-  id="signup-trigger"
-  class="hidden md:block px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/90 transition-all cursor-pointer"
+<a
+  href={SIGN_UP_URL}
+  class="hidden md:block px-4 py-2 text-sm font-medium bg-primary text-white rounded-full hover:bg-primary/90 transition-all"
 >
   {triggerLabel}
-</button>
+</a>
 {/* Waitlister embed.js injects an iframe into any element with data-waitlist-key,
-    so the key lives in this JSON blob rather than on the button. */}
+    so the key lives in this JSON blob rather than on an element. */}
 <script is:inline type="application/json" id="signup-config" set:html={JSON.stringify({ waitlistKey })}></script>
 
 <script>
-  const button = document.getElementById('signup-trigger');
   const configEl = document.getElementById('signup-config');
   let waitlistKey = '';
   try {
@@ -41,10 +45,6 @@ const { triggerLabel = 'Sign up', waitlistKey = '' } = Astro.props;
   async function open(trigger) {
     const m = await load();
     m.openModal(props, trigger);
-  }
-
-  if (button) {
-    button.addEventListener('click', () => open('button'));
   }
 
   if (window.location.hash === '#signup') {

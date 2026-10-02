@@ -1,0 +1,101 @@
+---
+/**
+ * The live demo (change request 1, §4): on the hub, and whole on Agent
+ * guardrails (§10.1). The left pane is the request and the model the agent
+ * built from it, the right pane what that one definition produces.
+ *
+ * Every artifact comes from one real Semantius workspace and is supplied, never
+ * written here; until then each shows a TBD that names it (home-tbd.md, A1).
+ * The TBD notes are visible copy, so they keep the hub's rule of naming no
+ * technology above the specifications section: "the rule", never its language.
+ */
+import Button from '~/components/ui/Button.astro';
+import Tbd from '~/components/common/Tbd.astro';
+import { SIGN_UP_URL } from '~/data/pricing';
+
+interface Props {
+  /** The page's own H2 style, so the heading matches the sections around it. */
+  headingClass?: string;
+}
+
+const { headingClass = 'text-3xl md:text-5xl font-display font-bold' } = Astro.props;
+
+const REQUEST = 'Set up quotes for our clients. I approve every quote; you prepare them.';
+
+const tabs = [
+  {
+    key: 'app',
+    label: 'The app',
+    tbd: "The app screenshot: the quote form generated from the model, with the owner's Approve button. Not supplied yet.",
+  },
+  {
+    key: 'attempt',
+    label: "The agent's attempt",
+    tbd: 'The refusal: the agent tries to set a quote to approved, and Semantius refuses it, with the reason as the agent receives it (the missing permission). Not supplied yet.',
+  },
+  {
+    key: 'record',
+    label: 'The record',
+    tbd: 'The log entries: who did what, person or agent, and when. Not supplied yet.',
+  },
+];
+
+const pane = 'rounded-3xl border border-foreground/10 bg-foreground/2 p-6';
+---
+
+<div class="live-demo">
+  <h2 class={`${headingClass} text-center mb-12`}>One definition. Three outputs. No code.</h2>
+  <div class="grid gap-6 lg:grid-cols-2">
+    <div class={pane}>
+      <h3 class="text-lg font-bold mb-4">Active data dictionary</h3>
+      <p class="rounded-2xl rounded-tl-sm bg-primary/10 px-4 py-3 italic text-foreground/85">"{REQUEST}"</p>
+      <Tbd
+        block
+        class="mt-4"
+        note="The model view the agent built from this request: the entities Clients and Quotes, the fields of Quotes, the steps a quote goes through, the two roles and what each may do. Not supplied yet."
+      />
+      <Tbd block class="mt-4" note="The one rule: hours must be greater than 0, as written in the demo workspace. Not supplied yet." />
+    </div>
+    <div class={pane}>
+      <div role="tablist" aria-label="What the definition produces" class="flex flex-wrap gap-2 border-b border-foreground/10 pb-3">
+        {tabs.map((t, i) => (
+          <button
+            type="button"
+            role="tab"
+            id={`live-demo-tab-${t.key}`}
+            aria-controls={`live-demo-panel-${t.key}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            class="rounded-lg px-3 py-1.5 text-left text-sm text-foreground/70 hover:bg-foreground/5 aria-selected:bg-primary/10 aria-selected:font-medium aria-selected:text-foreground"
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+      {tabs.map((t, i) => (
+        <div role="tabpanel" id={`live-demo-panel-${t.key}`} aria-labelledby={`live-demo-tab-${t.key}`} class="pt-4" hidden={i !== 0}>
+          <Tbd block note={t.tbd} />
+        </div>
+      ))}
+    </div>
+  </div>
+  <p class="mt-8 max-w-3xl mx-auto text-center text-lg text-foreground/80">The agent prepares the quote, but its role can't approve it. The owner approves it from their phone, and every change is on record.</p>
+  <div class="mt-8 text-center">
+    <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+  </div>
+</div>
+
+<script>
+  document.querySelectorAll<HTMLElement>('.live-demo [role="tablist"]').forEach((list) => {
+    const tabs = Array.from(list.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        for (const t of tabs) {
+          const on = t === tab;
+          t.setAttribute('aria-selected', String(on));
+          const panel = document.getElementById(t.getAttribute('aria-controls') ?? '');
+          if (panel) panel.hidden = !on;
+        }
+      });
+    });
+  });
+</script>

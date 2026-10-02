@@ -21,3 +21,27 @@ export const SPECIFICATION: [string, string][] = [
 	['License', 'MIT'],
 	['Tests', '3,000+ pgTAP tests'],
 ];
+
+/**
+ * The hub's specification table (change request 1, §6). It differs from the
+ * one above, which Agent guardrails keeps as built: the hub names no CLI and no
+ * test count. Whether the two should become one is open (home-tbd.md, B23).
+ */
+export const HUB_SPECIFICATION: [string, string][] = [
+	['Database', 'PostgreSQL 18+'],
+	['Implementation', '100% PL/pgSQL, no external dependencies'],
+	['Business rules', 'Extended JSONLogic, stored and evaluated in Postgres: validation, computed fields, attribute-based access'],
+	['Access control', 'RBAC and ABAC with row-level security, enforced for every app, API and agent login'],
+	['Data model', 'Entities with descriptions; relationships with cardinality; subtypes and extensions'],
+	['Lifecycles', 'State machines with permission gates'],
+	['Audit', 'Every change to data and to the model'],
+	['Events', 'Queues with event and rule triggers; incoming webhooks (Pro)'],
+	['Search', 'Full-text search'],
+	['API', 'REST API (PostgREST)'],
+	['App', 'Generated from the model, in the browser on any device'],
+	['Sign-in', 'Cloud: Google and Microsoft 365 accounts. Self-hosted: Microsoft Entra ID or any identity provider with a JWKS endpoint'],
+	['Backups', 'Cloud backups; point-in-time restore coming soon'],
+	['Self-hosting', 'Docker Compose and Dokploy'],
+	['Code', 'None to write or maintain. Business rules are short JSONLogic expressions'],
+	['License', 'MIT'],
+];

@@ -1,6 +1,6 @@
 ---
-// The footer from the founder's v1 specification (§4.11), on every page, with
-// Privacy and Terms added (home-deviations.md, 3).
+// The footer of change request 1 (§8), on every page, with Privacy and Terms
+// added (home-deviations.md, 3).
 import { getCollection } from 'astro:content';
 import { ACTION_LINKS, FOOTER_LINKS } from '~/site.config';
 import { blogPath } from '~/lib/routes';
@@ -8,15 +8,18 @@ import { Github } from 'lucide-react';
 import ThemeToggle from '~/components/common/ThemeToggle.astro';
 import Tbd from '~/components/common/Tbd.astro';
 
-// An article's title links to its blog post, and a title whose post is not
-// published is not shown (§4.11). A post is matched by its exact title.
+// Each title links to its blog post once it is published, and shows with a TBD
+// until then (change request 1, §8). A post is matched by its exact title.
 const ARTICLE_GROUPS = [
   {
-    title: 'Agent safety and architecture',
-    articles: ['Rules in a prompt versus rules in Postgres: what your agent actually follows'],
+    title: 'Agent Safety & Architecture',
+    articles: [
+      'How to build approval rules for AI agents with JSONLogic inside PostgreSQL',
+      'Rules in a prompt versus rules in Postgres: what your agent actually follows',
+    ],
   },
   {
-    title: 'Agents and connected data',
+    title: 'Database-Driven Minimalism',
     articles: [
       "Why your agent can't connect a ticket to usage and lead status, and what fixes it",
       'What Klarna actually did: unify first, and fewer tools follow',
@@ -27,9 +30,9 @@ const ARTICLE_GROUPS = [
 const posts = await getCollection('blog');
 const groups = ARTICLE_GROUPS.map((g) => ({
   title: g.title,
-  links: g.articles.flatMap((title) => {
+  articles: g.articles.map((title) => {
     const post = posts.find((p) => p.data.title === title);
-    return post ? [{ href: blogPath(post), label: title }] : [];
+    return { label: title, href: post ? blogPath(post) : undefined };
   }),
 }));
 
@@ -43,20 +46,20 @@ const link = 'hover:text-foreground transition-colors';
       {groups.map((g) => (
         <div>
           <h3 class="font-semibold mb-4 text-foreground">{g.title}</h3>
-          {g.links.length > 0 ? (
-            <ul class="space-y-2 text-sm text-foreground/80">
-              {g.links.map((l) => <li><a href={l.href} class={link}>{l.label}</a></li>)}
-            </ul>
-          ) : (
-            <Tbd note="No article in this group is published yet." />
-          )}
+          <ul class="space-y-3 text-sm text-foreground/80">
+            {g.articles.map((a) => (
+              <li>
+                {a.href ? <a href={a.href} class={link}>{a.label}</a> : <>{a.label} <Tbd note="Not published yet." /></>}
+              </li>
+            ))}
+          </ul>
         </div>
       ))}
       <div>
-        <h3 class="font-semibold mb-4 text-foreground">For agents and developers</h3>
+        <h3 class="font-semibold mb-4 text-foreground">System Access Nodes</h3>
         <ul class="space-y-2 text-sm text-foreground/80">
           <li><a href="/llms.txt" class={link}>llms.txt</a></li>
-          <li>Docs quickstart <Tbd note="No docs quickstart page exists." /></li>
+          <li><a href="/docs/overview" class={link}>Docs</a></li>
           <li><a href={github} class={link}>GitHub</a></li>
           <li><a href="https://github.com/semantius/awesome-agent-first" class={link}>The agent-first definition and list</a></li>
         </ul>
