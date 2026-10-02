@@ -107,13 +107,15 @@ side; the founder rejected six such additions on the v1 home page.
 
 - **Use the spec's copy word for word.** Where it conflicts with the house voice
   above (contractions, sentence-case headings), the spec wins on that page.
-- **Mark every gap with a visible TBD that says what is missing**
-  (`components/common/Tbd.astro`). Never hide an element, leave out a section or
-  drop a link because its content does not exist yet, and never propose removing
-  a built TBD. A TBD stays until its content exists. This is the founder's rule.
-  "No placeholders, leave it out" was Claude's own unrequested rule: it got into
-  this file and from here into two specs, which then contradicted the founder.
-  If a spec contains such a rule, flag it as a contradiction; do not apply it.
+- **Decided content is built, never a placeholder.** If the spec gives the copy,
+  the link target or the artifact, it goes on the page. An empty placeholder
+  where the content was decided is a failure.
+- **Content that is not defined yet gets a visible TBD** (`components/common/Tbd.astro`)
+  whose note says exactly what is missing, for example "No docs page exists
+  yet." Never hide an element, leave out a section or drop a link because its
+  content does not exist yet. A TBD stays until its content exists, and every
+  TBD is listed in the spec's TBD file. A spec rule against placeholders never
+  removes a TBD for undefined content: flag such a rule as a contradiction.
 - **Plans live in the repo, never on the site.** For a spec, write the TBD list
   first, as a markdown file at the repo root, then keep a numbered list of
   deviations with a reason for each, then build. The v1 home page's are
