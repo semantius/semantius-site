@@ -34,23 +34,23 @@ request 1; B30, B31, C32, D33 and D34 with change request 2.
 - B16's "the outcome is bounded, not determined": "Outside these contracts"
   now says what the checks do not guarantee.
 
-**Preview:** PREVIEW_URL
+**Preview:** https://homev-20261002173922-semantius-site.ma532.workers.dev
 
 Pages that carry TBD labels. The footer is on every page and carries A4.
 
-- [Hub](PREVIEW_URL/): A1
-- [Agent guardrails](PREVIEW_URL/solutions/agent-guardrails): A1, A3, B7
-- [CRM and operations](PREVIEW_URL/solutions/crm): A3
-- [Apps](PREVIEW_URL/solutions/airtable-alternative): A3
+- [Hub](https://homev-20261002173922-semantius-site.ma532.workers.dev/): A1
+- [Agent guardrails](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/agent-guardrails): A1, A3, B7
+- [CRM and operations](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/crm): A3
+- [Apps](https://homev-20261002173922-semantius-site.ma532.workers.dev/solutions/airtable-alternative): A3
 - Sample prompts, A2:
-  [agency](PREVIEW_URL/prompts/agency-client-tracker),
-  [field service](PREVIEW_URL/prompts/field-service-jobs),
-  [rentals](PREVIEW_URL/prompts/rental-turnovers),
-  [punch list](PREVIEW_URL/prompts/punch-list),
-  [purchase approvals](PREVIEW_URL/prompts/purchase-approvals),
-  [equipment register](PREVIEW_URL/prompts/equipment-register)
-- [/about](PREVIEW_URL/about): A6
-- [/llms.txt](PREVIEW_URL/llms.txt): A5, as TBD text
+  [agency](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/agency-client-tracker),
+  [field service](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/field-service-jobs),
+  [rentals](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/rental-turnovers),
+  [punch list](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/punch-list),
+  [purchase approvals](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/purchase-approvals),
+  [equipment register](https://homev-20261002173922-semantius-site.ma532.workers.dev/prompts/equipment-register)
+- [/about](https://homev-20261002173922-semantius-site.ma532.workers.dev/about): A6
+- [/llms.txt](https://homev-20261002173922-semantius-site.ma532.workers.dev/llms.txt): A5, as TBD text
 
 ## A. Gaps: Content That Does Not Exist
 
