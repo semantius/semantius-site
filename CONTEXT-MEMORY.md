@@ -111,6 +111,11 @@ side; the founder rejected six such additions on the v1 home page.
   box, unless the founder asks for TBD labels on a preview branch; then the gap
   shows `components/common/Tbd.astro`. The same goes for undecided pricing facts
   (`data/pricing.ts` says why).
+- **On the home page preview branches, TBD labels are intentional and stay.**
+  Every gap keeps its visible TBD until its content exists, including a gap a
+  change request creates, such as a docs link with no page. A change request's
+  "no empty placeholders" rule does not remove a built TBD, and never propose
+  dropping one: the founder rejected that reading of a change request outright.
 - **Plans live in the repo, never on the site.** For a spec, write the TBD list
   first, as a markdown file at the repo root, then keep a numbered list of
   deviations with a reason for each, then build. The v1 home page's are
