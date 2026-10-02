@@ -13,7 +13,7 @@ import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 import { ACTION_LINKS } from '~/site.config';
 
-// The founder's v1 specification as amended by change requests 1 to 3, with
+// The founder's v1 specification as amended by change requests 1 to 4, with
 // the copy as given. Where the build departs from it, home-deviations.md says how and
 // why; open gaps carry a TBD label and are listed in home-tbd.md.
 //
@@ -23,7 +23,8 @@ import { ACTION_LINKS } from '~/site.config';
 // Once a live sandbox exists, this becomes "Deploy a live sandbox (1-click)".
 const startFree = { text: 'Start free', href: SIGN_UP_URL };
 
-// One card per search intent (change request 3, §2.1).
+// One card per search intent (change request 3, §2.1; card 3 from change
+// request 4, §1, which names no tool the reader could be leaving).
 const routingCards = [
     {
         solution: SOLUTIONS.guardrails,
@@ -37,8 +38,8 @@ const routingCards = [
     },
     {
         solution: SOLUTIONS.businessApps,
-        question: 'Outgrown Airtable, monday or SmartSuite?',
-        line: "Real relationships, rules that hold where you've defined them, and a ready-to-use app for your whole team, in the browser on desktop and mobile. Paid plans aren't priced per user.",
+        question: "Working around tools that weren't built for your agent?",
+        line: "Bring your records into one system that keeps your rules, where you've defined them, with a ready-to-use app for your whole team, in the browser on desktop and mobile. Paid plans aren't priced per user.",
     },
 ];
 

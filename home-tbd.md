@@ -1,9 +1,10 @@
-# Home Page v1.3: TBD List
+# Home Page v1.4: TBD List
 
 What is still open in the founder's v1 specification, as amended by change
 request 1 (the hub and the landing pages), change request 2 (the hub's
-specifications section) and change request 3 (the solution pages, rebuilt by
-search intent), built on branch `home-v1.3`. Every item must be resolved before
+specifications section), change request 3 (the solution pages, rebuilt by
+search intent) and change request 4 (hub card 3 and Business apps, without
+brand names), built on branch `home-v1.4`. Every item must be resolved before
 the branch goes live.
 
 - **Part A** lists gaps: content the spec relies on that does not exist. Each
@@ -17,10 +18,11 @@ the branch goes live.
 An item keeps its number while it stays open, so A1 to C18 mean the same as in
 the review of the v1 build. B23 to B25 and D26 to D29 are new with change
 request 1; B30, B31, C32, D33 and D34 with change request 2; C35 and C36 with
-change request 3, which also reopens part of B9.
+change request 3, which also reopens part of B9. Change request 4 adds no
+gap: everything it changes has its copy.
 
 The specs are in `C:\dev\pgext-research`: `homepage-spec-v1.md`,
-`homepage-spec-v1-cr1.md` to `-cr3.md` and `seo-intents-v0.md`.
+`homepage-spec-v1-cr1.md` to `-cr4.md` and `seo-intents-v0.md`.
 
 **Closed by change request 1:**
 

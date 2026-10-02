@@ -12,7 +12,7 @@ export interface Solution {
 	readerLabel: string;
 	/** The hub routing card's link label (change request 3, §2.1), reused by the cross-links. */
 	linkLabel: string;
-	/** The page's one sentence with its qualifier in llms.txt (change request 3, §7). */
+	/** The page's one sentence with its qualifier in llms.txt (change request 3, §7; Business apps from change request 4, §3). */
 	summary: string;
 }
 
@@ -39,7 +39,7 @@ export const SOLUTIONS = {
 		readerLabel: 'For teams that outgrew their tools',
 		linkLabel: 'See business apps',
 		summary:
-			'for teams that outgrew Airtable, monday, SmartSuite or Power Apps: linked records with rules, an app for the whole team in the browser, paid plans not priced per user; data comes in by CSV import, with no built-in connectors.',
+			"for teams whose CRM, project tool or spreadsheets weren't built for their agent: linked records with rules, an app for the whole team in the browser, paid plans not priced per user; data comes in by CSV import, with no built-in connectors.",
 	},
 } satisfies Record<string, Solution>;
 

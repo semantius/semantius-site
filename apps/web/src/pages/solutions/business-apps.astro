@@ -12,9 +12,11 @@ import { CLOUD_PLANS, SIGN_UP_URL, usd } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 
 // Change request 3, §5: the page for the "outgrown SaaS" search intent, for
-// business teams that outgrew a tool. Plain words: no technology names, no
-// "MIT", no comparison sections. Departures: home-deviations.md. Open gaps:
-// home-tbd.md.
+// business teams that outgrew a tool, with its top and import line from change
+// request 4, §2. Plain words: no technology names, no "MIT", no comparison
+// sections, and no tool the reader could be leaving named in the page's own
+// copy: the generic kind of tool instead. Departures: home-deviations.md. Open
+// gaps: home-tbd.md.
 
 const page = SOLUTIONS.businessApps;
 
@@ -43,14 +45,14 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
 
 <Layout
     title="Business apps your agent sets up, with real relationships and rules | Semantius"
-    description="Outgrown Airtable, monday or SmartSuite? Linked records with rules, a ready-to-use app for your whole team in the browser, and paid plans not priced per user."
+    description="Your CRM, project tool or spreadsheets weren't built for your agent. Bring your records into one system that keeps your rules, with a ready-to-use app for your whole team in the browser and paid plans not priced per user."
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
 >
     <section class="pt-44 pb-12 md:pt-40">
         <Container class="max-w-4xl">
             <Badge class="mb-6">{page.readerLabel}</Badge>
-            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Outgrown Airtable, monday or SmartSuite?</h1>
-            <p class="mt-6 text-2xl font-semibold leading-snug">Your records, with real relationships, a login for each person, and a price that doesn't grow per seat.</p>
+            <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Your tools weren't built for your agent.</h1>
+            <p class="mt-6 text-2xl font-semibold leading-snug">A CRM that's more than you need, a project tool that doesn't know your clients, spreadsheets nobody keeps in sync: your agent ends up working around tools made for people clicking. Give it one connected system with your rules built in, and give your team the app.</p>
             <p class="mt-5 text-xl text-foreground/75 leading-relaxed">Your agent brings your records across and sets up the rules. Your team works in a ready-to-use app on desktop and mobile, in the browser, with nothing to install.</p>
         </Container>
     </section>
@@ -109,7 +111,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
     <Section class="py-12!">
         <Container class="max-w-4xl">
             <h2 class={h2}>Bring your data with you</h2>
-            <p class={prose}>Export what you have today from Airtable, monday, SmartSuite, Power Apps or your spreadsheets, and your agent imports it into your new model, for example from CSV files. There are no built-in connectors to other tools; with incoming webhooks on Pro, new events can arrive in real time.</p>
+            <p class={prose}>Export what you have today from your CRM, your project tool or your spreadsheets, and your agent imports it into your new model, for example from CSV files. There are no built-in connectors to other tools; with incoming webhooks on Pro, new events can arrive in real time.</p>
         </Container>
     </Section>
 

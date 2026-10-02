@@ -1,7 +1,7 @@
-# Home Page v1.3: Deviations From the Spec
+# Home Page v1.4: Deviations From the Spec
 
-Every place where the build on branch `home-v1.3` departs from the founder's v1
-specification as amended by change requests 1 to 3, or decides something they
+Every place where the build on branch `home-v1.4` departs from the founder's v1
+specification as amended by change requests 1 to 4, or decides something they
 leave unsaid, with the reason for each. Open questions are in `home-tbd.md`, not here.
 
 Items keep their numbers so references stay valid. An item that a change
@@ -51,10 +51,9 @@ request made moot says so in one line.
     change request 1's "mark every gap with a visible TBD".
 47. **The prompt pages keep their install steps,** although change request 3
     describes them as "without install commands".
-48. **Business apps §5.5 is built word for word.** "CSV files" and "incoming
-    webhooks" are not technology names in the sense of the plain-word rule, and
-    Airtable, monday, SmartSuite and Power Apps are tools the reader outgrew,
-    not a comparison.
+48. **Business apps' import line is built word for word.** "CSV files" and
+    "incoming webhooks" are not technology names in the sense of the plain-word
+    rule. Change request 4 (§2.2) replaced the named tools with generic ones.
 
 ## My Choices, With Reasons
 
