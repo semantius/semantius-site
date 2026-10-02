@@ -584,7 +584,7 @@ writes its own description of the page. Anything else it reports is a bug.
 `/content=["']([^"']*)["']/` closes on the **first** quote of either kind, so an
 apostrophe inside a double-quoted attribute ends the capture: `blueprints/hcm`
 shipped 87 of 777 description characters, cut mid-clause. Capture the opening
-quote and back-reference it: `/content=(["'])(.*?)/`. This bit twice — the
+quote and back-reference it: `/content=(["'])(.*?)/`. This bit twice: the
 `<meta name="description">` read and, later the same day, the `alt=` read that
 dropped a hero image whose alt contains `'Vibe Coding'`.
 
@@ -609,7 +609,7 @@ value on a dev machine.
 
 So each key lives in exactly **one** of the two. Anything a CI build needs goes in
 the root `.env` via `dotenvx set KEY value` and is then deliberately absent from
-`apps/web/.env` — that is why the PostHog pair is not in the app-level file.
+`apps/web/.env`. That is why the PostHog pair is not in the app-level file.
 `apps/web/.env` keeps only what is genuinely local (`SITE_URL`, `ADAPTER`).
 `SITE_URL` needs nothing in CI: `astro.config.mjs` falls back to
 `https://www.semantius.com`.
