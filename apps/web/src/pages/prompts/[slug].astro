@@ -23,7 +23,7 @@ const { prompt } = Astro.props as { prompt: SamplePrompt };
     title={promptTitle(prompt)}
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: prompt.heading, href: promptPath(prompt.slug) }]}
 >
-    <section class="pt-32 pb-24 md:pt-40">
+    <section class="pt-44 pb-24 md:pt-40">
         <Container class="max-w-3xl space-y-10">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">{prompt.heading}</h1>
             <Command mode="chat" command={prompt.prompt} />
