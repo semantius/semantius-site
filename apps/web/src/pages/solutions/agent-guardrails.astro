@@ -16,7 +16,7 @@ import { SPECIFICATION } from '~/data/specification';
 import { ACTION_LINKS } from '~/site.config';
 
 // The founder's v1 specification, §5, with the copy as given, as amended by
-// change request 1, §10.1.
+// change request 1, §10.1, and change request 2, §1.
 // Departures: home-deviations.md. Open gaps: home-tbd.md.
 
 const page = SOLUTIONS.guardrails;
@@ -38,6 +38,12 @@ const notGuaranteed = [
     "That a role doesn't take a wrong action it's allowed to take",
     'Protection from a database superuser or table owner, who can bypass row-level security',
 ];
+
+// The v1 hub FAQ's answer, moved here unchanged from the hub (change request
+// 2, §1). It replaces the section "The Directus difference" and takes as its
+// heading the label it carried on the hub.
+const comparedWith =
+    'Everything you run yourself in Semantius is MIT, at any company size; Directus needs a commercial license once you reach 50 employees or $5M in revenue, even self-hosted. Directus enforces its permissions in its app server, so they apply to everyone who goes through Directus; Semantius enforces them in Postgres, so they also hold for another app, a script or a SQL client connected straight to the database. Supabase gives you Postgres and row-level security you write yourself; Semantius gives you the model, rules, roles, approval steps and app, defined once. In Airtable, rules live in the app and an agent usually gets one broad API key; in Semantius each agent has its own login and role, checked in the database.';
 
 const h2 = 'text-3xl md:text-4xl font-display font-bold mb-6';
 const prose = 'text-lg text-foreground/75 leading-relaxed';
@@ -119,23 +125,8 @@ const prose = 'text-lg text-foreground/75 leading-relaxed';
 
     <Section class="py-12!">
         <Container class="max-w-4xl">
-            <h2 class={h2}>The Directus difference</h2>
-            <ol class="space-y-6 text-foreground/80 leading-relaxed">
-                <li>
-                    <strong class="text-foreground">1. The license.</strong> Everything you run yourself is MIT, at any company size. Directus is free for companies with fewer than 50 employees and under $5M in revenue; above that, it needs a commercial license, even self-hosted. Directus has changed its license twice since 2023. What's released under MIT stays MIT.
-                </li>
-                <li>
-                    <strong class="text-foreground">2. Where the rules hold, by how the caller connects:</strong>
-                    <ul class="mt-3 list-disc pl-5 space-y-2">
-                        <li>Through the platform's own API, with its own login: both enforce their rules</li>
-                        <li>Straight to the database, from another app, a script or a SQL client: Directus's permissions don't apply, because they run in its app server; Semantius's do, because they run in Postgres</li>
-                        <li>With the database owner's or a superuser's connection: both are bypassed</li>
-                    </ul>
-                </li>
-                <li>
-                    <strong class="text-foreground">3. Leaving.</strong> Directus keeps your tables, but its permissions, Flows and app settings do nothing without its app server. An exported Semantius database keeps enforcing its rules.
-                </li>
-            </ol>
+            <h2 class={h2}>Compared with Directus, Supabase and Airtable</h2>
+            <p class={prose}>{comparedWith}</p>
         </Container>
     </Section>
 

@@ -9,13 +9,12 @@ import LiveDemo from '~/components/sections/LiveDemo.astro';
 import Container from '~/components/ui/Container.astro';
 import Badge from '~/components/ui/Badge.astro';
 import Button from '~/components/ui/Button.astro';
-import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers, usd } from '~/data/pricing';
+import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
-import { HUB_SPECIFICATION } from '~/data/specification';
 import { ACTION_LINKS } from '~/site.config';
 
-// The founder's v1 specification as amended by change request 1, with the copy
-// as given. Where the build departs from it, home-deviations.md says how and
+// The founder's v1 specification as amended by change requests 1 and 2, with
+// the copy as given. Where the build departs from it, home-deviations.md says how and
 // why; open gaps carry a TBD label and are listed in home-tbd.md.
 //
 // The hub names no install command, no test count and no CLI anywhere, and no
@@ -23,11 +22,6 @@ import { ACTION_LINKS } from '~/site.config';
 
 // Once a live sandbox exists, this becomes "Deploy a live sandbox (1-click)".
 const startFree = { text: 'Start free', href: SIGN_UP_URL };
-
-// Prices and the user limit come from the pricing data, so this page and
-// /pricing cannot state different figures.
-const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p]));
-const pricingLine = `Free is open now, for up to ${plan.free.userLimit} users, people and agents. Starter (${usd(plan.starter.monthlyPrice)} a month) and Pro (${usd(plan.pro.monthlyPrice)} a month) open soon, not priced per user, with no surprise charges. Your Free workspace upgrades in place.`;
 
 const routingCards = [
     {
@@ -60,48 +54,97 @@ const routingCards = [
     },
 ];
 
-const specItems = [
+// #specifications (change request 2, §2). A point is a bold label and the
+// text after it, which starts in lowercase as given.
+interface Item {
+    title: string;
+    lead?: string;
+    points: [string, string][];
+    after?: string;
+}
+
+const architecture: Item[] = [
     {
         title: 'Eliminating semantic drift',
-        text: "Business rules are defined once in the active data dictionary, as JSONLogic stored and evaluated inside PostgreSQL, and checked on every write: from the app, the API or any agent's own login. A rule in a system prompt is followed most of the time. A rule in the database is checked every time. An agent can't write data your rules don't allow.",
+        lead: 'One active data dictionary defines your business.',
+        points: [
+            ['The model', 'every entity, every field, every relationship with its cardinality, subtypes and extensions, each with its description, dimensions and measures.'],
+            ['The business rules', 'extended JSONLogic, stored and evaluated inside PostgreSQL, for validation, computed fields and attribute-based access.'],
+            ['One source for everything', "the same definition drives the API, the app your team uses and what your agent reads. No generated code restates it, so there's no second copy to drift away from it."],
+        ],
+        after: 'A rule in a system prompt is read again in every session and followed most of the time. A rule in the database is evaluated on every write.',
     },
     {
         title: 'Real-time actions on live records',
-        text: 'Agents work on the live records, not on a copy that drifts. Changes that matter, such as a new record, a status change or an approval waiting, go into queues an always-on agent picks up, and incoming webhooks (Pro) bring events from your other tools as they happen.',
+        lead: 'Agents act on the live system of record, not on an export or a copy kept in sync.',
+        points: [
+            ['Queues', 'changes that matter are put into queues with event and rule triggers: a new record, a status change, an approval waiting. An always-on agent picks them up on its next check.'],
+            ['Incoming webhooks (Pro)', 'they bring events from your other tools as they happen, authenticated and mapped to your entities and fields.'],
+        ],
     },
     {
         title: 'Unified context ingestion',
-        text: "Support tickets, product usage events and CRM records arrive through imports and incoming webhooks (Pro), mapped to the entities and fields of one model with enforced relationships. Your agent follows a ticket to the customer's usage and the open deal instead of matching names across tools.",
+        points: [
+            ['Getting data in', 'existing data comes in through CSV import and JSON modules. Continuous events arrive through incoming webhooks (Pro).'],
+            ['One model', 'support tickets, product usage events and CRM records land in one model whose relationships are enforced by foreign keys.'],
+            ['What the agent does with it', "it follows a ticket to the customer's usage and the open deal by reference, instead of matching names across tools."],
+            ['Search', 'full-text search runs across all of it.'],
+        ],
     },
     {
-        title: 'Agents as accountable users',
-        text: 'Every agent works under its own login and role, like any person. When a change is refused, the agent is told which permission is missing, and it can look up in the model who holds it. Every change to data and to the model is logged: who made it, person or agent, and when.',
+        title: 'Agents as accountable actors',
+        lead: 'People and agents are both actors.',
+        points: [
+            ['Login and role', 'every agent signs in with its own token and works under its own role.'],
+            ['Enforcement', 'role-based and attribute-based access control is enforced inside the database, with row-level security, for every caller.'],
+            ['Refusals', 'a refused change returns the reason, the missing permission, and the agent can query the dictionary to see who holds it.'],
+            ['The model', 'changing the model itself requires its own permission.'],
+        ],
     },
     {
         title: 'Who does the work, who approves it',
-        text: 'Lifecycle steps carry permission gates. Only the role allowed to take a step can take it, and only the person who has to approve can approve.',
+        lead: 'State machines define the steps a record can go through, and enforce that it moves only along them.',
+        points: [
+            ['Permission gates', 'each step has a gate, so only a role allowed to take it can take it.'],
+            ['Doing and approving', 'where you define who does the work and who approves it, the database enforces both.'],
+        ],
     },
     {
         title: 'A model your agent can read',
-        text: 'Every entity, field and relationship carries its description, readable at any time, so every agent session starts from the same understanding of your business.',
+        points: [
+            ['Readable at runtime', "the dictionary's descriptions, relationships, dimensions and measures can be read at any time through the same API the agent uses."],
+            ['No manual needed', 'every agent session starts from the same understanding of your business, without out-of-band instructions.'],
+        ],
     },
 ];
 
-// The v1 hub FAQ's answer, unchanged (change request 1, §6).
-const comparedWith =
-    'Everything you run yourself in Semantius is MIT, at any company size; Directus needs a commercial license once you reach 50 employees or $5M in revenue, even self-hosted. Directus enforces its permissions in its app server, so they apply to everyone who goes through Directus; Semantius enforces them in Postgres, so they also hold for another app, a script or a SQL client connected straight to the database. Supabase gives you Postgres and row-level security you write yourself; Semantius gives you the model, rules, roles, approval steps and app, defined once. In Airtable, rules live in the app and an agent usually gets one broad API key; in Semantius each agent has its own login and role, checked in the database.';
+// The guarantees: the bold part, then the rest of the sentence.
+const contracts: [string, string][] = [
+    ['Every write is checked', ' against the rules defined for it.'],
+    ['The same change, from the same role, against the same record, always gets the same answer.', ''],
+    ['A refused change leaves the record as it was', ' and returns the reason.'],
+    ['A record moves only along the steps defined for it,', ' and only by a role allowed to take the step.'],
+    ["A reference can't point to a record that doesn't exist.", ''],
+    ['Changing the model requires its own permission.', ''],
+    ['Every change to data and to the model is logged,', ' with who made it, person or agent, and when.'],
+];
 
-const contracts = [
-    { label: 'Limits', text: "you get a warning first. At its limits, a workspace pauses with all your data kept, until the next month's credits arrive, you top up, or you move to a larger plan." },
-    { label: 'Support', text: 'Free: the documentation. Starter and Pro: support. Self-hosted: paid support plans.' },
-    { label: 'Your data', text: 'everything you run yourself is MIT. Export one module or everything at any time.' },
-    { label: 'Compared with Directus, Supabase and Airtable', text: comparedWith },
+const outsideContracts = [
+    'Whether an agent chose the right action',
+    'Whether a value that passes your rules is the right one',
+    'A database superuser or table owner, who can bypass row-level security',
 ];
 
 const github = ACTION_LINKS.social.github;
-const freeOffer = cloudOffers(Astro.site).filter((o) => o.name === plan.free.name);
+// The structured data's offer is the Free plan only (home-tbd.md, B10).
+const freePlan = CLOUD_PLANS.find((p) => p.key === 'free');
+const freeOffer = cloudOffers(Astro.site).filter((o) => o.name === freePlan?.name);
 
 const h2 = 'text-3xl md:text-5xl font-display font-bold';
+const h3 = 'mt-14 text-2xl md:text-3xl font-bold';
+const h4 = 'mt-8 mb-3 text-lg font-bold';
+const body = 'text-foreground/75 leading-relaxed';
+const list = 'list-disc pl-5 space-y-2 text-foreground/75 leading-relaxed';
 const link = 'font-medium text-primary hover:underline underline-offset-4';
 ---
 
@@ -183,39 +226,38 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
         </Container>
     </Section>
 
-    {/* 6. Technical platform specifications and operational contracts */}
+    {/* 6. Technical platform specifications and operational contracts: dense
+        text for technical readers and answer engines, with no cards, tables or
+        icons (change request 2). */}
     <Section id="specifications" class="py-16! md:py-24! scroll-mt-28">
-        <Container class="max-w-4xl">
-            <h2 class={`${h2} mb-12`}>Technical Platform Specifications &amp; Operational Contracts</h2>
-            <ul class="grid gap-x-10 gap-y-8 md:grid-cols-2">
-                {specItems.map((item) => (
-                    <li>
-                        <h3 class="text-xl font-bold mb-2">{item.title}</h3>
-                        <p class="text-foreground/75 leading-relaxed">{item.text}</p>
-                    </li>
+        <Container class="max-w-3xl">
+            <h2 class={`${h2} mb-6`}>Technical Platform Specifications &amp; Operational Contracts</h2>
+            <p class="text-lg text-foreground/75 leading-relaxed">Semantius keeps the records your agents work on correct by construction, not by instruction. The rules live in the database, next to the data, and every change passes through them. This section explains how the architecture achieves that, and what it guarantees.</p>
+
+            <h3 class={h3}>How the architecture keeps records correct</h3>
+            {architecture.map((item) => (
+                <>
+                    <h4 class={h4}>{item.title}</h4>
+                    {item.lead && <p class={`${body} mb-3`}>{item.lead}</p>}
+                    <ul class={list}>
+                        {item.points.map(([label, text]) => (
+                            <li><strong class="text-foreground">{label}:</strong> {text}</li>
+                        ))}
+                    </ul>
+                    {item.after && <p class={`${body} mt-3`}>{item.after}</p>}
+                </>
+            ))}
+
+            <h3 class={h3}>Operational contracts</h3>
+            <p class={`${body} mb-3`}>These hold for every app, API and agent login:</p>
+            <ul class={list}>
+                {contracts.map(([bold, rest]) => (
+                    <li><strong class="text-foreground">{bold}</strong>{rest}</li>
                 ))}
             </ul>
-            <div class="mt-12 relative overflow-x-auto rounded-2xl border border-foreground/10">
-                <table class="w-full text-left text-sm md:text-base">
-                    <tbody>
-                        {HUB_SPECIFICATION.map(([name, value]) => (
-                            <tr class="border-b border-foreground/10 last:border-b-0">
-                                <th scope="row" class="p-4 align-top font-semibold whitespace-nowrap">{name}</th>
-                                <td class="p-4 text-foreground/80">{value}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <h3 class="mt-12 text-2xl font-bold mb-4">Operational contracts</h3>
-            <ul class="list-disc pl-5 space-y-3 text-foreground/80 leading-relaxed">
-                <li>
-                    <strong class="text-foreground">Plans:</strong> {pricingLine}
-                    <span class="ml-1 inline-flex gap-4"><a href="#signup" class={link}>Notify me</a><a href="/pricing" class={link}>See pricing</a></span>
-                </li>
-                {contracts.map((c) => (
-                    <li><strong class="text-foreground">{c.label}:</strong> {c.text}</li>
-                ))}
+            <h4 class={h4}>Outside these contracts</h4>
+            <ul class={list}>
+                {outsideContracts.map((item) => <li>{item}</li>)}
             </ul>
         </Container>
     </Section>

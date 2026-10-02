@@ -1,19 +1,19 @@
-# Home Page v1.1: Deviations From the Spec
+# Home Page v1.2: Deviations From the Spec
 
-Every place where the build on branch `home-v1.1` departs from the founder's v1
-specification as amended by change request 1, or decides something they leave
-unsaid, with the reason for each. Open questions are in `home-tbd.md`, not here.
+Every place where the build on branch `home-v1.2` departs from the founder's v1
+specification as amended by change requests 1 and 2, or decides something they
+leave unsaid, with the reason for each. Open questions are in `home-tbd.md`, not here.
 
-Items keep their numbers so references stay valid. An item that change request
-1 made moot says so in one line.
+Items keep their numbers so references stay valid. An item that a change
+request made moot says so in one line.
 
 ## Decided by You
 
 1. **Section names are visible H2 headings (D15).** Change request 1 names every
    heading on the hub. Agent guardrails gets "Deterministic checks, bounded
-   outcomes", "Specification", "Refusals with a reason", "The Directus
-   difference", "Models as files" and "Moving from another system"; its "Demo"
-   heading gave way to the live demo's own (item 34). CRM and operations gets
+   outcomes", "Specification", "Refusals with a reason", "Models as files" and
+   "Moving from another system"; its "The Directus difference" gave way to the
+   comparison's heading (item 42), and its "Demo" to the live demo's (item 34). CRM and operations gets
    "The connection, by type of business", "Getting data in", "Fewer tools",
    "Approvals", "For IT" and "Examples". Apps gets "What you get" and "For
    builders". Docs links, cross-links and buttons stay unlabeled.
@@ -48,8 +48,7 @@ Items keep their numbers so references stay valid. An item that change request
 ## My Choices, With Reasons
 
 9. **No longer a choice:** change request 1 sends "Start free" and "Sign up" to
-   `https://app.semantius.com/auth/sign-up` (§2, §9). "Notify me" opens the
-   wait list form.
+   `https://app.semantius.com/auth/sign-up` (§2, §9).
 10. **The docs links that resolve.** "Rules and validation" goes to
     `/docs/business-logic`, which covers validation rules. "The CLI" goes to
     `/docs/cli`, "self-hosting" (§4.6, §7) to `/docs/self-hosted`, and "the
@@ -67,8 +66,9 @@ Items keep their numbers so references stay valid. An item that change request
     items drop their closing semicolons. For example, §5.1's "only valid data
     under your rules;" renders as "Only valid data under your rules", and §5.3's
     "a refused change comes back..." as "A refused change comes back...". The
-    operational contracts are the exception: after their bold label, the text
-    starts in lowercase, as change request 1 gives it.
+    bold-labeled points of the hub's specifications section are the exception:
+    after the label, the text starts in lowercase, as change request 2 gives
+    it.
 16. **The hero is two columns on wide screens:** the text on the left, the
     graphic on the right. They stack on a phone. The sub-headline is one
     paragraph under the H1, and the agent line a smaller one below it. "Read
@@ -123,12 +123,11 @@ Items keep their numbers so references stay valid. An item that change request
 
 ## Change Request 1: My Choices, With Reasons
 
-30. **Headings drop their closing period.** Change request 1 gives the six
-    specifications items and the new landing-page sections as bold sentences
-    ending in a period. As headings they drop it, as the lead-ins of item 27
-    drop their colons. The new landing-page sections ("The visual face of your
-    agents", "No semantic drift", "No frontend tax") are H2 headings with a
-    paragraph, like the sections around them.
+30. **Headings drop their closing period.** Change request 1 gives the new
+    landing-page sections as bold sentences ending in a period. As headings
+    they drop it, as the lead-ins of item 27 drop their colons. The sections
+    ("The visual face of your agents", "No semantic drift", "No frontend tax")
+    are H2 headings with a paragraph, like the sections around them.
 31. **The routing cards** are two columns on wide screens and one on a phone.
     The reader label is a small line above the question. The link is a text
     link ending in an arrow, as §3 writes it, where the v1 cards had outlined
@@ -143,22 +142,35 @@ Items keep their numbers so references stay valid. An item that change request
     rule" rather than naming its language.
 34. **Agent guardrails shows the hub's demo whole,** with its heading, caption
     and Start free button, in the place of the old "Demo" section.
-35. **The operational contracts** are a bulleted list with bold labels. "Notify
-    me" and "See pricing" follow the plans text as two links. The Directus
-    comparison carries the label "Compared with Directus, Supabase and
-    Airtable", followed by the FAQ answer.
-36. **The hub's specifications items** sit in two columns on wide screens,
-    before the table and the operational contracts.
+35. **No longer applies:** the operational contracts list as built is gone
+    (change request 2, §1).
+36. **No longer applies:** the specifications items are H4 headings in one
+    column (change request 2, §2).
 37. **The CRM page's "Start from one of these"** sits directly above the two
     buttons, after the docs links and the cross-links, since §10.2 says "before
     the buttons".
 38. **The search-term TBD on Agent guardrails** sits under the lead, since no
     sentence says where the term goes (`home-tbd.md`, B7).
 39. **The header's Sign up is a link,** no longer the wait list's button. The
-    wait list still opens from every "#signup" link: the announcement banner,
-    "Notify me" and the coming-soon plans on /pricing.
+    wait list still opens from every "#signup" link: the announcement banner
+    and the coming-soon plans on /pricing.
 40. **The footer's article titles are plain text,** not italic as in the change
     request's list. While a post is unpublished, its title is followed by a TBD
     label.
 41. **The landing pages' eyebrows use the hub's eyebrow style,** a small pill
     above the H1.
+
+## Change Request 2: My Choices, With Reasons
+
+42. **The comparison replaces the whole "The Directus difference" section on
+    Agent guardrails,** heading and three items, since §3 checks for it "in place
+    of 'The Directus difference'". It takes as its H2 the label it carried on
+    the hub, "Compared with Directus, Supabase and Airtable". What the page lost
+    is in `home-tbd.md`, D34.
+43. **The specifications section is one column of text,** as wide as "Yours to
+    keep". An item's points are a bulleted list with the label in bold, after
+    the item's lead sentence and before its closing sentence where it has them.
+    "These hold for every app, API and agent login:" is a paragraph above the
+    guarantees.
+44. **"Outside these contracts" follows item 15:** each item starts with a
+    capital letter and drops its closing semicolon or period.
