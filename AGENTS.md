@@ -1,24 +1,37 @@
 # Agent Instructions
 
-> **🔒 CRITICAL: Do not modify this file. It is a global SOP maintained by the human user only. It is shared across many repositories and organisations. Changes here are never required — if you think a rule needs changing, say so explicitly rather than editing this file.**
+> **🔒 CRITICAL: Do not modify this file. It is a global SOP maintained by the human user only. It is shared across many repositories and organizations. Changes here are never required — if you think a rule needs changing, say so explicitly rather than editing this file.**
+
+## The User Is in Control
+
+- **Do what the user instructs, and only that.** Never edit, create, delete, commit, push or deploy anything the user did not ask for.
+- **A question is not an instruction.** When the user asks a question or points out a problem, answer it and propose a fix. Change nothing until the user tells you to.
+- **When the user gives an instruction, carry it out.** Do not ask for confirmation again, and do not add steps the user did not ask for: a merge does not include a push.
+- **Never add guards, checks, rules or behaviors on your own,** in code, scripts, specs or memory. Propose them, and add them only after the user approves.
 
 ## Project Context
 
-**Before starting any task**, read `CONTEXT-MEMORY.md`. It contains architecture decisions, lessons learned, and project state that you MUST incorporate into your work.
+**Before starting any task**, read `CONTEXT-MEMORY.md`. It holds the architecture decisions, platform constraints and preferences the user has approved, and you MUST incorporate them into your work.
 
-You are responsible for maintaining `CONTEXT-MEMORY.md`. Update it **only** when you discover something a future session would otherwise get wrong — non-obvious platform constraints, architectural patterns, or environmental quirks. Do **not** use it as a change log or to record individual bug fixes. Ask yourself: _"Would a capable developer, reading only the code and this file, make this mistake again?"_ If no, don't record it.
+### `CONTEXT-MEMORY.md` changes only after the user approves
 
-If you make a mistake, encounter a bug that takes more than one attempt to fix, or if I give you a direct preference (e.g., "always run tests"), you MUST:
+- **Propose, then wait.** When you find something a future session would otherwise get wrong (a non-obvious platform constraint, an architectural pattern, an environmental quirk), or the user states a preference, propose the exact text and where it goes. Write it only after the user approves that text. Approval of other work, or an instruction to fix something, is not approval of a memory change.
+- **Record only what was approved, in the approved words.** Never turn the user's words into a broader rule of your own, and never call a rule the user's unless the user stated or approved it.
+- **It is a reference, not a history.** No dates, no session records, no progress notes, no "RESOLVED" or "LESSON LEARNED" entries, and no stories of what went wrong. State the rule and its reason in one or two sentences, in the relevant existing section. Never append chronologically.
+- **Never write a secret value into it** (keys, tokens, passwords, webhook URLs). Name the secret and where it is stored instead.
+- **Commit a memory change on its own,** with a message that says what changed in `CONTEXT-MEMORY.md`. Never fold it into other work.
+- **Ask before proposing:** _"Would a capable developer, reading only the code and this file, make this mistake again?"_ If no, do not propose it.
+
+### When you make a mistake or the user corrects you
 
 1.  **Analyze:** Identify the root cause of the error or the core requirement.
-2.  **Route:** Decide where the knowledge belongs before recording it:
-    - **Specific file** → add a comment in that file explaining the _why_. Do NOT duplicate it in `CONTEXT-MEMORY.md`. If the fix is already self-evident from well-commented code, no further recording is needed.
-    - **Cross-cutting / architectural / no single file home** → record in `CONTEXT-MEMORY.md`, but only if the knowledge represents a reusable principle that a future session would otherwise get wrong. Do not record one-off fixes.
-    - **Rule of thumb:** if the knowledge would go stale or become wrong when the relevant code is refactored, it belongs in the code — not in a memory file.
-    - **Concrete examples of what belongs in `CONTEXT-MEMORY.md`:** environment or toolchain constraints specific to this repo, third-party API quirks, monorepo-wide conventions that differ from the obvious default, architectural decisions and their reasoning, preferences the human has stated that should persist across sessions.
-    - **Concrete examples of what never belongs in `CONTEXT-MEMORY.md`:** individual bug fixes, step-by-step task records, dates or session identifiers, anything already stated in this SOP.
-3.  **Record:** If `CONTEXT-MEMORY.md` is the right place (step 2), update it by integrating the knowledge into the relevant existing section, grouped by topic. **Do not append chronologically. Do not add a "discovery log" or dated entries. Edit the document so it reads as a current, structured reference — not a history.**
-4.  **Prevent:** Formulate a rule for yourself to prevent this specific issue in the future.
+2.  **Route:** Decide where the knowledge belongs:
+    - **Specific file** → a comment in that file explaining the _why_, as part of a change the user asked for. If the fix is already self-evident from well-commented code, nothing more is needed.
+    - **Cross-cutting / architectural / no single file home** → propose an entry for `CONTEXT-MEMORY.md` (see above), and write it only after the user approves it.
+    - **Rule of thumb:** if the knowledge would go stale or become wrong when the relevant code is refactored, it belongs in the code, not in a memory file.
+    - **What belongs in `CONTEXT-MEMORY.md`:** environment or toolchain constraints specific to this repo, third-party API quirks, monorepo-wide conventions that differ from the obvious default, architectural decisions and their reasoning, and preferences the user has stated and approved for recording.
+    - **What never belongs in `CONTEXT-MEMORY.md`:** individual bug fixes, task records, dates or session identifiers, stories of incidents, secret values, and anything already stated in this SOP.
+3.  **Prevent:** Tell the user how you will avoid this mistake in future. Record it only if the user approves.
 
 ## Workspace
 
@@ -54,7 +67,7 @@ Use `pnpm dev` (or `pnpm --filter web dev`) for instant Vite HMR feedback while 
 
 ### Task completion — mandatory
 
-A task is **not complete** until it has been deployed to a Cloudflare branch preview and verified there. Do not mark a task done based on localhost behaviour alone.
+A task is **not complete** until it has been deployed to a Cloudflare branch preview and verified there. Do not mark a task done based on localhost behavior alone.
 
 ## Secrets
 
@@ -70,7 +83,7 @@ To add or update a secret:
 dotenvx set KEY value
 ```
 
-Never expose or log secret values.
+Never expose or log secret values. Never write a secret value into any file other than through `dotenvx set`: not into `CONTEXT-MEMORY.md`, code, comments, commit messages or PR descriptions.
 
 ## Deployment
 

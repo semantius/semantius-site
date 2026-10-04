@@ -7,25 +7,10 @@ Last reviewed: 2026-09-30.
 
 ---
 
-## 🟡 Open: pricing details left off /pricing until decided
+## 🟡 Open: the announcement banner contradicts the Free plan
 
-The page publishes only decided terms: an undecided detail is left out, never
-shown as a placeholder. These are missing on purpose, and each has a home in
-`apps/web/src/data/pricing.ts` for when it is decided:
-
-- **Starter and Pro support targets.** Both plans say "Support" until then.
-- **Idle time before the database pauses, and the wake-up time.** The page
-  says "a short idle period".
-- **The low-credit warning threshold.**
-- **The order credits are used in** (proposed: monthly first, then top-ups,
-  oldest first).
-- **Refunds on yearly plans, and the EU withdrawal wording** (to check with the
-  merchant of record).
-- **The dollar value of a credit**, and a machine-readable pricing file
-  (`/pricing.json` or a pricing section in `llms.txt`).
-
-Also to settle outside the page: the announcement banner still says the public
-beta starts in late October, while the Free plan's button now signs up directly.
+The banner still says the public beta starts in late October and opens the wait
+list, while the Free plan's button signs up directly.
 
 ---
 
@@ -234,7 +219,6 @@ items on this page went unnoticed for months.
 
 | | |
 |---|---|
-| **Pricing details still open** | The page carries only decided terms, and its twin is published. What is left out until decided is listed at the top of this file. |
 | **`Accept: text/markdown` handling** | Agents that content-negotiate instead of reading `rel="alternate"` currently get HTML. Two options: Cloudflare's "Markdown for Agents" toggle (machine conversion of the rendered page) or a zone Redirect Rule matching the Accept header and redirecting to our own twin. The second serves better content and still costs no Worker invocation; plan availability of `http.request.headers` in Redirect Rules is unconfirmed. |
 | **Training-crawler policy** | Resolved 2026-09-22: GPTBot and ClaudeBot unblocked. Recorded so it is not silently reverted. Note that only the *Training* category was ever blocked, and AI-answer visibility never depended on it. |
 
