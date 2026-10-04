@@ -222,11 +222,20 @@ gutter, measured as a 421px content column at 1100px wide. The grid now steps
 `lg:grid-cols-[280px_1fr]` then `xl:grid-cols-[280px_1fr_240px]`, and below
 `xl` the contents list renders inline above the article instead of vanishing.
 
-### A `DOTENV_PRIVATE_KEY` must be 64 hex characters
+### A `DOTENV_PRIVATE_KEY` must be 64 hex characters and match `.env`
 
 dotenvx rejects a key with an odd number of hex characters (`[INVALID_PRIVATE_KEY]`)
 and then passes the still-encrypted `encrypted:...` values on instead of failing.
 Check the length with `echo -n "$DOTENV_PRIVATE_KEY" | wc -c`.
+
+The key must also pair with `DOTENV_PUBLIC_KEY` in the committed `.env`. That
+public key was rotated in `aff4889`. A stale private key still decrypts older
+ciphertexts, or prints `DECRYPTION_FAILED` on new ones, and wrangler then sees
+either a revoked token or the raw `encrypted:...` string. After that commit
+only `CLOUDFLARE_API_TOKEN` is encrypted; `CLOUDFLARE_ACCOUNT_ID` and the
+PostHog pair are plaintext. GitHub Actions holds the matching private key in
+`secrets.DOTENV_PRIVATE_KEY`. A Cloud Agent environment that still has the
+previous key cannot run `pnpm preview:wrangler` until that secret is updated.
 
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
