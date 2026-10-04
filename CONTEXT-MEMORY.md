@@ -215,20 +215,11 @@ gutter, measured as a 421px content column at 1100px wide. The grid now steps
 `lg:grid-cols-[280px_1fr]` then `xl:grid-cols-[280px_1fr_240px]`, and below
 `xl` the contents list renders inline above the article instead of vanishing.
 
-### A `DOTENV_PRIVATE_KEY` must be 64 hex characters, and must match `.env`
+### A `DOTENV_PRIVATE_KEY` must be 64 hex characters
 
 dotenvx rejects a key with an odd number of hex characters (`[INVALID_PRIVATE_KEY]`)
 and then passes the still-encrypted `encrypted:...` values on instead of failing.
 Check the length with `echo -n "$DOTENV_PRIVATE_KEY" | wc -c`.
-
-A 64-character key can still fail if `.env`'s `DOTENV_PUBLIC_KEY` was rotated
-and the Cloud Agent secret was not. dotenvx then prints `DECRYPTION_FAILED` and
-injects the `encrypted:...` ciphertext. wrangler sends that as
-`Bearer encrypted:...` and Cloudflare returns
-`Invalid format for Authorization header` (code 6111). Plaintext keys in the
-same file still look "decrypted", which hides the mismatch if you only check
-those. Confirm the token does not begin with `encrypted:` before treating a
-deploy auth error as a bad token. Do not print the rest of the value.
 
 ### Custom response headers: use `public/_headers`, not per-adapter config
 
