@@ -199,6 +199,13 @@ Path alias: `~/*` → `src/*`, declared once in `apps/web/tsconfig.json`. There 
 `src/components/ui/` is a plain `.astro` file. `clsx` and `tailwind-merge` are installed
 and used directly. Do not run a shadcn generator or assume a Radix primitive exists.
 
+**POC routes stay unpublished as product.** `/botsim` is a proof-of-concept
+workspace (issue 18), not a marketing page. It is `noindex={true}` (the exact
+token `getNoIndexUrls()` scans for), `searchable={false}`, and absent from
+`NAV_LINKS` and `llms.txt`. Do not add it to the header or treat a missing
+`noindex` as an oversight to "fix". A page the founder has not approved must
+not become reachable as product just because the route exists.
+
 **`pnpm lint` is a no-op.** The root script runs `turbo lint`, but `apps/web` declares no
 `lint` script and has no ESLint config or dependency, so the task resolves to nothing and
 always reports success. `@astrojs/check` is installed but not wired to a script either.
