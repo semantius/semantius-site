@@ -593,3 +593,34 @@ a.command-skill-prefix:hover {
   --muted-foreground: #334155;
   color-scheme: light;
 }
+
+/* Typing / thinking dots for the /botsim workspace. Lives here so the React
+ * island does not need a CSS import of its own. */
+.bot-sim-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.18rem;
+}
+.bot-sim-dots span {
+  width: 0.28rem;
+  height: 0.28rem;
+  border-radius: 999px;
+  background: currentColor;
+  animation: bot-sim-dot 1s ease-in-out infinite;
+}
+.bot-sim-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.bot-sim-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes bot-sim-dot {
+  0%, 80%, 100% { opacity: 0.3; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bot-sim-dots span {
+    animation: none;
+    opacity: 0.7;
+  }
+}
