@@ -1,13 +1,34 @@
 # Agent Instructions
 
-> **🔒 CRITICAL: Do not modify this file. It is a global SOP maintained by the human user only. It is shared across many repositories and organizations. Changes here are never required — if you think a rule needs changing, say so explicitly rather than editing this file.**
+> **CRITICAL: Do not modify this file.** It is a global SOP maintained by the human user only. It is shared across many repositories and organizations. Changes here are never required. If you think a rule needs changing, say so explicitly rather than editing this file.
 
 ## The User Is in Control
 
-- **Do what the user instructs, and only that.** Never edit, create, delete, commit, push or deploy anything the user did not ask for.
+**Do only what the request asks. Propose everything else (flags, nav, index, memory, safeguards). Never add it on your own.**
+
+That is the whole rule. There is no list of forbidden extras to maintain. If the user did not ask for a change, it is extra.
+
 - **A question is not an instruction.** When the user asks a question or points out a problem, answer it and propose a fix. Change nothing until the user tells you to.
 - **When the user gives an instruction, carry it out.** Do not ask for confirmation again, and do not add steps the user did not ask for: a merge does not include a push.
 - **Never add guards, checks, rules or behaviors on your own,** in code, scripts, specs or memory. Propose them, and add them only after the user approves.
+
+### How this is checked
+
+Other sections in this file, and `CONTEXT-MEMORY.md`, say how to do the asked work. They are not a second assignment. A deploy gate is not a reason to set `noindex`. A founder-spec rule is not a reason to invent policy on a page that has no founder spec. A mistake is not a reason to write a standing rule into memory.
+
+**1. Name the ask.** Before the first edit, state the request in one sentence, in the user's words. That sentence is the scope. Questions, complaints, and "why did you..." are not an ask.
+
+**2. The mapping test, before every write.** For each file or flag you are about to touch, name the words in the request that require it. If you cannot, stop. Propose it in the reply. Change nothing.
+
+Required process for work the user did ask for still runs (build, commit before deploy, preview). Process is how you finish the asked work. It is not a license to add product, SEO, nav, or memory.
+
+**3. Propose in chat, never in the tree.** An extra that might be wise belongs in the reply as a question. Zero bytes in the repo until the user says to add it.
+
+**4. Memory is the same rule.** Do not write `CONTEXT-MEMORY.md` unless the user said to write that text. Finding a "reusable principle" is not approval. Correcting you is not approval. "Record this" is approval.
+
+**5. Diff before commit.** Every changed path must pass the mapping test. A comment that encodes a policy the user did not state fails the test.
+
+If a later section of this file or of `CONTEXT-MEMORY.md` seems to demand something the request did not, do not satisfy it by adding extras. Ask, or skip that extra and say so.
 
 ## Project Context
 
@@ -37,17 +58,17 @@
 
 This is a **pnpm workspace monorepo** orchestrated by **Turborepo** (`turbo.json`). All packages live under the `apps/` and `packages/` directories.
 
-- `pnpm` — package manager & workspace orchestration
-- `turbo` — task runner (build, dev, lint pipelines defined in `turbo.json`)
+- `pnpm`: package manager and workspace orchestration
+- `turbo`: task runner (build, dev, lint pipelines defined in `turbo.json`)
 
 ## Environment
 
 The workspace is provisioned automatically via `workplace/setup.sh` on session start. The following are installed globally and available on PATH:
 
-- `agent-browser` — headless browser automation
-- `dotenvx` — secret decryption
-- `wrangler` — Cloudflare deployment
-- `pnpm` — package manager
+- `agent-browser`: headless browser automation
+- `dotenvx`: secret decryption
+- `wrangler`: Cloudflare deployment
+- `pnpm`: package manager
 
 Do not re-run `setup.sh` manually unless the environment appears broken.
 
@@ -61,11 +82,11 @@ pnpm lint             # lint all apps
 
 ## Development vs. Completion
 
-### During development — fast iteration
+### During development: fast iteration
 
-Use `pnpm dev` (or `pnpm --filter web dev`) for instant Vite HMR feedback while writing code. Use this freely during a task for rapid iteration. Localhost is a development tool only — **it is not a completion gate**.
+Use `pnpm dev` (or `pnpm --filter web dev`) for instant Vite HMR feedback while writing code. Use this freely during a task for rapid iteration. Localhost is a development tool only. **It is not a completion gate.**
 
-### Task completion — mandatory
+### Task completion: mandatory
 
 A task is **not complete** until it has been deployed to a Cloudflare branch preview and verified there. Do not mark a task done based on localhost behavior alone.
 
@@ -93,9 +114,9 @@ Branch previews deploy to Cloudflare Workers. After deployment, the preview URL 
 pnpm preview:wrangler   # deploy preview (run from repo root), writes URL to .preview-url.md
 ```
 
-> ⚠️ **If `.preview-url.md` does not exist after `pnpm preview:wrangler` completes, the deployment failed.** Writing that file is the final step of the command — its absence is a reliable failure signal. Do not proceed to browser verification or screenshots. Diagnose and fix the deployment error first.
+> **If `.preview-url.md` does not exist after `pnpm preview:wrangler` completes, the deployment failed.** Writing that file is the final step of the command. Its absence is a reliable failure signal. Do not proceed to browser verification or screenshots. Diagnose and fix the deployment error first.
 
-Read `.preview-url.md` to get the URL — do not guess or construct it manually.
+Read `.preview-url.md` to get the URL. Do not guess or construct it manually.
 
 ## Browser Automation
 
@@ -113,7 +134,7 @@ Full skill documentation: `.agents/skills/agent-browser/SKILL.md`
 
 ## Screenshots
 
-> ⚠️ **Screenshots must be taken from the Cloudflare preview URL, never from localhost.**
+> **Screenshots must be taken from the Cloudflare preview URL, never from localhost.**
 > Read `.preview-url.md` after deployment and open that URL before screenshotting.
 
 All verification screenshots **must** be saved to the `screenshots/` folder at the repo root.
@@ -125,14 +146,14 @@ When referencing a screenshot in task results or comments, always include:
 
 - The filename/path
 - A short description of what the screenshot shows
-- A confidence score (0–100%) reflecting how well the screenshot demonstrates that the task requirements have been met
+- A confidence score (0 to 100%) reflecting how well the screenshot demonstrates that the task requirements have been met
 
 Example result comment:
 
 ```
 Screenshot: screenshots/20240315143022-checkout-flow.png
 Description: Cloudflare preview showing the completed checkout flow with all three steps visible and the confirm button enabled.
-Confidence: 92% — all acceptance criteria visible; minor responsive layout not tested on mobile.
+Confidence: 92%: all acceptance criteria visible; minor responsive layout not tested on mobile.
 ```
 
 ## Verification Workflow
@@ -141,30 +162,30 @@ When asked to implement and verify a change:
 
 1. Make the change
 2. Use `pnpm dev` during development for fast feedback (localhost is for iteration only)
-3. `pnpm build` — confirm no build errors
-4. **`git add -A && git commit -m "wip"` — commit all work before deploying.** Deployment can crash the agent and any uncommitted work will be lost. This commit is mandatory before every deploy attempt.
-5. `pnpm preview:wrangler` — deploy to Cloudflare (**run from repo root**)
-6. Read `.preview-url.md` — this is the only valid URL for verification screenshots
+3. `pnpm build`: confirm no build errors
+4. **`git add -A && git commit -m "wip"`: commit all work before deploying.** Deployment can crash the agent and any uncommitted work will be lost. This commit is mandatory before every deploy attempt.
+5. `pnpm preview:wrangler`: deploy to Cloudflare (**run from repo root**)
+6. Read `.preview-url.md`: this is the only valid URL for verification screenshots
 
 ```bash
 cat .preview-url.md   # e.g. https://abc123.your-project.workers.dev
 ```
 
-7. `agent-browser open <url-from-.preview-url.md>` — **use this URL, not localhost**
+7. `agent-browser open <url-from-.preview-url.md>`: **use this URL, not localhost**
 8. `agent-browser screenshot --full screenshots/YYYYMMDDHHMMSS-<short-title>.png`
 9. Confirm the screenshot URL/title bar reflects the Cloudflare domain, not localhost
 
 ---
 
-## Pre-PR — COMPLETE THIS BEFORE report_progress
+## Pre-PR: COMPLETE THIS BEFORE report_progress
 
-> ❌ **Known failure mode:** Finishing the task and taking screenshots but submitting the PR without the preview URL or without screenshots embedded in the PR description body. Screenshots saved to disk do NOT count. They must be visible inline in the PR description using an absolute GitHub URL.
+> **Known failure mode:** Finishing the task and taking screenshots but submitting the PR without the preview URL or without screenshots embedded in the PR description body. Screenshots saved to disk do NOT count. They must be visible inline in the PR description using an absolute GitHub URL.
 
-> ❌ **Known failure mode:** Omitting the `CONTEXT-MEMORY.md` update status from the PR description. This section is mandatory on every PR, even when no update was made.
+> **Known failure mode:** Omitting the `CONTEXT-MEMORY.md` update status from the PR description. This section is mandatory on every PR, even when no update was made.
 
-> ❌ **Known failure mode:** Running `pnpm preview:wrangler` without first committing work. Deployment failures can crash the agent, and any uncommitted changes are lost. Always `git commit` before deploying — even a `wip` commit is fine.
+> **Known failure mode:** Running `pnpm preview:wrangler` without first committing work. Deployment failures can crash the agent, and any uncommitted changes are lost. Always `git commit` before deploying. Even a `wip` commit is fine.
 
-> ❌ **Known failure mode:** Running `pnpm preview:wrangler` and proceeding as if deployment succeeded when `.preview-url.md` was not created. A missing file means the build or deploy failed — not that the URL needs to be constructed manually. Stop and fix the error before continuing.
+> **Known failure mode:** Running `pnpm preview:wrangler` and proceeding as if deployment succeeded when `.preview-url.md` was not created. A missing file means the build or deploy failed, not that the URL needs to be constructed manually. Stop and fix the error before continuing.
 
 Before calling `report_progress`, confirm all of the following are true:
 
@@ -180,7 +201,7 @@ If any of the above is not true, fix it before proceeding. Do not call `report_p
 
 ---
 
-## PR Description Requirements — MANDATORY FOR EVERY PR
+## PR Description Requirements: MANDATORY FOR EVERY PR
 
 Copy the template below and fill in every placeholder. Do not paraphrase or omit sections.
 
@@ -189,7 +210,7 @@ Copy the template below and fill in every placeholder. Do not paraphrase or omit
 
 ## Preview
 
-<paste the full URL from .preview-url.md here — bare URL, no link text>
+<paste the full URL from .preview-url.md here: bare URL, no link text>
 
 ## Screenshots
 
@@ -197,24 +218,24 @@ Copy the template below and fill in every placeholder. Do not paraphrase or omit
 
 ## CONTEXT-MEMORY.md
 
-<Updated — describe which section was changed and what knowledge was added> OR <No update needed — reason>
+<Updated: describe which section was changed and what knowledge was added> OR <No update needed: reason>
 ```
 
-> ⚠️ **The org, repo, and branch in the screenshot URL must be the actual values for this repository and PR branch — not placeholders, not examples, not values from memory.** This file is shared across many repos and orgs; you must derive the correct values from git every time. Run `git remote get-url origin` and `git branch --show-current` to get them.
+> **The org, repo, and branch in the screenshot URL must be the actual values for this repository and PR branch**, not placeholders, not examples, not values from memory. This file is shared across many repos and orgs. You must derive the correct values from git every time. Run `git remote get-url origin` and `git branch --show-current` to get them.
 
 ### Preview URL rules
 
-- Read the URL from `.preview-url.md` — never guess or construct it
+- Read the URL from `.preview-url.md`. Never guess or construct it
 - Paste it as a bare URL so it is fully visible to reviewers
 
-> ❌ Wrong: `[Live preview →](https://...)` — URL is hidden behind link text
-> ✅ Correct: `https://...` — full URL visible
+> Wrong: `[Live preview →](https://...)` (URL is hidden behind link text)
+> Correct: `https://...` (full URL visible)
 
 ### Screenshot rules
 
 - Screenshots must come from the Cloudflare preview URL, not localhost
-- Embed screenshots using absolute `raw.githubusercontent.com` URLs — relative paths do not render in GitHub PRs before the branch is merged
-- The URL must use the **actual org, repo, and branch** derived from git — not values from memory or a previous repo
+- Embed screenshots using absolute `raw.githubusercontent.com` URLs. Relative paths do not render in GitHub PRs before the branch is merged
+- The URL must use the **actual org, repo, and branch** derived from git, not values from memory or a previous repo
 
 URL format:
 
@@ -222,15 +243,15 @@ URL format:
 https://raw.githubusercontent.com/<org>/<repo>/<branch>/screenshots/YYYYMMDDHHMMSS-short-title.png
 ```
 
-> ❌ Wrong: `![alt](screenshots/file.png)` — broken image in PR (relative path, branch not yet merged)
-> ❌ Wrong: org/repo/branch copied from memory or another repo — always derive from git
-> ✅ Correct: `![alt](https://raw.githubusercontent.com/acme-corp/my-actual-repo/feature/my-branch/screenshots/20240315143022-checkout.png)`
+> Wrong: `![alt](screenshots/file.png)` (broken image in PR: relative path, branch not yet merged)
+> Wrong: org/repo/branch copied from memory or another repo. Always derive from git
+> Correct: `![alt](https://raw.githubusercontent.com/acme-corp/my-actual-repo/feature/my-branch/screenshots/20240315143022-checkout.png)`
 
 ### CONTEXT-MEMORY.md rules
 
 Every PR description **must** include a `CONTEXT-MEMORY.md` section, even when no update was made. There is no exception. Omitting it is a checklist failure. A reason is always required.
 
-> ❌ Wrong: omitting the section entirely
-> ❌ Wrong: `No update needed` with no reason given
-> ✅ Correct: `Updated — added note to Deployment section: DOTENV_PRIVATE_KEY must be set before wrangler deploys or the build silently uses wrong env`
-> ✅ Correct: `No update needed — fixed a typo in a button label, no architectural or process knowledge involved`
+> Wrong: omitting the section entirely
+> Wrong: `No update needed` with no reason given
+> Correct: `Updated: added note to Deployment section: DOTENV_PRIVATE_KEY must be set before wrangler deploys or the build silently uses wrong env`
+> Correct: `No update needed: fixed a typo in a button label, no architectural or process knowledge involved`
