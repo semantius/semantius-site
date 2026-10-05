@@ -1,8 +1,9 @@
 /**
  * The three solution pages, one per search intent (change request 3, §1): agents,
- * build, outgrown SaaS. The hub's routing cards, the header's Solutions menu,
- * each page's eyebrow and cross-links, and llms.txt read their paths and labels
- * from here, in this order.
+ * build, outgrown SaaS. The header's Solutions menu, each page's eyebrow and
+ * cross-links, and llms.txt read their paths and labels from here, in this
+ * order. The hub routing cards use these labels but display Business apps, Back
+ * end, Agent guardrails (issue 16).
  */
 export interface Solution {
 	path: string;

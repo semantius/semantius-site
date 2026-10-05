@@ -50,7 +50,8 @@ The specs are in `C:\dev\pgext-research`: `homepage-spec-v1.md`,
 - C14 and D34: the Directus comparison is gone. Back end carries one license
   line, from the facts you settled (§9).
 - D26: the six prompt cards are split three and three, by reader.
-- D27: the menu and the grid list the pages in the same order.
+- D27: the menu and the grid listed the pages in the same order. Issue 16 later
+  swapped the hub cards (`home-deviations.md`, 57); the menu is unchanged.
 - D29: the specs are in `C:\dev\pgext-research`.
 - A5 and A7 for the solution pages: their llms.txt summaries and meta
   descriptions are given.
