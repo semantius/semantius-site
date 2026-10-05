@@ -13,22 +13,25 @@
 
 **Before starting any task**, read `CONTEXT-MEMORY.md`. It holds the architecture decisions, platform constraints and preferences the user has approved, and you MUST incorporate them into your work.
 
-### `CONTEXT-MEMORY.md` is read-only unless the user says to edit it
+### `CONTEXT-MEMORY.md` changes only after the user approves
 
-Do not create, edit or delete `CONTEXT-MEMORY.md` unless the user said to change that file, in this turn, including the words to put there (or "write what I just said into CONTEXT-MEMORY").
-
-Finding a platform quirk, making a mistake, being corrected, finishing a task, filling a PR template, or thinking a future session would get something wrong is not that instruction. Propose the text in the reply if you must. Change the file only after the user says to write it.
-
-- **Record only what was approved, in the approved words.** Never widen it into a broader rule.
-- **It is a reference, not a history.** No dates, no session records, no progress notes, no "RESOLVED" or "LESSON LEARNED" entries. State the rule and its reason in one or two sentences, in the relevant existing section.
-- **Never write a secret value into it.** Name the secret and where it is stored.
-- **Commit a memory change on its own.** Never fold it into other work.
+- **Propose, then wait.** When you find something a future session would otherwise get wrong (a non-obvious platform constraint, an architectural pattern, an environmental quirk), or the user states a preference, propose the exact text and where it goes. Write it only after the user approves that text. Approval of other work, or an instruction to fix something, is not approval of a memory change.
+- **Record only what was approved, in the approved words.** Never turn the user's words into a broader rule of your own, and never call a rule the user's unless the user stated or approved it.
+- **It is a reference, not a history.** No dates, no session records, no progress notes, no "RESOLVED" or "LESSON LEARNED" entries, and no stories of what went wrong. State the rule and its reason in one or two sentences, in the relevant existing section. Never append chronologically.
+- **Never write a secret value into it** (keys, tokens, passwords, webhook URLs). Name the secret and where it is stored instead.
+- **Commit a memory change on its own,** with a message that says what changed in `CONTEXT-MEMORY.md`. Never fold it into other work.
+- **Ask before proposing:** _"Would a capable developer, reading only the code and this file, make this mistake again?"_ If no, do not propose it.
 
 ### When you make a mistake or the user corrects you
 
-1. **Analyze:** Identify the root cause.
-2. **Route:** If it belongs in a file the user already asked you to change, a short comment there is enough. If it would belong in `CONTEXT-MEMORY.md`, say so in the reply and stop.
-3. **Prevent:** Tell the user how you will avoid it. Do not record it unless the user says to.
+1.  **Analyze:** Identify the root cause of the error or the core requirement.
+2.  **Route:** Decide where the knowledge belongs:
+    - **Specific file** → a comment in that file explaining the _why_, as part of a change the user asked for. If the fix is already self-evident from well-commented code, nothing more is needed.
+    - **Cross-cutting / architectural / no single file home** → propose an entry for `CONTEXT-MEMORY.md` (see above), and write it only after the user approves it.
+    - **Rule of thumb:** if the knowledge would go stale or become wrong when the relevant code is refactored, it belongs in the code, not in a memory file.
+    - **What belongs in `CONTEXT-MEMORY.md`:** environment or toolchain constraints specific to this repo, third-party API quirks, monorepo-wide conventions that differ from the obvious default, architectural decisions and their reasoning, and preferences the user has stated and approved for recording.
+    - **What never belongs in `CONTEXT-MEMORY.md`:** individual bug fixes, task records, dates or session identifiers, stories of incidents, secret values, and anything already stated in this SOP.
+3.  **Prevent:** Tell the user how you will avoid this mistake in future. Record it only if the user approves.
 
 ## Workspace
 
@@ -194,7 +197,7 @@ Copy the template below and fill in every placeholder. Do not paraphrase or omit
 
 ## CONTEXT-MEMORY.md
 
-No update. (Only write `Updated: ...` if the user told you to edit that file in this work.)
+<Updated — describe which section was changed and what knowledge was added> OR <No update needed — reason>
 ```
 
 > ⚠️ **The org, repo, and branch in the screenshot URL must be the actual values for this repository and PR branch — not placeholders, not examples, not values from memory.** This file is shared across many repos and orgs; you must derive the correct values from git every time. Run `git remote get-url origin` and `git branch --show-current` to get them.
@@ -228,6 +231,6 @@ https://raw.githubusercontent.com/<org>/<repo>/<branch>/screenshots/YYYYMMDDHHMM
 Every PR description **must** include a `CONTEXT-MEMORY.md` section, even when no update was made. There is no exception. Omitting it is a checklist failure. A reason is always required.
 
 > ❌ Wrong: omitting the section entirely
-> ❌ Wrong: writing `Updated: ...` when the user did not tell you to edit `CONTEXT-MEMORY.md`
-> ✅ Correct: `No update.`
-> ✅ Correct: `Updated: added note to Deployment section: DOTENV_PRIVATE_KEY must be set before wrangler deploys or the build silently uses wrong env` (only if the user told you to edit that file)
+> ❌ Wrong: `No update needed` with no reason given
+> ✅ Correct: `Updated — added note to Deployment section: DOTENV_PRIVATE_KEY must be set before wrangler deploys or the build silently uses wrong env`
+> ✅ Correct: `No update needed — fixed a typo in a button label, no architectural or process knowledge involved`
