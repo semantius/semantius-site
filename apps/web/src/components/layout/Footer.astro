@@ -37,6 +37,8 @@ const groups = ARTICLE_GROUPS.map((g) => ({
 }));
 
 const github = ACTION_LINKS.social.github;
+const awesomeAgentFirst = 'https://github.com/semantius/awesome-agent-first';
+const iconLink = 'text-muted-foreground hover:text-foreground transition-colors';
 const link = 'hover:text-foreground transition-colors';
 ---
 
@@ -61,7 +63,7 @@ const link = 'hover:text-foreground transition-colors';
           <li><a href="/llms.txt" class={link}>llms.txt</a></li>
           <li><a href="/docs/overview" class={link}>Docs</a></li>
           <li><a href={github} class={link}>GitHub</a></li>
-          <li><a href="https://github.com/semantius/awesome-agent-first" class={link}>The agent-first definition and list</a></li>
+          <li><a href={awesomeAgentFirst} class={link}>The agent-first definition and list</a></li>
         </ul>
       </div>
     </div>
@@ -74,7 +76,27 @@ const link = 'hover:text-foreground transition-colors';
 
       <div class="flex items-center gap-4">
         <ThemeToggle />
-        <a href={github} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground transition-colors" aria-label="GitHub">
+        <a
+          href={awesomeAgentFirst}
+          target="_blank"
+          rel="noopener noreferrer"
+          class={iconLink}
+          aria-label="Awesome Agent First Software"
+          title="Awesome Agent First Software"
+        >
+          {/* Awesome Lists mark (Simple Icons via dashboardicons.com/icons/external/awesomelists). fill currentColor so it tracks the theme the same way the GitHub icon does. */}
+          <svg
+            class="w-5 h-5"
+            fill="currentColor"
+            role="img"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+          >
+            <path d="M24 11.438l-6.154-5.645-.865.944 5.128 4.7H1.895l5.128-4.705-.865-.943-6.154 5.649H0v3.72c0 1.683 1.62 3.053 3.61 3.053h3.795c1.99 0 3.61-1.37 3.61-3.051v-2.446h1.97v2.446c0 1.68 1.62 3.051 3.61 3.051h3.794c1.99 0 3.61-1.37 3.61-3.051v-3.721z"></path>
+          </svg>
+        </a>
+        <a href={github} target="_blank" rel="noopener noreferrer" class={iconLink} aria-label="GitHub">
           <Github className="w-5 h-5" strokeWidth={1.5} />
         </a>
       </div>
