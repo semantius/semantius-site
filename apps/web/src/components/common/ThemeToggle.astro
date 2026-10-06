@@ -5,26 +5,40 @@ import { Sun, Moon } from 'lucide-react';
 <button
   id="theme-toggle"
   class="p-2 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-  aria-label="Toggle Theme"
+  aria-label="Switch to dark mode"
+  title="Switch to dark mode"
 >
   <Sun className="w-5 h-5 dark:hidden" />
   <Moon className="w-5 h-5 hidden dark:block" />
 </button>
 
 <script>
+  function themeToggleLabel(isDark: boolean) {
+    return isDark ? 'Switch to light mode' : 'Switch to dark mode';
+  }
+
+  function syncThemeToggleLabel(themeToggle: HTMLElement) {
+    const label = themeToggleLabel(document.documentElement.classList.contains('dark'));
+    themeToggle.setAttribute('aria-label', label);
+    themeToggle.setAttribute('title', label);
+  }
+
   function initThemeToggle() {
     const themeToggle = document.getElementById('theme-toggle');
-    
-    // Toggle theme logic
+    if (!themeToggle) return;
+
+    syncThemeToggleLabel(themeToggle);
+
     const handleToggleClick = () => {
       const element = document.documentElement;
       element.classList.toggle('dark');
-      
+
       const isDark = element.classList.contains('dark');
       localStorage.setItem('theme', isDark ? 'dark' : 'light');
+      syncThemeToggleLabel(themeToggle);
     };
 
-    themeToggle?.addEventListener('click', handleToggleClick);
+    themeToggle.addEventListener('click', handleToggleClick);
   }
 
   // Run on initial load
