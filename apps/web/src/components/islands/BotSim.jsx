@@ -215,7 +215,7 @@ export default function BotSim() {
 	const live = statusLabel(selected.status);
 
 	return (
-		<div className="bot-sim not-prose" data-pagefind-ignore>
+		<div className="bot-sim not-prose">
 			<div className="overflow-hidden rounded-[28px] border border-foreground/10 bg-background shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
 				<div className="grid min-h-[640px] lg:grid-cols-[300px_1fr]">
 					<aside className="flex flex-col border-b border-foreground/10 lg:border-b-0 lg:border-r">

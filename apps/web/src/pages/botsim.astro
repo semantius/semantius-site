@@ -3,17 +3,11 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import Container from '~/components/ui/Container.astro';
 import BotSim from '~/components/islands/BotSim.jsx';
-
-// Proof of concept for issue 18. Kept off the sitemap, search index and nav
-// on purpose: this page is not approved product copy. noindex={true} is the
-// exact token getNoIndexUrls() scans for.
 ---
 
 <Layout
 	title="Bot simulator"
 	description="Proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you."
-	noindex={true}
-	searchable={false}
 >
 	<section class="pt-32 pb-24">
 		<Container>

@@ -24,12 +24,14 @@ import { ACTION_LINKS } from '~/site.config';
 const startFree = { text: 'Start free', href: SIGN_UP_URL };
 
 // One card per search intent (change request 3, §2.1; card 3 from change
-// request 4, §1, which names no tool the reader could be leaving).
+// request 4, §1, which names no tool the reader could be leaving). Left and
+// right cards swapped per issue 16, so Business apps is first and Agent
+// guardrails is last. The Solutions menu still follows SOLUTIONS order.
 const routingCards = [
     {
-        solution: SOLUTIONS.guardrails,
-        question: 'Enforcing guardrails for your AI agents?',
-        line: "Give each agent its own login. Your rules are checked on every write, from any app, API or agent login, where you've defined them, and your team approves what matters.",
+        solution: SOLUTIONS.businessApps,
+        question: "Working around tools that weren't built for your agent?",
+        line: "Bring your records into one system that keeps your rules, where you've defined them, with a ready-to-use app for your whole team, in the browser on desktop and mobile. Paid plans aren't priced per user.",
     },
     {
         solution: SOLUTIONS.backend,
@@ -37,9 +39,9 @@ const routingCards = [
         line: "Your rules enforced in the database for every app, API and agent login, where you've defined them, and an API and an app that follow the model, with no code to maintain.",
     },
     {
-        solution: SOLUTIONS.businessApps,
-        question: "Working around tools that weren't built for your agent?",
-        line: "Bring your records into one system that keeps your rules, where you've defined them, with a ready-to-use app for your whole team, in the browser on desktop and mobile. Paid plans aren't priced per user.",
+        solution: SOLUTIONS.guardrails,
+        question: 'Enforcing guardrails for your AI agents?',
+        line: "Give each agent its own login. Your rules are checked on every write, from any app, API or agent login, where you've defined them, and your team approves what matters.",
     },
 ];
 

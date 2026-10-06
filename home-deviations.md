@@ -201,3 +201,7 @@ request made moot says so in one line.
     capital letter (item 15), where §5.1 shows them in lowercase.
 56. **The end of each solution page** is docs links, then buttons, then the
     related pages, in the order change request 3 lists them.
+57. **The hub routing cards put Business apps first and Agent guardrails last**
+    (issue 16), swapping the left and right boxes. The middle card stays Back
+    end. The Solutions menu and llms.txt still list the pages in the SOLUTIONS
+    object order: Agent guardrails, Back end, Business apps.
