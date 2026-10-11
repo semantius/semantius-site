@@ -8,7 +8,7 @@ import Badge from '~/components/ui/Badge.astro';
 import PromptCards from '~/components/sections/PromptCards.astro';
 import DocsLinks from '~/components/sections/DocsLinks.astro';
 import CrossLinks from '~/components/sections/CrossLinks.astro';
-import { CLOUD_PLANS, SIGN_UP_URL, usd } from '~/data/pricing';
+import { CLOUD_PLANS, SIGN_UP_URL, usd, type CloudPlan } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 
 // Change request 3, §5: the page for the "outgrown SaaS" search intent, for
@@ -29,11 +29,11 @@ const connections = [
 
 // Prices and the user limit come from the pricing data, so this page and
 // /pricing cannot state different figures.
-const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p]));
+const plan = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p])) as Record<CloudPlan['key'], CloudPlan>;
 const price: [string, string][] = [
-    ['Plans', `Free is open now, for up to ${plan.free.userLimit} users, people and agents. Starter (${usd(plan.starter.monthlyPrice)} a month) and Pro (${usd(plan.pro.monthlyPrice)} a month) open soon, not priced per user, with no surprise charges. Your Free workspace upgrades in place.`],
-    ['Limits', "you get a warning first. At its limits, a workspace pauses with all your data kept, until the next month's credits arrive. On paid plans, you can also top up or move to a larger plan."],
-    ['Who helps', 'Free: the documentation. Starter and Pro: support.'],
+    ['Plans', `Free is open now, for up to ${plan.free.userLimit} users, people and agents. Standard (${usd(plan.standard.monthlyPrice)} a month) opens soon, not priced per user, with no surprise charges. Your Free workspace upgrades in place.`],
+    ['Limits', "you get a warning first. At its limits, a workspace pauses with all your data kept, until the next month's credits arrive. On the Standard plan, you can also top up."],
+    ['Who helps', 'Free: the documentation. Standard: support.'],
     ['Spending', 'limited to the credits you hold.'],
     ['Backups', 'in the cloud, with point-in-time restore coming soon.'],
 ];
@@ -111,7 +111,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
     <Section class="py-12!">
         <Container class="max-w-4xl">
             <h2 class={h2}>Bring your data with you</h2>
-            <p class={prose}>Export what you have today from your CRM, your project tool or your spreadsheets, and your agent imports it into your new model, for example from CSV files. There are no built-in connectors to other tools; with incoming webhooks on Pro, new events can arrive in real time.</p>
+            <p class={prose}>Export what you have today from your CRM, your project tool or your spreadsheets, and your agent imports it into your new model, for example from CSV files. There are no built-in connectors to other tools; with incoming webhooks on the Standard plan, new events can arrive in real time.</p>
         </Container>
     </Section>
 
