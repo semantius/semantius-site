@@ -35,7 +35,7 @@ export const SIGN_UP_URL = 'https://app.semantius.com/auth/sign-up';
 /* -------------------------------------------------------------------------- */
 
 export interface CloudPlan {
-	key: 'free' | 'starter' | 'pro';
+	key: 'free' | 'standard';
 	name: string;
 	summary: string;
 	/** `available` gets a Sign up button; `coming-soon` a badge and the wait list. */
@@ -77,34 +77,19 @@ export const CLOUD_PLANS: CloudPlan[] = [
 		webhookReceivers: false,
 	},
 	{
-		key: 'starter',
-		name: 'Starter',
+		key: 'standard',
+		name: 'Standard',
 		summary: 'For teams of any size, with no limit on users.',
 		status: 'coming-soon',
 		monthlyPrice: 24,
 		yearlyPrice: 20,
 		credits: 250,
 		userLimit: null,
-		maxComputeUnits: 4,
-		storageLimit: '1 GB',
-		topUps: true,
-		// The response-time targets for Starter and Pro are not decided, so both
-		// say "Support" rather than one of them implying a better level.
-		support: 'Support',
-		webhookReceivers: false,
-	},
-	{
-		key: 'pro',
-		name: 'Pro',
-		summary: 'For larger workloads, with up to 32 compute units and no storage limit.',
-		status: 'coming-soon',
-		monthlyPrice: 45,
-		yearlyPrice: 37,
-		credits: 500,
-		userLimit: null,
 		maxComputeUnits: 32,
 		storageLimit: null,
 		topUps: true,
+		// Response-time targets for the Standard plan are not decided, so the
+		// card says "Support" rather than implying a timed SLA.
 		support: 'Support',
 		webhookReceivers: true,
 	},
@@ -162,16 +147,7 @@ export const TOP_UP_PACKS = [
 
 /** Stated in "How credits work" and in the FAQ, so the two cannot drift. */
 export const AT_ZERO_CREDITS =
-	"When your credits are used up, your database stops until you top up (on Starter and Pro) or your next month's credits arrive. You are warned before that happens.";
-
-/**
- * Where Pro starts to cost less than Starter plus top-ups. Pro's 500 credits
- * for $45 cost $0.09 each; top-ups cost $0.095 to $0.135. So between 250 and
- * 500 credits a month, Starter plus top-ups passes $45 somewhere between about
- * 405 (100-credit packs) and 470 (1,250-credit packs). Redo this if a price,
- * a plan's credits or a pack changes.
- */
-export const PRO_BREAK_EVEN_CREDITS = 450;
+	"When your credits are used up, your database stops until you top up (on the Standard plan) or your next month's credits arrive. You are warned before that happens.";
 
 /* -------------------------------------------------------------------------- */
 /* Worked examples                                                            */
@@ -220,20 +196,18 @@ export const WORKED_EXAMPLES: WorkedExample[] = [
 		cost: '$0 a month.',
 	},
 	{
-		// 790 credits: Pro plus 290 in top-ups ($73 to $81) undercuts Starter
-		// plus 540 ($75 to $90). See PRO_BREAK_EVEN_CREDITS.
 		title: 'A Small Team',
 		who: '6 people and 2 agents, working office hours.',
 		usage: { computeUnits: 1, hours: 176, activity: 'office hours', storageGb: 1, egressGb: 3, emails: 1500 },
-		plan: 'pro',
-		cost: '$45 with 500 credits, plus top-ups for about 290 credits: about $73 to $81 a month, depending on pack size.',
+		plan: 'standard',
+		cost: '$24 with 250 credits, plus top-ups for about 540 credits: about $75 to $90 a month, depending on pack size.',
 	},
 	{
 		title: 'A Company',
 		who: 'About 50 people with agents, around the clock.',
 		usage: { computeUnits: 2, hours: 730, activity: 'around the clock', storageGb: 10, egressGb: 40, emails: 20000 },
-		plan: 'pro',
-		cost: '$45 with 500 credits, plus top-ups for about 6,400 credits: about $650 a month.',
+		plan: 'standard',
+		cost: '$24 with 250 credits, plus top-ups for about 6,670 credits: about $660 a month.',
 	},
 ];
 
@@ -263,7 +237,7 @@ export const SUPPORT_TIERS: SupportTier[] = [
 		link: { label: 'Open GitHub Discussions', href: 'https://github.com/Semantius/semantius/discussions' },
 	},
 	{
-		name: 'Standard',
+		name: 'Essential',
 		price: 1800,
 		lines: ['Email and tickets', 'P1 response within 2 business days', '1 named contact', 'Security advisories'],
 	},

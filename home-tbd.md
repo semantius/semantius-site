@@ -202,7 +202,7 @@ in late October.
 copy, used word for word, lacks these:
 
 - **Hub:** "There are no built-in connectors to other tools" ("Real-time actions
-  on live records" and "Unified context ingestion"); "Pro cloud features
+  on live records" and "Unified context ingestion"); "Cloud-only features
   aren't MIT" ("Yours to keep"); "Free allows up to 5 users, and agents count
   as users" (routing card 3, "Paid plans aren't priced per user").
 - **Business apps:** "No offline mode and no installable app" (the lead and "An
