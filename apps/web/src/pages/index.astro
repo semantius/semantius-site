@@ -70,13 +70,13 @@ const architecture: Item[] = [
         lead: 'Agents act on the live system of record, not on an export or a copy kept in sync.',
         points: [
             ['Queues', 'changes that matter are put into queues with event and rule triggers: a new record, a status change, an approval waiting. An always-on agent picks them up on its next check.'],
-            ['Incoming webhooks (Pro)', 'they bring events from your other tools as they happen, authenticated and mapped to your entities and fields.'],
+            ['Incoming webhooks (Standard plan)', 'they bring events from your other tools as they happen, authenticated and mapped to your entities and fields.'],
         ],
     },
     {
         title: 'Unified context ingestion',
         points: [
-            ['Getting data in', 'existing data comes in through CSV import and JSON modules. Continuous events arrive through incoming webhooks (Pro).'],
+            ['Getting data in', 'existing data comes in through CSV import and JSON modules. Continuous events arrive through incoming webhooks (Standard plan).'],
             ['One model', 'support tickets, product usage events and CRM records land in one model whose relationships are enforced by foreign keys.'],
             ['What the agent does with it', "it follows a ticket to the customer's usage and the open deal by reference, instead of matching names across tools."],
             ['Search', 'full-text search runs across all of it.'],

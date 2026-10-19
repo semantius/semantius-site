@@ -16,7 +16,6 @@ import {
   CREDIT_RATES,
   HAS_YEARLY,
   HOURLY_RATE,
-  PRO_BREAK_EVEN_CREDITS,
   RESPONSE_TARGETS,
   SERVICES,
   SUPPORT_COVERAGE,
@@ -75,11 +74,11 @@ const faqs = [
   },
   {
     question: 'What is a compute unit?',
-    answer: 'A compute unit is a fraction of a virtual CPU plus 1 GB of memory. Your plan sets the most your database can use: 1 compute unit on Free, 4 on Starter and 32 on Pro.',
+    answer: 'A compute unit is a fraction of a virtual CPU plus 1 GB of memory. Your plan sets the most your database can use: 1 compute unit on Free and 32 on Standard.',
   },
   {
     question: 'Who counts as a user?',
-    answer: 'Users only matter on the Free plan, which allows 5. People and agents count alike, so an agent with its own login is one user. Starter and Pro have no limit on users.',
+    answer: 'Users only matter on the Free plan, which allows 5. People and agents count alike, so an agent with its own login is one user. Standard has no limit on users.',
   },
   {
     question: 'Do unused credits roll over?',
@@ -117,7 +116,7 @@ const td = 'py-3 px-4 text-sm align-top';
 
 <Layout
   title="Pricing - Semantius, the Agent-First Data Platform"
-  description="Semantius cloud plans: Free, Starter at $24 a month and Pro at $45 a month, paid in credits for what your database uses, not per user. Self-hosting is free and MIT licensed."
+  description="Semantius cloud plans: Free, and Standard at $24 a month, paid in credits for what your database uses, not per user. Self-hosting is free and MIT licensed."
 >
   {/* Must match the plan cards exactly, which is why both read CLOUD_PLANS
       (the offers through cloudOffers, which the home page uses too).
@@ -190,7 +189,7 @@ const td = 'py-3 px-4 text-sm align-top';
         </p>
       )}
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 lg:gap-8">
+      <div class="mx-auto grid max-w-4xl grid-cols-1 gap-6 md:grid-cols-2 lg:gap-8">
         {CLOUD_PLANS.map((plan) => <PlanCard plan={plan} />)}
       </div>
 
@@ -275,7 +274,7 @@ const td = 'py-3 px-4 text-sm align-top';
 
         <section>
           <h3 id="top-ups" class={sectionTitle}>Top-Ups</h3>
-          <p class={lede}>Top-ups add credits when your monthly credits are not enough. They are available on Starter and Pro; the Free plan cannot be topped up.</p>
+          <p class={lede}>Top-ups add credits when your monthly credits are not enough. They are available on the Standard plan; the Free plan cannot be topped up.</p>
           <div class="grid gap-6 md:grid-cols-[1fr_1fr] items-start">
             <div class="relative overflow-x-auto rounded-2xl border border-foreground/10">
               <table class="w-full text-left border-collapse">
@@ -344,7 +343,6 @@ const td = 'py-3 px-4 text-sm align-top';
               );
             })}
           </div>
-          <p class="mt-6 text-sm text-muted-foreground"><strong class="text-foreground">Choosing between Starter and Pro:</strong> above about {PRO_BREAK_EVEN_CREDITS} credits a month, Pro costs less than Starter with top-ups.</p>
         </section>
       </div>
     </section>
@@ -385,7 +383,7 @@ const td = 'py-3 px-4 text-sm align-top';
 
         <section>
           <h3 id="support-plans" class={sectionTitle}>Support Plans</h3>
-          <p class={lede}>The software is free, and support is sold separately. Paid plans have no incident counting: raise as many issues as you need, with no cap on the hours spent on one.</p>
+          <p class={lede}>The software is free, and support is sold separately. Paid support plans have no incident counting: raise as many issues as you need, with no cap on the hours spent on one.</p>
           <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {SUPPORT_TIERS.map((tier) => (
               <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
@@ -418,7 +416,7 @@ const td = 'py-3 px-4 text-sm align-top';
                 <tr class="border-b border-foreground/10 bg-foreground/3">
                   <th scope="col" class={th}>Severity</th>
                   <th scope="col" class={th}>What it means</th>
-                  <th scope="col" class={th}>Standard</th>
+                  <th scope="col" class={th}>Essential</th>
                   <th scope="col" class={th}>Priority</th>
                 </tr>
               </thead>

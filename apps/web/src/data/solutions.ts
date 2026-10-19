@@ -32,7 +32,7 @@ export const SOLUTIONS = {
 		readerLabel: 'For builders and developers',
 		linkLabel: 'See the back end',
 		summary:
-			"the back end with the rules built in, for builders and developers; everything you self-host is MIT, Pro cloud features aren't.",
+			"the back end with the rules built in, for builders and developers; everything you self-host is MIT, cloud-only features aren't.",
 	},
 	businessApps: {
 		path: '/solutions/business-apps',
