@@ -5,10 +5,11 @@ interface Props {
   command: string;
   mode?: Mode;
   /**
-   * Sample-prompt box: Copy and Run sit inside the prompt box (top right).
-   * Copy tooltip is "copy for your agent". Run tooltip is
-   * "Start the semantius agent"; it writes cookie agent_prompt
-   * (Domain=.semantius.com) and opens https://app.semantius.com/copilot.
+   * Sample-prompt box: Copy and Run sit after the heading on the card
+   * (white background), above the ochre prompt text. Copy tooltip is
+   * "copy for your agent". Run tooltip is "Start the semantius agent";
+   * it writes cookie agent_prompt (Domain=.semantius.com) and opens
+   * https://app.semantius.com/copilot.
    */
   runnable?: boolean;
 }
@@ -30,9 +31,9 @@ const skillRest = skillMatch?.[2] ?? "";
 const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
 ---
 
-<div class:list={["command", "not-prose", "group", `is-${mode}`, runnable && "is-runnable"]}>
-  {runnable && (
-    <div class="command-toolbar">
+{runnable ? (
+  <div class="sample-prompt not-prose">
+    <div class="sample-prompt-toolbar">
       <button
         type="button"
         class="command-copy"
@@ -108,71 +109,75 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
         <span class="command-run-label">Run</span>
       </button>
     </div>
-  )}
-  {runnable ? (
-    <textarea class="command-text command-prompt" rows="4">{command}</textarea>
-  ) : (
-    <>
-      <code class="command-text">
-        {skill && skillHref && (
-          <>
-            <a href={skillHref} class="command-skill-prefix">{skill}</a>{skillRest}
-          </>
-        )}
-        {skill && !skillHref && (
-          <>
-            <span class="command-skill-prefix">{skill}</span>{skillRest}
-          </>
-        )}
-        {!skill && command}
-      </code>
-      <button
-        type="button"
-        class="command-copy"
-        data-command={command}
-        aria-label="Copy command"
+    <div class="command is-chat is-runnable">
+      <textarea class="command-text command-prompt" rows="4">{command}</textarea>
+    </div>
+  </div>
+) : (
+  <div class={`command not-prose group is-${mode}`}>
+    <code class="command-text">
+      {skill && skillHref && (
+        <>
+          <a href={skillHref} class="command-skill-prefix">{skill}</a>{skillRest}
+        </>
+      )}
+      {skill && !skillHref && (
+        <>
+          <span class="command-skill-prefix">{skill}</span>{skillRest}
+        </>
+      )}
+      {!skill && command}
+    </code>
+    <button
+      type="button"
+      class="command-copy"
+      data-command={command}
+      aria-label="Copy command"
+    >
+      <svg
+        class="command-icon-copy"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
       >
-        <svg
-          class="command-icon-copy"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-        </svg>
-        <svg
-          class="command-icon-check"
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="2"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          aria-hidden="true"
-        >
-          <polyline points="20 6 9 17 4 12"></polyline>
-        </svg>
-        <span class="command-copy-label">Copy</span>
-      </button>
-    </>
-  )}
-</div>
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <svg
+        class="command-icon-check"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span class="command-copy-label">Copy</span>
+    </button>
+  </div>
+)}
 
 <script>
   const COPILOT_URL = "https://app.semantius.com/copilot";
   const AGENT_PROMPT_COOKIE = "agent_prompt";
 
-  function currentCommand(wrapper: Element | null, fallback: string): string {
-    const prompt = wrapper?.querySelector<HTMLTextAreaElement>(".command-prompt");
+  function sampleRoot(el: Element | null): Element | null {
+    return el?.closest(".sample-prompt") ?? el?.closest(".command");
+  }
+
+  function currentCommand(root: Element | null, fallback: string): string {
+    const prompt = root?.querySelector<HTMLTextAreaElement>(".command-prompt");
     return prompt?.value ?? fallback;
   }
 
@@ -222,8 +227,8 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
     const runButton = target?.closest<HTMLButtonElement>(".command-run");
     if (runButton) {
       if (runButton.disabled) return;
-      const wrapper = runButton.closest(".command");
-      const command = currentCommand(wrapper, runButton.dataset.command ?? "");
+      const root = sampleRoot(runButton);
+      const command = currentCommand(root, runButton.dataset.command ?? "");
       const label = runButton.querySelector<HTMLElement>(".command-run-label");
       runButton.disabled = true;
       runButton.classList.add("is-starting");
@@ -240,18 +245,20 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
     const button = target?.closest<HTMLButtonElement>(".command-copy");
     if (!button) return;
 
-    const wrapper = button.closest(".command");
-    const command = currentCommand(wrapper, button.dataset.command ?? "");
+    const root = sampleRoot(button);
+    const command = currentCommand(root, button.dataset.command ?? "");
     const label = button.querySelector<HTMLElement>(".command-copy-label");
     const originalLabel = label?.textContent ?? "Copy";
 
     await copyText(command);
 
-    wrapper?.classList.add("copied");
+    root?.classList.add("copied");
+    button.classList.add("copied");
     if (label) label.textContent = "Copied";
 
     setTimeout(() => {
-      wrapper?.classList.remove("copied");
+      root?.classList.remove("copied");
+      button.classList.remove("copied");
       if (label) label.textContent = originalLabel;
     }, 1600);
   });
