@@ -4,6 +4,14 @@ type Mode = "chat" | "shell";
 interface Props {
   command: string;
   mode?: Mode;
+  /**
+   * Sample-prompt box: Copy and Run sit after the heading on the card
+   * (white background), above the ochre prompt text. Copy tooltip is
+   * "copy for your agent". Run tooltip is "Start the semantius agent";
+   * it writes cookie agent_prompt (Domain=.semantius.com) and opens
+   * https://app.semantius.com/copilot.
+   */
+  runnable?: boolean;
 }
 
 // Map of slash-prefixed skill names to the docs page that documents the skill.
@@ -15,83 +23,170 @@ const SKILL_DOC_MAP: Record<string, string> = {
   "/semantic-model-optimizer": "/docs/models/optimize",
 };
 
-const { command, mode = "shell" } = Astro.props;
+const { command, mode = "shell", runnable = false } = Astro.props;
 
-const skillMatch = mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
+const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;
 const skillRest = skillMatch?.[2] ?? "";
 const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
 ---
 
-<div class={`command not-prose group is-${mode}`}>
-  <code class="command-text">
-    {skill && skillHref && (
-      <>
-        <a href={skillHref} class="command-skill-prefix">{skill}</a>{skillRest}
-      </>
-    )}
-    {skill && !skillHref && (
-      <>
-        <span class="command-skill-prefix">{skill}</span>{skillRest}
-      </>
-    )}
-    {!skill && command}
-  </code>
-  <button
-    type="button"
-    class="command-copy"
-    data-command={command}
-    aria-label="Copy command"
-  >
-    <svg
-      class="command-icon-copy"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
+{runnable ? (
+  <div class="sample-prompt not-prose">
+    <div class="sample-prompt-toolbar">
+      <button
+        type="button"
+        class="command-copy"
+        data-command={command}
+        aria-label="copy for your agent"
+        title="copy for your agent"
+      >
+        <svg
+          class="command-icon-copy"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+        </svg>
+        <svg
+          class="command-icon-check"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="20 6 9 17 4 12"></polyline>
+        </svg>
+        <span class="command-copy-label">Copy</span>
+      </button>
+      <button
+        type="button"
+        class="command-run"
+        data-command={command}
+        aria-label="Start the semantius agent"
+        title="Start the semantius agent"
+      >
+        <svg
+          class="command-icon-run"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <polygon points="6 3 20 12 6 21 6 3"></polygon>
+        </svg>
+        <svg
+          class="command-icon-spinner"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="8" stroke-dasharray="40" stroke-dashoffset="10"></circle>
+        </svg>
+        <span class="command-run-label">Run</span>
+      </button>
+    </div>
+    <div class="command is-chat is-runnable">
+      <textarea class="command-text command-prompt" rows="4">{command}</textarea>
+    </div>
+  </div>
+) : (
+  <div class={`command not-prose group is-${mode}`}>
+    <code class="command-text">
+      {skill && skillHref && (
+        <>
+          <a href={skillHref} class="command-skill-prefix">{skill}</a>{skillRest}
+        </>
+      )}
+      {skill && !skillHref && (
+        <>
+          <span class="command-skill-prefix">{skill}</span>{skillRest}
+        </>
+      )}
+      {!skill && command}
+    </code>
+    <button
+      type="button"
+      class="command-copy"
+      data-command={command}
+      aria-label="Copy command"
     >
-      <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-    </svg>
-    <svg
-      class="command-icon-check"
-      width="16"
-      height="16"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      stroke-width="2"
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      aria-hidden="true"
-    >
-      <polyline points="20 6 9 17 4 12"></polyline>
-    </svg>
-    <span class="command-copy-label">Copy</span>
-  </button>
-</div>
+      <svg
+        class="command-icon-copy"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+      </svg>
+      <svg
+        class="command-icon-check"
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        aria-hidden="true"
+      >
+        <polyline points="20 6 9 17 4 12"></polyline>
+      </svg>
+      <span class="command-copy-label">Copy</span>
+    </button>
+  </div>
+)}
 
 <script>
-  document.addEventListener("click", async (event) => {
-    const target = event.target as HTMLElement | null;
-    const button = target?.closest<HTMLButtonElement>(".command-copy");
-    if (!button) return;
+  const COPILOT_URL = "https://app.semantius.com/copilot";
+  const AGENT_PROMPT_COOKIE = "agent_prompt";
 
-    const command = button.dataset.command ?? "";
-    const wrapper = button.closest(".command");
-    const label = button.querySelector<HTMLElement>(".command-copy-label");
-    const originalLabel = label?.textContent ?? "Copy";
+  function sampleRoot(el: Element | null): Element | null {
+    return el?.closest(".sample-prompt") ?? el?.closest(".command");
+  }
 
+  function currentCommand(root: Element | null, fallback: string): string {
+    const prompt = root?.querySelector<HTMLTextAreaElement>(".command-prompt");
+    return prompt?.value ?? fallback;
+  }
+
+  async function copyText(text: string): Promise<void> {
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(text);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = command;
+      textarea.value = text;
       textarea.style.position = "fixed";
       textarea.style.opacity = "0";
       document.body.appendChild(textarea);
@@ -99,13 +194,82 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
       document.execCommand("copy");
       document.body.removeChild(textarea);
     }
+  }
 
-    wrapper?.classList.add("copied");
+  function setAgentPromptCookie(value: string): void {
+    // Cross-subdomain so app.semantius.com can read it after the redirect.
+    // Browsers reject Domain=.semantius.com on any other host (preview, localhost).
+    const parts = [
+      `${AGENT_PROMPT_COOKIE}=${encodeURIComponent(value)}`,
+      "path=/",
+      "secure",
+      "samesite=lax",
+    ];
+    const host = location.hostname;
+    if (host === "semantius.com" || host.endsWith(".semantius.com")) {
+      parts.push("domain=.semantius.com");
+    }
+    document.cookie = parts.join("; ");
+  }
+
+  function sizePrompt(textarea: HTMLTextAreaElement): void {
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }
+
+  function sizePrompts(): void {
+    document.querySelectorAll<HTMLTextAreaElement>(".command-prompt").forEach(sizePrompt);
+  }
+
+  document.addEventListener("click", async (event) => {
+    const target = event.target as HTMLElement | null;
+
+    const runButton = target?.closest<HTMLButtonElement>(".command-run");
+    if (runButton) {
+      if (runButton.disabled) return;
+      const root = sampleRoot(runButton);
+      const command = currentCommand(root, runButton.dataset.command ?? "");
+      const label = runButton.querySelector<HTMLElement>(".command-run-label");
+      runButton.disabled = true;
+      runButton.classList.add("is-starting");
+      runButton.setAttribute("aria-busy", "true");
+      if (label) label.textContent = "Starting...";
+      setAgentPromptCookie(command);
+      // Let Starting... and the spinner paint before the navigation.
+      window.setTimeout(() => {
+        window.location.assign(COPILOT_URL);
+      }, 400);
+      return;
+    }
+
+    const button = target?.closest<HTMLButtonElement>(".command-copy");
+    if (!button) return;
+
+    const root = sampleRoot(button);
+    const command = currentCommand(root, button.dataset.command ?? "");
+    const label = button.querySelector<HTMLElement>(".command-copy-label");
+    const originalLabel = label?.textContent ?? "Copy";
+
+    await copyText(command);
+
+    root?.classList.add("copied");
+    button.classList.add("copied");
     if (label) label.textContent = "Copied";
 
     setTimeout(() => {
-      wrapper?.classList.remove("copied");
+      root?.classList.remove("copied");
+      button.classList.remove("copied");
       if (label) label.textContent = originalLabel;
     }, 1600);
   });
+
+  document.addEventListener("input", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLTextAreaElement && target.classList.contains("command-prompt")) {
+      sizePrompt(target);
+    }
+  });
+
+  sizePrompts();
+  document.addEventListener("astro:page-load", sizePrompts);
 </script>

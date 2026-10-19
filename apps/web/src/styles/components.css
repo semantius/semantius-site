@@ -84,7 +84,61 @@ a.command-skill-prefix:hover {
     content: none !important;
 }
 
-.command-copy {
+.sample-prompt {
+    display: flex;
+    flex-direction: column;
+}
+
+.sample-prompt-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.25rem;
+    margin-bottom: 0.5rem;
+    background: transparent;
+}
+
+.sample-prompt-toolbar .command-copy,
+.sample-prompt-toolbar .command-run {
+    color: color-mix(in srgb, currentColor 70%, transparent);
+}
+
+.sample-prompt-toolbar .command-copy:hover,
+.sample-prompt-toolbar .command-run:hover {
+    color: currentColor;
+    background: color-mix(in srgb, currentColor 8%, transparent);
+    border-color: color-mix(in srgb, currentColor 14%, transparent);
+}
+
+.command.is-runnable {
+    display: block;
+}
+
+.command-prompt {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+    resize: none;
+    overflow: hidden;
+    field-sizing: content;
+    min-height: 4.5rem;
+    line-height: 1.45;
+    white-space: pre-wrap;
+    border: 0;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+}
+
+.command-prompt:focus {
+    outline: none;
+}
+
+.command-copy,
+.command-run {
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -102,11 +156,13 @@ a.command-skill-prefix:hover {
         border-color 0.15s;
 }
 
-.command.is-chat .command-copy {
+.command.is-chat .command-copy,
+.command.is-chat .command-run {
     color: #6b655a;
 }
 
-.command.is-chat .command-copy:hover {
+.command.is-chat .command-copy:hover,
+.command.is-chat .command-run:hover {
     background: #ece4d0;
     color: #1f1e1b;
     border-color: #d9cfb5;
@@ -122,8 +178,40 @@ a.command-skill-prefix:hover {
     border-color: #3d3d3d;
 }
 
-.command-copy-label {
+.command-copy-label,
+.command-run-label {
     line-height: 1;
+}
+
+.command-icon-spinner {
+    display: none;
+}
+
+.command-run.is-starting,
+.command-run.is-starting:disabled {
+    cursor: progress;
+    opacity: 1;
+}
+
+.command.is-chat .command-run.is-starting:hover,
+.sample-prompt .command-run.is-starting:hover {
+    background: transparent;
+    border-color: transparent;
+}
+
+.command-run.is-starting .command-icon-run {
+    display: none;
+}
+
+.command-run.is-starting .command-icon-spinner {
+    display: inline-block;
+    animation: command-spin 0.7s linear infinite;
+}
+
+@keyframes command-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .command-icon-check {
@@ -146,7 +234,16 @@ a.command-skill-prefix:hover {
     display: inline-block;
 }
 
-.command.is-chat.copied .command-copy-label {
+.command-copy.copied .command-icon-copy {
+    display: none;
+}
+
+.command-copy.copied .command-icon-check {
+    display: inline-block;
+}
+
+.command.is-chat.copied .command-copy-label,
+.command-copy.copied .command-copy-label {
     color: #b8562f;
 }
 
