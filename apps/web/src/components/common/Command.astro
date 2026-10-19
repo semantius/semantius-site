@@ -5,7 +5,7 @@ interface Props {
   command: string;
   mode?: Mode;
   /**
-   * Sample-prompt box: copy and run sit above an editable prompt.
+   * Sample-prompt box: Copy and Run sit inside the prompt box (top right).
    * Copy tooltip is "copy for your agent". Run tooltip is
    * "Start the semantius agent"; it writes cookie agent_prompt
    * (Domain=.semantius.com) and opens https://app.semantius.com/copilot.
@@ -91,6 +91,19 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
           aria-hidden="true"
         >
           <polygon points="6 3 20 12 6 21 6 3"></polygon>
+        </svg>
+        <svg
+          class="command-icon-spinner"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="8" stroke-dasharray="40" stroke-dashoffset="10"></circle>
         </svg>
         <span class="command-run-label">Run</span>
       </button>
@@ -208,10 +221,19 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
 
     const runButton = target?.closest<HTMLButtonElement>(".command-run");
     if (runButton) {
+      if (runButton.disabled) return;
       const wrapper = runButton.closest(".command");
       const command = currentCommand(wrapper, runButton.dataset.command ?? "");
+      const label = runButton.querySelector<HTMLElement>(".command-run-label");
+      runButton.disabled = true;
+      runButton.classList.add("is-starting");
+      runButton.setAttribute("aria-busy", "true");
+      if (label) label.textContent = "Starting...";
       setAgentPromptCookie(command);
-      window.location.assign(COPILOT_URL);
+      // Let Starting... and the spinner paint before the navigation.
+      window.setTimeout(() => {
+        window.location.assign(COPILOT_URL);
+      }, 400);
       return;
     }
 

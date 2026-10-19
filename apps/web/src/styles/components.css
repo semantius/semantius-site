@@ -85,12 +85,15 @@ a.command-skill-prefix:hover {
 }
 
 .command.is-runnable {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 0.5rem;
+    position: relative;
+    display: block;
 }
 
 .command-toolbar {
+    position: absolute;
+    top: 0.6rem;
+    right: 0.65rem;
+    z-index: 1;
     display: flex;
     justify-content: flex-end;
     align-items: center;
@@ -102,6 +105,7 @@ a.command-skill-prefix:hover {
     width: 100%;
     box-sizing: border-box;
     margin: 0;
+    padding-top: 2.15rem;
     resize: none;
     overflow: hidden;
     field-sizing: content;
@@ -164,6 +168,37 @@ a.command-skill-prefix:hover {
 .command-copy-label,
 .command-run-label {
     line-height: 1;
+}
+
+.command-icon-spinner {
+    display: none;
+}
+
+.command-run.is-starting,
+.command-run.is-starting:disabled {
+    cursor: progress;
+    opacity: 1;
+}
+
+.command.is-chat .command-run.is-starting:hover {
+    background: transparent;
+    color: #6b655a;
+    border-color: transparent;
+}
+
+.command-run.is-starting .command-icon-run {
+    display: none;
+}
+
+.command-run.is-starting .command-icon-spinner {
+    display: inline-block;
+    animation: command-spin 0.7s linear infinite;
+}
+
+@keyframes command-spin {
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .command-icon-check {
