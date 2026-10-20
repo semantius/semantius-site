@@ -14,6 +14,7 @@ import { SIGN_UP_URL } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 import { SPECIFICATION } from '~/data/specification';
 import { ACTION_LINKS } from '~/site.config';
+import PageHeader from '~/components/layout/PageHeader.astro';
 
 // Change request 3, §3: the page rebuilt for the "agents" search intent, with
 // the copy as given. Part 1 is for IT and developers, part 2 for owners, in
@@ -100,7 +101,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
             "publisher": { "@type": "Organization", "name": "Semantius" },
         }} />
 
-    <section class="pt-44 pb-12 md:pt-40">
+    <PageHeader class="pb-12">
         <Container class="max-w-4xl">
             <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">{h1}</h1>
@@ -110,10 +111,10 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
                 <li><a href="#routine-work" class={link}>Let your agent do the routine work</a></li>
             </ul>
         </Container>
-    </section>
+    </PageHeader>
 
     {/* Part 1: for IT and developers. */}
-    <Section id="challenges" class="py-12! scroll-mt-28">
+    <Section id="challenges" class="py-12! scroll-mt-24">
         <Container class="max-w-4xl">
             <h2 class={h2}>Where agents struggle, and what Semantius does about it</h2>
             <p class={prose}>Semantius is the system of record your AI agents work in. Agents are good at understanding what you want, and bad at being exact, careful and consistent every single time. Semantius catches some of those mistakes, such as invalid values, broken links and steps or actions your rules forbid: your agent proposes, and the rules you define decide what reaches your records.</p>
@@ -158,7 +159,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
         </Container>
     </Section>
 
-    <Section id="specification" class="py-12! scroll-mt-28">
+    <Section id="specification" class="py-12! scroll-mt-24">
         <Container class="max-w-4xl">
             <h3 class={h3}>Specification</h3>
             <p class={`${prose} mb-6`}>The specification of Semantius as a secure database runtime for LLMs and AI agents.</p>
@@ -178,7 +179,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
     </Section>
 
     {/* Part 2: for owners, in plain words. */}
-    <Section id="routine-work" class="py-12! scroll-mt-28">
+    <Section id="routine-work" class="py-12! scroll-mt-24">
         <Container class="max-w-6xl">
             <div class="max-w-4xl">
                 <h2 class={h2}>Let your agent do the routine work</h2>

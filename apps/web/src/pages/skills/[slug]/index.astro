@@ -3,6 +3,7 @@ export const prerender = true;
 import { getCollection } from 'astro:content';
 import { skillSourceUrl } from '~/lib/repo';
 import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 import Command from '~/components/common/Command.astro';
 import SkillInstall from '~/components/common/SkillInstall.astro';
 
@@ -45,7 +46,7 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 	title={catalog.domain_name}
 	description={catalog.catalog_tagline || `Agent skill for ${catalog.domain_name}.`}
 >
-	<section class="pt-32 pb-16">
+	<PageHeader>
 		<div class="max-w-3xl mx-auto px-6">
 			<div class="mb-6">
 				<a href="/skills" class="text-sm text-muted-foreground hover:text-primary">
@@ -60,7 +61,10 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 			{catalog.catalog_tagline && (
 				<p class="mt-4 text-lg text-foreground/90">{catalog.catalog_tagline}</p>
 			)}
-
+		</div>
+	</PageHeader>
+	<section class="pb-16">
+		<div class="max-w-3xl mx-auto px-6">
 			{paragraphs.length > 0 && (
 				<div class="mt-6 space-y-4 text-foreground/80">
 					{paragraphs.map((paragraph) => (

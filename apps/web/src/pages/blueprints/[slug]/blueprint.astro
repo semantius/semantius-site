@@ -3,6 +3,7 @@ export const prerender = true;
 import { type CollectionEntry, getCollection, render } from 'astro:content';
 import { githubBlobUrl } from '~/lib/repo';
 import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 import { blueprintSourcePath } from '~/lib/routes';
 
 export async function getStaticPaths() {
@@ -29,7 +30,7 @@ const systemName = spec.data.system_name;
 	noindex={spec.data.noindex}
 	nofollow={spec.data.nofollow}
 >
-	<section class="pt-32 pb-16">
+	<PageHeader>
 		<div class="max-w-3xl mx-auto px-6">
 			<div class="mb-6 flex items-center justify-between gap-3">
 				<a
@@ -64,7 +65,10 @@ const systemName = spec.data.system_name;
 					</a>
 				</div>
 			</div>
-
+		</div>
+	</PageHeader>
+	<section class="pb-16">
+		<div class="max-w-3xl mx-auto px-6">
 			<div class="prose dark:prose-invert prose-base max-w-none prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-xl prose-code:before:content-none prose-code:after:content-none">
 				<Content />
 			</div>

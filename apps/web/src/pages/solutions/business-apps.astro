@@ -10,6 +10,7 @@ import DocsLinks from '~/components/sections/DocsLinks.astro';
 import CrossLinks from '~/components/sections/CrossLinks.astro';
 import { CLOUD_PLANS, SIGN_UP_URL, usd, type CloudPlan } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
+import PageHeader from '~/components/layout/PageHeader.astro';
 
 // Change request 3, §5: the page for the "outgrown SaaS" search intent, for
 // business teams that outgrew a tool, with its top and import line from change
@@ -48,14 +49,14 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
     description="Your CRM, project tool or spreadsheets weren't built for your agent. Bring your records into one system that keeps your rules, with a ready-to-use app for your whole team in the browser and paid plans not priced per user."
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
 >
-    <section class="pt-44 pb-12 md:pt-40">
+    <PageHeader class="pb-12">
         <Container class="max-w-4xl">
             <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Your tools weren't built for your agent.</h1>
             <p class="mt-6 text-2xl font-semibold leading-snug">A CRM that's more than you need, a project tool that doesn't know your clients, spreadsheets nobody keeps in sync: your agent ends up working around tools made for people clicking. Give it one connected system with your rules built in, and give your team the app.</p>
             <p class="mt-5 text-xl text-foreground/75 leading-relaxed">Your agent brings your records across and sets up the rules. Your team works in a ready-to-use app on desktop and mobile, in the browser, with nothing to install.</p>
         </Container>
-    </section>
+    </PageHeader>
 
     <Section class="py-12!">
         <Container class="max-w-4xl">
@@ -83,7 +84,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
         </Container>
     </Section>
 
-    <Section id="prompts" class="py-12! scroll-mt-28">
+    <Section id="prompts" class="py-12! scroll-mt-24">
         <Container class="max-w-6xl">
             <h2 class={h2}>Start from one of these</h2>
             <PromptCards

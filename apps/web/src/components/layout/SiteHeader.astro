@@ -13,7 +13,9 @@ const signUpLabel = 'Sign up';
 const signInLabel = 'Sign in';
 ---
 
-<header class="w-full transition-all duration-300 border-b border-foreground/10 bg-background/80 backdrop-blur-md">
+{/* Sticky, not fixed: it stays in the page flow and takes its own height, so no page
+    has to pad for it. Solid on purpose; a translucent bar turns gray over a dark hero. */}
+<header class="sticky top-0 z-50 w-full border-b border-foreground/10 bg-background">
   <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
     <a href="/" class="flex items-center gap-3 text-xl font-bold tracking-tight text-primary dark:text-white">
       {siteConfig.logo && (
