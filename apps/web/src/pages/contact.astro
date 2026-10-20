@@ -5,15 +5,18 @@ import { siteConfig } from '~/site.config';
 import ContactForm from '~/components/islands/ContactForm.jsx';
 import { Mail, MapPin, Phone } from 'lucide-react';
 import PageHeader from '~/components/layout/PageHeader.astro';
+import PageTitle from '~/components/layout/PageTitle.astro';
 import Container from '~/components/ui/Container.astro';
 import Grid from '~/components/ui/Grid.astro';
 ---
 
 <Layout title="Contact - Semantius Agentic Data Platform" description="Get in touch with the Semantius team about self-hosting, the managed cloud, semantic blueprints or an evaluation.">
-  <PageHeader 
-      title='Get in <span class="text-primary">Touch</span>'
-      description="We'd love to hear from you. Fill out the form below or reach out directly."
-  />
+  <PageHeader>
+    <PageTitle
+        title='Get in <span class="text-primary">Touch</span>'
+        description="We'd love to hear from you. Fill out the form below or reach out directly."
+    />
+  </PageHeader>
 
   <Container as="section" class="pb-24">
       <Grid cols={2} class="gap-12">

@@ -12,6 +12,7 @@ import Button from '~/components/ui/Button.astro';
 import { CLOUD_PLANS, SIGN_UP_URL, cloudOffers } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 import { ACTION_LINKS } from '~/site.config';
+import PageHeader from '~/components/layout/PageHeader.astro';
 
 // The founder's v1 specification as amended by change requests 1 to 4, with
 // the copy as given. Where the build departs from it, home-deviations.md says how and
@@ -169,7 +170,7 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
         }} />
 
     {/* 2. Hero: inverts the site theme (theme-inverse in components.css). */}
-    <section class="theme-inverse bg-background text-foreground pt-44 pb-20 md:pt-40 md:pb-28">
+    <PageHeader class="theme-inverse bg-background text-foreground pb-20 md:pb-28">
         <Container class="grid gap-14 lg:grid-cols-[1.2fr_1fr] lg:items-center">
             <div>
                 <Badge class="mb-6 border-foreground/10">The agent-first data platform</Badge>
@@ -183,7 +184,7 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
             </div>
             <DataModelGraphic />
         </Container>
-    </section>
+    </PageHeader>
 
     {/* 3. Routing grid */}
     <Section id="routing" class="py-16! md:py-24!">
@@ -220,7 +221,7 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
     {/* 6. Technical platform specifications and operational contracts: dense
         text for technical readers and answer engines, with no cards, tables or
         icons (change request 2). */}
-    <Section id="specifications" class="py-16! md:py-24! scroll-mt-28">
+    <Section id="specifications" class="py-16! md:py-24! scroll-mt-24">
         <Container class="max-w-3xl">
             <h2 class={`${h2} mb-6`}>Technical Platform Specifications &amp; Operational Contracts</h2>
             <p class="text-lg text-foreground/75 leading-relaxed">Semantius keeps the records your agents work on correct by construction, not by instruction. The rules live in the database, next to the data, and every change passes through them. This section explains how the architecture achieves that, and what it guarantees.</p>

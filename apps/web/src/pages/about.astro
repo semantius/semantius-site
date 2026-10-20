@@ -5,6 +5,7 @@ import ContentSection from '~/components/sections/ContentSection.astro';
 import FeaturesList from '~/components/sections/FeaturesList.astro';
 import FeatureItem from '~/components/ui/FeatureItem.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
+import PageTitle from '~/components/layout/PageTitle.astro';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 import Heading from '~/components/ui/Heading.astro';
@@ -27,7 +28,9 @@ const principles = [
 ---
 
 <Layout title="About - Semantius Agentic Data Platform" description="Why Semantius exists: one semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.">
-<PageHeader title='Why <span class="text-primary">Semantius</span> Exists' description='One semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.' />
+  <PageHeader>
+    <PageTitle title='Why <span class="text-primary">Semantius</span> Exists' description='One semantic model, owned by you, that serves your team and your agents from a PostgreSQL database you control.' />
+  </PageHeader>
 
   {/* The paragraph from the founder's v1 specification, §4.11. */}
   <Section class="py-8!">

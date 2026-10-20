@@ -1,5 +1,6 @@
 ---
 import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 import { getCollection } from 'astro:content';
 import { buildDocsTree, getDocsCollectionNavs } from '~/lib/docs-tree';
 
@@ -14,14 +15,17 @@ const collections = getDocsCollectionNavs(buildDocsTree(docs));
     description="Guides and reference documentation for building on Semantius."
     searchable={false}
 >
-    <section class="pt-32 pb-24">
+    <PageHeader>
         <div class="max-w-3xl mx-auto px-6">
             <h1 class="text-4xl font-display font-normal lg:text-[56px]">Documentation</h1>
             <p class="mt-6 text-lg text-foreground/80">
                 Everything you need to describe your business as a semantic model and put it
                 to work for both humans and AI agents.
             </p>
-
+        </div>
+    </PageHeader>
+    <section class="pb-24">
+        <div class="max-w-3xl mx-auto px-6">
             {collections.length > 0 ? (
                 <div class="mt-16 grid gap-6 sm:grid-cols-2">
                     {collections.map((c) => (

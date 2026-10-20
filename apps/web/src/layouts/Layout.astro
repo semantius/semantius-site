@@ -1,6 +1,6 @@
 ---
 import { Font } from 'astro:assets';
-import Header from '~/components/layout/Header.astro';
+import SiteHeader from '~/components/layout/SiteHeader.astro';
 import Footer from '~/components/layout/Footer.astro';
 import Analytics from '~/components/common/Analytics.astro';
 import PostHog from '~/components/common/PostHog.astro';
@@ -113,17 +113,18 @@ const breadcrumbItems = breadcrumbs
 		<body class="min-h-screen flex flex-col antialiased bg-background text-foreground selection:bg-primary selection:text-white">
         <div class="fixed inset-0 z-[-1] bg-background"></div>
 
-        <div class="fixed top-0 w-full z-50 flex flex-col items-stretch">
-            {siteConfig.announcement?.enabled && (
-                <AnnouncementBanner
-                    id={siteConfig.announcement.id}
-                    message="The public beta will start in late October, join our wait list to be notified"
-                    link={siteConfig.announcement.link}
-                    linkText="Join our wait list"
-                />
-            )}
-            <Header />
-        </div>
+        {/* The banner scrolls away; only the SiteHeader sticks. Both are in the page flow,
+            so content starts below them at any banner height. The SiteHeader must stay a
+            direct child of <body>: sticky only holds within its parent. */}
+        {siteConfig.announcement?.enabled && (
+            <AnnouncementBanner
+                id={siteConfig.announcement.id}
+                message="The public beta will start in late October, join our wait list to be notified"
+                link={siteConfig.announcement.link}
+                linkText="Join our wait list"
+            />
+        )}
+        <SiteHeader />
 		{/* Pagefind indexes only what is inside data-pagefind-body; header, banner and footer sit outside <main>.
 		    Astro renders {false} on data-* attributes as the string "false", which Pagefind would treat as opt-in,
 		    so the attribute must be undefined (omitted) rather than false. */}

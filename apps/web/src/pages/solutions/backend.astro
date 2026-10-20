@@ -10,6 +10,7 @@ import CrossLinks from '~/components/sections/CrossLinks.astro';
 import { SIGN_UP_URL } from '~/data/pricing';
 import { SOLUTIONS } from '~/data/solutions';
 import { ACTION_LINKS } from '~/site.config';
+import PageHeader from '~/components/layout/PageHeader.astro';
 
 // Change request 3, §4: the page for the "build" search intent, for builders who
 // deliver systems for clients and developers of internal systems. MIT and
@@ -47,7 +48,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
     description="Business rules, roles and approval steps enforced in Postgres for every app, API and agent login, an API and an app that follow the model, and everything you self-host under MIT."
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: page.name, href: page.path }]}
 >
-    <section class="pt-44 pb-12 md:pt-40">
+    <PageHeader class="pb-12">
         <Container class="max-w-4xl">
             <Badge class="mb-6">{page.readerLabel}</Badge>
             <h1 class="text-4xl md:text-6xl font-bold tracking-tight">The back end with the rules built in.</h1>
@@ -57,7 +58,7 @@ const link = 'font-medium text-primary underline-offset-4 hover:underline';
                 <p>For builders who want the speed of no-code and low-code tools, with the rules in the database.</p>
             </div>
         </Container>
-    </section>
+    </PageHeader>
 
     <Section class="py-12!">
         <Container class="max-w-4xl">

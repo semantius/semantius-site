@@ -1,11 +1,16 @@
 ---
 import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 ---
 
 <Layout title="License - Semantius" description="License information for Semantius.">
-    <div class="pt-32 pb-24">
+    <PageHeader>
         <div class="max-w-4xl mx-auto px-6">
             <h1 class="text-4xl md:text-5xl font-bold mb-8">License</h1>
+        </div>
+    </PageHeader>
+    <div class="pb-24">
+        <div class="max-w-4xl mx-auto px-6">
             <div class="prose dark:prose-invert max-w-none text-foreground/80">
                 <p class="text-lg mb-6">
                     Semantius is released under the MIT License, which is a permissive license that is short and to the point. 

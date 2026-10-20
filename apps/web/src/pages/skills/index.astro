@@ -1,6 +1,7 @@
 ---
 export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 import { getCollection } from 'astro:content';
 
 // The skills listing is grouped by domain (one skill per domain for now). The
@@ -24,7 +25,7 @@ const entries = domains
 ---
 
 <Layout title="Skills" description="Agent skills you can install and use with your semantic models, grouped by domain." searchable={false}>
-	<section class="pt-32 pb-16">
+	<PageHeader>
 		<div class="max-w-3xl mx-auto px-6">
 			<h1 class="text-4xl font-display font-normal lg:text-[56px]">Skills</h1>
 			<p class="mt-6 text-lg text-foreground/80">
@@ -33,7 +34,10 @@ const entries = domains
 			<p class="mt-4 text-muted-foreground">
 				One installable skill per domain. Install it alongside your semantic model and put your agent to work.
 			</p>
-
+		</div>
+	</PageHeader>
+	<section class="pb-16">
+		<div class="max-w-3xl mx-auto px-6">
 			<div class="mt-16 space-y-8">
 				{entries.map((catalog) => (
 					<section aria-labelledby={`skill-${catalog.domain_code}`}>

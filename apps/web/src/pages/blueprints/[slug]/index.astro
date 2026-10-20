@@ -6,6 +6,7 @@ import { blueprintSourcePath } from '~/lib/routes';
 import Command from '~/components/common/Command.astro';
 import { blueprintDeployHeading, blueprintDeployPrompt } from '~/lib/blueprint-deploy';
 import DomainLanding from '~/components/blueprints/DomainLanding.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 
 // This route serves two page kinds at /blueprints/<slug>:
 //   - 'blueprint': a module's semantic blueprint detail (slug = system_slug).
@@ -110,7 +111,7 @@ if (props.kind === 'blueprint') {
 	noindex={blueprint.data.noindex}
 	nofollow={blueprint.data.nofollow}
 >
-	<section class="pt-32 pb-16">
+	<PageHeader>
 		<div class="max-w-7xl mx-auto px-6">
 			<div class="mb-6 flex items-center justify-between gap-3">
 				<a href="/blueprints" class="text-sm text-muted-foreground hover:text-primary">
@@ -152,7 +153,10 @@ if (props.kind === 'blueprint') {
 				<h1>{systemName}</h1>
 				{description && <p>{description}</p>}
 			</div>
-
+		</div>
+	</PageHeader>
+	<section class="pb-16">
+		<div class="max-w-7xl mx-auto px-6">
 			{/* Full container width: command box and the entity summary table. */}
 			<div class="prose dark:prose-invert prose-base max-w-none mt-4 prose-headings:font-display prose-headings:font-bold prose-headings:text-foreground prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-xl prose-code:before:content-none prose-code:after:content-none">
 				<h3>{blueprintDeployHeading(systemName)}</h3>

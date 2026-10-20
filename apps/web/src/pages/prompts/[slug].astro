@@ -2,6 +2,7 @@
 export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import Container from '~/components/ui/Container.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
 import Button from '~/components/ui/Button.astro';
 import Command from '~/components/common/Command.astro';
 import InstallSteps from '~/components/common/InstallSteps.astro';
@@ -23,9 +24,13 @@ const { prompt } = Astro.props as { prompt: SamplePrompt };
     title={promptTitle(prompt)}
     breadcrumbs={[{ name: 'Home', href: '/' }, { name: prompt.heading, href: promptPath(prompt.slug) }]}
 >
-    <section class="pt-44 pb-24 md:pt-40">
-        <Container class="max-w-3xl space-y-10">
+    <PageHeader class="pb-10">
+        <Container class="max-w-3xl">
             <h1 class="text-4xl md:text-5xl font-bold tracking-tight">{prompt.heading}</h1>
+        </Container>
+    </PageHeader>
+    <section class="pb-24">
+        <Container class="max-w-3xl space-y-10">
             <Command mode="chat" runnable command={prompt.prompt} />
             <Tbd block note="What the result includes, in three short bullets. Not written yet." />
             <InstallSteps />
