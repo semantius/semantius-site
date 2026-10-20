@@ -54,6 +54,12 @@ Operator changes go in `.env` or
 a backslash line continuation.** The `\` plus newline arrives collapsed, leaving
 one long line with triple spaces. Use Write or Edit for such content.
 
+## Working rules
+
+**Name the root cause, not only the fix.** When a change works around a structural
+problem instead of removing it, say so in the hand-back and the commit message, name
+the structural problem, and list the other places it affects.
+
 ## Working from the founder's page specifications
 
 **Stop and ask; never infer.** This is the founder's standing instruction. When a
