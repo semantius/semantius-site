@@ -1,12 +1,9 @@
 ---
 export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
-import { siteConfig } from '~/site.config';
-import { Mail } from 'lucide-react';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import PageTitle from '~/components/layout/PageTitle.astro';
 import Container from '~/components/ui/Container.astro';
-import Grid from '~/components/ui/Grid.astro';
 ---
 
 <Layout title="Contact - Semantius Agentic Data Platform" description="Get in touch with the Semantius team about self-hosting, the managed cloud, semantic blueprints or an evaluation.">
@@ -17,28 +14,9 @@ import Grid from '~/components/ui/Grid.astro';
     />
   </PageHeader>
 
-  <Container as="section" class="pb-24">
-      <Grid cols={2} class="gap-12">
-          <!-- Contact Info -->
-          <div class="space-y-8">
-              <h2 class="text-2xl font-bold mb-6">Contact Information</h2>
-              
-              <div class="flex items-start gap-4">
-                  <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                      <Mail className="w-6 h-6" />
-                  </div>
-                  <div>
-                      <h3 class="font-bold mb-1">Email</h3>
-                      <p class="text-muted-foreground"><a href={`mailto:${siteConfig.contact.email}`} class="hover:text-foreground transition-colors">{siteConfig.contact.email}</a></p>
-                  </div>
-              </div>
-          </div>
-
-          <!-- Contact Form: HubSpot embed, portal 149609610 in region eu1. -->
-          <div>
-              <script is:inline src="https://js-eu1.hsforms.net/forms/embed/149609610.js" defer></script>
-              <div class="hs-form-frame" data-region="eu1" data-form-id="8c1bb5db-e5b6-4840-919a-ffcf99795bfc" data-portal-id="149609610"></div>
-          </div>
-      </Grid>
+  <!-- Contact Form: HubSpot embed, portal 149609610 in region eu1. -->
+  <Container as="section" class="max-w-2xl pb-24">
+      <script is:inline src="https://js-eu1.hsforms.net/forms/embed/149609610.js" defer></script>
+      <div class="hs-form-frame" data-region="eu1" data-form-id="8c1bb5db-e5b6-4840-919a-ffcf99795bfc" data-portal-id="149609610"></div>
   </Container>
 </Layout>
