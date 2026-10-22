@@ -2,8 +2,7 @@
 export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import { siteConfig } from '~/site.config';
-import ContactForm from '~/components/islands/ContactForm.jsx';
-import { Mail, MapPin, Phone } from 'lucide-react';
+import { Mail } from 'lucide-react';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import PageTitle from '~/components/layout/PageTitle.astro';
 import Container from '~/components/ui/Container.astro';
@@ -33,39 +32,12 @@ import Grid from '~/components/ui/Grid.astro';
                       <p class="text-muted-foreground"><a href={`mailto:${siteConfig.contact.email}`} class="hover:text-foreground transition-colors">{siteConfig.contact.email}</a></p>
                   </div>
               </div>
-
-              <div class="flex items-start gap-4">
-                  <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                      <Phone className="w-6 h-6" />
-                  </div>
-                  <div>
-                      <h3 class="font-bold mb-1">Phone</h3>
-                      <p class="text-muted-foreground">{siteConfig.contact.phone.main}</p>
-                      <p class="text-muted-foreground">{siteConfig.contact.phone.label}</p>
-                  </div>
-              </div>
-
-               <div class="flex items-start gap-4">
-                  <div class="p-3 rounded-lg bg-primary/10 text-primary">
-                      <MapPin className="w-6 h-6" />
-                  </div>
-                  <div>
-                      <h3 class="font-bold mb-1">Office</h3>
-                      <p class="text-muted-foreground">{siteConfig.contact.address.city}</p>
-                      <p class="text-muted-foreground">{siteConfig.contact.address.full}</p>
-                  </div>
-              </div>
-              
-              <div class="p-6 rounded-2xl bg-linear-to-br from-primary/20 to-purple-500/20 border border-white/10 mt-8">
-                  <h3 class="font-bold mb-2">Enterprise Support</h3>
-                  <p class="text-sm text-muted-foreground mb-4">Need a custom solution or dedicated support? Our enterprise team is ready to help.</p>
-                  <a href="#" class="text-sm font-medium text-primary hover:underline">Contact Sales &rarr;</a>
-              </div>
           </div>
 
-          <!-- Contact Form -->
+          <!-- Contact Form: HubSpot embed, portal 149609610 in region eu1. -->
           <div>
-              <ContactForm client:load />
+              <script is:inline src="https://js-eu1.hsforms.net/forms/embed/149609610.js" defer></script>
+              <div class="hs-form-frame" data-region="eu1" data-form-id="8c1bb5db-e5b6-4840-919a-ffcf99795bfc" data-portal-id="149609610"></div>
           </div>
       </Grid>
   </Container>

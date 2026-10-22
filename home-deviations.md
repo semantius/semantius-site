@@ -205,3 +205,6 @@ request made moot says so in one line.
     (issue 16), swapping the left and right boxes. The middle card stays Back
     end. The Solutions menu and llms.txt still list the pages in the SOLUTIONS
     object order: Agent guardrails, Back end, Business apps.
+58. **The footer's "System Access Nodes" column starts with Contact,** at your
+    request, linking /contact. Its form is the HubSpot form you supplied, and
+    the template's phone, office and "Contact Sales" box are removed.

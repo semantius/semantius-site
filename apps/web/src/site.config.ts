@@ -28,15 +28,7 @@ export const siteConfig = {
   },
   contact: {
     // One address for support, sales and privacy questions.
-    email: 'hello@semantius.com',
-    phone: {
-      main: '+1 (555) 123-4567',
-      label: 'Mon-Fri 9am-6pm PST'
-    },
-    address: {
-      city: 'Endurance',
-      full: 'Interstellar Space Station'
-    }
+    email: 'hello@semantius.com'
   },
   analytics: {
     alwaysLoad: import.meta.env.ANALYTICS_ALWAYS_LOAD === 'true',
