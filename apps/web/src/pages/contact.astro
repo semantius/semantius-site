@@ -1,6 +1,7 @@
 ---
 export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
+import { siteConfig } from '~/site.config';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import PageTitle from '~/components/layout/PageTitle.astro';
 import Container from '~/components/ui/Container.astro';
@@ -8,10 +9,12 @@ import Container from '~/components/ui/Container.astro';
 
 <Layout title="Contact - Semantius Agentic Data Platform" description="Get in touch with the Semantius team about self-hosting, the managed cloud, semantic blueprints or an evaluation.">
   <PageHeader>
-    <PageTitle
-        title='Get in <span class="text-primary">Touch</span>'
-        description="We'd love to hear from you. Fill out the form below or reach out directly."
-    />
+    <PageTitle title='Get in <span class="text-primary">Touch</span>'>
+        <Fragment slot="description">
+            Send us an email at <a href={`mailto:${siteConfig.contact.email}`} class="font-medium text-primary hover:underline underline-offset-4">{siteConfig.contact.email}</a> or submit the form below.
+            All requests are answered by a human, usually within one business day.
+        </Fragment>
+    </PageTitle>
   </PageHeader>
 
   <!-- Contact Form: HubSpot embed, portal 149609610 in region eu1. -->

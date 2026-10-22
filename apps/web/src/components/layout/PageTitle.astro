@@ -5,14 +5,16 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+// The "description" slot takes the place of the prop when the text needs markup, such as a link.
+const hasDescription = description || Astro.slots.has('description');
 ---
 
 <div class="pb-12 text-center">
   <div class="max-w-7xl mx-auto px-6">
     <h1 class="text-5xl md:text-7xl font-display font-bold mb-6" set:html={title} />
-    {description && (
+    {hasDescription && (
       <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
-        {description}
+        <slot name="description">{description}</slot>
       </p>
     )}
   </div>

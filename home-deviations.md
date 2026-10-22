@@ -208,3 +208,5 @@ request made moot says so in one line.
 58. **The footer's "System Access Nodes" column starts with Contact,** at your
     request, linking /contact. Its form is the HubSpot form you supplied, and
     the template's phone, office and "Contact Sales" box are removed.
+59. **The header's Sign up button reads "Start for free",** at your request, on
+    desktop and in the phone menu. The pricing plan cards keep "Sign up".
