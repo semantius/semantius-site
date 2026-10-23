@@ -16,6 +16,7 @@ import matter from 'gray-matter';
 import { markdownTwins } from './src/lib/dualmark/integration';
 import { skillSourceUrl } from './src/lib/repo';
 import { skillInstallCommand } from './src/lib/skill-install';
+import { TEMPLATE_CATEGORIES, TEMPLATES_PATH, templateCategoryPath } from './src/data/templates';
 // Imported statically rather than with `await import('pagefind')` inside the
 // astro:build:done hook. That dynamic import resolves through Vite's module
 // runner, which can already be closed by the time trailing build hooks run,
@@ -519,6 +520,11 @@ const removedPageRedirects = {
   '/showcase': '/',
 };
 
+// /templates has no page of its own: it opens the first category.
+const templatesRedirects = {
+  [TEMPLATES_PATH]: templateCategoryPath(TEMPLATE_CATEGORIES[0]),
+};
+
 // https://astro.build/config
 export default defineConfig({
   site: process.env.SITE_URL || 'https://www.semantius.com',
@@ -535,11 +541,12 @@ export default defineConfig({
     ...docsLegacyRedirects,
     ...blueprintLegacyRedirects,
     ...removedPageRedirects,
+    ...templatesRedirects,
     // Markdown twins of every legacy path. Without these, an agent that was
     // given an old URL and appends ".md" gets a 404, because Astro's redirects
     // only cover the HTML form. Derived from the same maps so the two can
     // never disagree about where a legacy path now lives.
-    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects, ...removedPageRedirects }),
+    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects, ...removedPageRedirects, ...templatesRedirects }),
   },
   fonts: [
     {
