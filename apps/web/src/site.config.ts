@@ -87,6 +87,7 @@ export const NAV_LINKS = [
       { href: '/changelog', label: 'Changelog', description: 'New features & fixes', icon: 'FileClock' },
     ]
   },
+  { href: '/templates', label: 'Templates' },
   // Company section temporarily hidden: restore when About/Contact pages are ready.
   // {
   //   href: '/about',

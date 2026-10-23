@@ -1,6 +1,8 @@
 [
   {
     "name": "ACTIVITY-BOOKING",
+    "title": "Tours, Activities & Experiences Booking",
+    "tagline": "Sell, schedule, and run your tours and activities: take bookings, manage availability and guides, collect waivers, and get paid, all in one place.",
     "domain_class": "domain",
     "prompt": "I need a tours, activities & experiences booking system to manage activity bookings, activity departures, and activity products.",
     "department": [
@@ -38,6 +40,8 @@
   },
   {
     "name": "AGENCY-MGMT",
+    "title": "Agency Management Software",
+    "tagline": "Run your agency from estimate to invoice: client jobs, media buying, and creative operations in one place.",
     "domain_class": "domain",
     "prompt": "Build me agency management software to manage agency jobs, agency time entries, and creative deliverables.",
     "department": [
@@ -76,6 +80,8 @@
   },
   {
     "name": "FMIS",
+    "title": "Farm Management Information System",
+    "tagline": "Run the whole farm from one record: map every field, plan each season, log every operation, and turn it into yield and profit insight.",
     "domain_class": "domain",
     "prompt": "I need a farm management information system to manage fields, field applications, and crop plans.",
     "department": [
@@ -112,6 +118,8 @@
   },
   {
     "name": "INS-CLAIMS",
+    "title": "Insurance Claims Management",
+    "tagline": "Take every claim from first notice of loss through settlement, payment, and recovery in one place.",
     "domain_class": "domain",
     "prompt": "Build me an insurance claims management system to manage insurance claims, insurance policies, and claim settlements.",
     "department": [
@@ -147,6 +155,8 @@
   },
   {
     "name": "LIVESTOCK-MGMT",
+    "title": "Livestock Management",
+    "tagline": "Run your herd and your pastures from one place: animals, mobs, movements, weights, breeding, treatments, and grazing plans.",
     "domain_class": "domain",
     "prompt": "I need a livestock management system to manage animals, mobs, and grazing plans.",
     "department": [
@@ -182,6 +192,8 @@
   },
   {
     "name": "MARINA-MGMT",
+    "title": "Marina Management",
+    "tagline": "Run your marina end to end: assign slips and storage, take reservations, bill boaters and meter utilities, schedule the boatyard, and sell fuel, all in one place.",
     "domain_class": "domain",
     "prompt": "Build me a marina management system to manage vessels, boaters, and slips.",
     "department": [
@@ -216,6 +228,8 @@
   },
   {
     "name": "PS-LIC",
+    "title": "Public-Sector Licensing and Permitting",
+    "tagline": "Take permit and license applications, issue and renew them, schedule inspections, enforce code, and bill regulatory fees in one civic-services workflow.",
     "domain_class": "domain",
     "prompt": "I need a public-sector licensing and permitting system to manage permit inspections, code violation / citations, and issued license records.",
     "department": [
@@ -246,6 +260,8 @@
   },
   {
     "name": "RE-CRE",
+    "title": "Commercial Real Estate Operations",
+    "tagline": "Manage commercial leases, CAM reconciliations, rent escalations, and stacking plans across office, retail, and industrial portfolios.",
     "domain_class": "domain",
     "prompt": "Build me a commercial real estate operations system to manage commercial leases, building certifications, and sublease transactions.",
     "department": [
@@ -279,6 +295,8 @@
   },
   {
     "name": "RE-PROP-MGMT",
+    "title": "Residential Property Management",
+    "tagline": "Collect rent, screen tenants, dispatch maintenance, and account for each property, all in one residential-management platform.",
     "domain_class": "domain",
     "prompt": "Build me a residential property management system to manage rental units, rental applications, and rental leases.",
     "department": [
@@ -310,6 +328,8 @@
   },
   {
     "name": "STR-MGMT",
+    "title": "Short-Term and Vacation Rental Management",
+    "tagline": "Distribute listings across every booking channel, manage reservations and guests, automate pricing and turnovers, and account for each owner, in one short-term rental platform.",
     "domain_class": "domain",
     "prompt": "I need a short-term and vacation rental management system to manage reservations, short-term rental listings, and channel connections.",
     "department": [
@@ -348,6 +368,8 @@
   },
   {
     "name": "VET-PRACT-MGMT",
+    "title": "Veterinary Practice Management",
+    "tagline": "Run your whole veterinary practice, from the first appointment to the controlled-substance ledger, in one platform.",
     "domain_class": "domain",
     "prompt": "I need a veterinary practice management system to manage animal patients, veterinary vaccinations, and controlled substance ledger entries.",
     "department": [
@@ -380,6 +402,8 @@
   },
   {
     "name": "WORK-MGMT",
+    "title": "Work Management",
+    "tagline": "Run every team's projects, tasks, and goals in one place, from first request to finished work.",
     "domain_class": "domain",
     "prompt": "I need a work management system to manage work items, work projects, and objective / OKRs.",
     "department": [
@@ -417,6 +441,8 @@
   },
   {
     "name": "CSM",
+    "title": "Customer Service Management",
+    "tagline": "Capture every customer issue, triage it across channels, and resolve it fast against the support level the customer is owed.",
     "domain_class": "domain",
     "prompt": "Build me a customer service management system to manage customer cases, customers, and customer entitlements.",
     "department": [
@@ -448,6 +474,8 @@
   },
   {
     "name": "FSM",
+    "title": "Field Service Management",
+    "tagline": "Schedule, dispatch, and complete on-site service work while keeping equipment, contracts, and customer commitments in sync.",
     "domain_class": "domain",
     "prompt": "Build me a field service management system to manage installed equipment, service work orders, and dispatch records.",
     "department": [
@@ -483,6 +511,8 @@
   },
   {
     "name": "ESG",
+    "title": "ESG Management",
+    "tagline": "Measure your footprint, hit your targets, and report with confidence.",
     "domain_class": "point_solution",
     "prompt": "Build me an ESG management system to manage emissions records, ESG metrics, and ESG disclosures.",
     "department": [
@@ -520,6 +550,8 @@
   },
   {
     "name": "SEM",
+    "title": "Strategy Execution Management",
+    "tagline": "Turn strategy into measurable execution your whole organization can see.",
     "domain_class": "domain",
     "prompt": "Build me a strategy execution management system to manage strategic initiatives, operating reviews, and strategy decisions.",
     "department": [
@@ -552,6 +584,8 @@
   },
   {
     "name": "SPM",
+    "title": "Strategic Portfolio Management",
+    "tagline": "Plan where the organization invests next, balance demand against capacity, and track the value every initiative actually delivers.",
     "domain_class": "domain",
     "prompt": "I need a strategic portfolio management system to manage strategic initiatives, resource allocations, and roadmap items.",
     "department": [
@@ -588,6 +622,8 @@
   },
   {
     "name": "VIS-MGMT",
+    "title": "Visitor Management",
+    "tagline": "Pre-register every visitor, check them in fast at the door, and keep a defensible record of who was on-site, when, and why.",
     "domain_class": "domain",
     "prompt": "Build me a visitor management system to manage visitor registrations, visitor check-ins, and visitor audit logs.",
     "department": [
@@ -617,6 +653,8 @@
   },
   {
     "name": "RE-INVEST",
+    "title": "Real Estate Investment Management",
+    "tagline": "",
     "domain_class": "domain",
     "prompt": "I need a real estate investment management system to manage capital calls, fund distributions, and investment funds.",
     "department": [
@@ -649,6 +687,8 @@
   },
   {
     "name": "LEASE-ACCT",
+    "title": "Lease Accounting and Administration",
+    "tagline": "Audit-ready ASC 842 and IFRS 16 lease accounting from contract to disclosure.",
     "domain_class": "domain",
     "prompt": "Build me a lease accounting and administration system to manage lease agreements, lease liabilities, and lease modifications.",
     "department": [
@@ -684,6 +724,8 @@
   },
   {
     "name": "EXPENSE",
+    "title": "Expense Management",
+    "tagline": "Turn employee spending into clean, policy-checked, reimbursable records from receipt to repayment.",
     "domain_class": "domain",
     "prompt": "I need an expense management system to manage expense lines, expense reports, and expense policies.",
     "department": [
@@ -719,6 +761,8 @@
   },
   {
     "name": "SPEND-MGMT",
+    "title": "Corporate Spend Management",
+    "tagline": "Give every team a card, a budget, and clear rules, then see and control company spend in real time.",
     "domain_class": "domain",
     "prompt": "Build me a corporate spend management system to manage spend policies, card authorizations, and spend requests.",
     "department": [
@@ -756,6 +800,8 @@
   },
   {
     "name": "INV-CRM",
+    "title": "Investor Relationship and Deal Flow Management",
+    "tagline": "See who in your network can open the next door, run every deal from first meeting to close, and keep your investor relationships warm in one place.",
     "domain_class": "domain",
     "prompt": "I need an investor relationship and deal flow management system to manage VC deals, investor contacts, and investment memos.",
     "department": [
@@ -788,6 +834,8 @@
   },
   {
     "name": "BCM",
+    "title": "Business Continuity Management",
+    "tagline": "Know what would hurt most if it stopped, plan the recovery, and prove the plan works before you need it.",
     "domain_class": "point_solution",
     "prompt": "Build me a business continuity management system.",
     "department": [
@@ -809,6 +857,8 @@
   },
   {
     "name": "GRC",
+    "title": "Governance, Risk and Compliance",
+    "tagline": "Run risk, compliance, policy, and audit on one connected register so nothing falls through the cracks.",
     "domain_class": "domain",
     "prompt": "I need a governance, risk and compliance system to manage compliance obligations, issues, and compliance evidences.",
     "department": [
@@ -846,6 +896,8 @@
   },
   {
     "name": "HCM",
+    "title": "Human Capital Management",
+    "tagline": "Run the single source of truth for your workforce, from the employee record to org structure, positions, and the full hire-to-retire lifecycle.",
     "domain_class": "domain",
     "prompt": "I need a human capital management system to manage employees, org units, and positions.",
     "department": [
@@ -883,6 +935,8 @@
   },
   {
     "name": "HRSD",
+    "title": "HR Service Delivery",
+    "tagline": "Give employees one place to ask HR questions, get answers, and track every request to resolution.",
     "domain_class": "domain",
     "prompt": "I need an HR service delivery system to manage HR cases, HR case categories, and employees.",
     "department": [
@@ -913,6 +967,8 @@
   },
   {
     "name": "LMS",
+    "title": "Learning Management",
+    "tagline": "Train your whole workforce and prove it, from first enrollment to audit-ready completion records.",
     "domain_class": "point_solution",
     "prompt": "Build me a learning management system to manage courses, compliance training assignments, and course enrollments.",
     "department": [
@@ -951,6 +1007,8 @@
   },
   {
     "name": "ATS",
+    "title": "Applicant Tracking and Recruiting",
+    "tagline": "Hire faster with a connected pipeline from sourcing through offer acceptance.",
     "domain_class": "point_solution",
     "prompt": "Build me an applicant tracking and recruiting system to manage candidates, applications, and job requisitions.",
     "department": [
@@ -988,6 +1046,8 @@
   },
   {
     "name": "TALENT-MGMT",
+    "title": "Talent Management",
+    "tagline": "Grow, evaluate, and retain your people with one connected talent practice, from goals and reviews to succession and continuous feedback.",
     "domain_class": "point_solution",
     "prompt": "Build me a talent management system to manage career aspirations, performance reviews, and nine-box placements.",
     "department": [
@@ -1026,6 +1086,8 @@
   },
   {
     "name": "SWP",
+    "title": "Strategic Workforce Planning",
+    "tagline": "Plan the workforce you will need years ahead: target headcount, skills, locations, and cost, modeled against every what-if.",
     "domain_class": "domain",
     "prompt": "I need a strategic workforce planning system to manage headcount plans, position demand forecasts, and workforce scenarios.",
     "department": [
@@ -1061,6 +1123,8 @@
   },
   {
     "name": "HAM",
+    "title": "Hardware Asset Management",
+    "tagline": "Know every device you own, where it is, and what it costs.",
     "domain_class": "point_solution",
     "prompt": "I need a hardware asset management system to manage hardware assets, hardware disposal records, and hardware models.",
     "department": [
@@ -1097,6 +1161,8 @@
   },
   {
     "name": "ITAM",
+    "title": "IT Asset Management",
+    "tagline": "Know every asset you own, what it costs, and where it is in its life, across hardware, software, SaaS, and cloud.",
     "domain_class": "domain",
     "prompt": "Build me an IT asset management system to manage asset lifecycle events, asset contracts, and org units.",
     "department": [
@@ -1127,6 +1193,8 @@
   },
   {
     "name": "SAM",
+    "title": "Software Asset Management",
+    "tagline": "",
     "domain_class": "point_solution",
     "prompt": "I need a software asset management system to manage software titles, software licenses, and license audits.",
     "department": [
@@ -1162,6 +1230,8 @@
   },
   {
     "name": "SMP",
+    "title": "SaaS Management Platforms",
+    "tagline": "See every SaaS app your company pays for, cut wasted licenses, and never miss a renewal.",
     "domain_class": "point_solution",
     "prompt": "I need a SaaS management platforms system to manage SaaS applications, SaaS subscriptions, and SMP license seat assignments.",
     "department": [
@@ -1200,6 +1270,8 @@
   },
   {
     "name": "APM",
+    "title": "Application Portfolio Management",
+    "tagline": "See every application you run, score what it is worth, and decide what to keep, fix, or retire.",
     "domain_class": "domain",
     "prompt": "Build me an application portfolio management system to manage enterprise applications, technology platforms, and application interfaces.",
     "department": [
@@ -1234,6 +1306,8 @@
   },
   {
     "name": "CMDB",
+    "title": "Configuration Management Database",
+    "tagline": "Keep one trusted record of every server, application, database, and the connections between them, so changes and incidents can be reasoned about in minutes.",
     "domain_class": "domain",
     "prompt": "Build me a configuration management database system to manage configuration items, CI baselines, and service maps.",
     "department": [
@@ -1264,6 +1338,8 @@
   },
   {
     "name": "ITSM",
+    "title": "IT Service Management",
+    "tagline": "Run a responsive IT service desk that resolves incidents, fulfills requests, and ships changes without breaking the business.",
     "domain_class": "domain",
     "prompt": "I need an IT service management system to manage incidents, service requests, and knowledge articles.",
     "department": [
@@ -1302,6 +1378,8 @@
   },
   {
     "name": "LEGAL-PRACT-MGMT",
+    "title": "Legal Practice Management",
+    "tagline": "Run your whole law firm in one place, from client intake and conflict clearance through matters, billable time, trust accounting, and court deadlines.",
     "domain_class": "domain",
     "prompt": "I need a legal practice management system to manage legal matters, engagement letters, and client invoices.",
     "department": [
@@ -1338,6 +1416,8 @@
   },
   {
     "name": "CLM",
+    "title": "Contract Lifecycle Management",
+    "tagline": "Draft, negotiate, sign, and track every contract from first draft through renewal in one place.",
     "domain_class": "domain",
     "prompt": "I need a contract lifecycle management system to manage contracts, contract clauses, and contract obligations.",
     "department": [
@@ -1376,6 +1456,8 @@
   },
   {
     "name": "ABM-PLATFORM",
+    "title": "Account-Based Marketing Platform",
+    "tagline": "Know which accounts are in-market, then engage them across ads, web, and orchestration before competitors do.",
     "domain_class": "domain",
     "prompt": "Build me an account-based marketing platform to manage ABM campaigns, account engagement scores, and account identifications.",
     "department": [
@@ -1409,6 +1491,8 @@
   },
   {
     "name": "CDP",
+    "title": "Customer Data Platform",
+    "tagline": "Unify every customer signal into one resolved profile, then turn it into action.",
     "domain_class": "point_solution",
     "prompt": "Build me a customer data platform to manage customers, audience segments, and customer attributes.",
     "department": [
@@ -1443,6 +1527,8 @@
   },
   {
     "name": "EMP-ADVOCACY",
+    "title": "Employee Advocacy Platform",
+    "tagline": "Turn your employees into your most trusted social channel: curate content, make sharing one click, and measure the reach and pipeline it drives.",
     "domain_class": "domain",
     "prompt": "I need an employee advocacy platform to manage advocate profiles, advocacy content items, and advocacy programs.",
     "department": [
@@ -1478,6 +1564,8 @@
   },
   {
     "name": "MRM",
+    "title": "Marketing Resource Management",
+    "tagline": "Plan your marketing, allocate the budget, and reconcile every dollar of spend back to the plan.",
     "domain_class": "domain",
     "prompt": "I need a marketing resource management system to manage marketing plan lines, marketing budget allocations, and marketing plans.",
     "department": [
@@ -1507,6 +1595,8 @@
   },
   {
     "name": "PMM",
+    "title": "Product Marketing Management",
+    "tagline": "Run every product launch, win every competitive deal, and arm sales with the right message and content.",
     "domain_class": "domain",
     "prompt": "I need a product marketing management system to manage battlecards, competitive intelligence records, and competitor profiles.",
     "department": [
@@ -1539,6 +1629,8 @@
   },
   {
     "name": "SRM",
+    "title": "Supplier Relationship Management",
+    "tagline": "Onboard new suppliers, qualify them against your standards, and monitor performance and risk on one supplier record.",
     "domain_class": "domain",
     "prompt": "Build me a supplier relationship management system to manage suppliers, supplier qualifications, and supplier risk assessments.",
     "department": [
@@ -1574,6 +1666,8 @@
   },
   {
     "name": "CWM",
+    "title": "Contingent Workforce Management",
+    "tagline": "Source contingent workers through approved staffing suppliers, manage rate cards, and reconcile timesheets and invoices end-to-end.",
     "domain_class": "domain",
     "prompt": "I need a contingent workforce management system to manage contingent workers, contingent invoices, and contingent timesheets.",
     "department": [
@@ -1605,6 +1699,8 @@
   },
   {
     "name": "PROD-MGMT",
+    "title": "Product Management",
+    "tagline": "Turn customer signals into a prioritized roadmap and ship features your users actually asked for.",
     "domain_class": "domain",
     "prompt": "Build me a product management system to manage product features, beta programs, and customer feedback items.",
     "department": [
@@ -1640,6 +1736,8 @@
   },
   {
     "name": "LIB-MGMT",
+    "title": "Library Management",
+    "tagline": "Run your library: catalog every title, lend every item, serve every patron.",
     "domain_class": "domain",
     "prompt": "Build me a library management system to manage library patrons, bibliographic records, and library loans.",
     "department": [
@@ -1677,6 +1775,8 @@
   },
   {
     "name": "CRM",
+    "title": "Customer Relationship Management",
+    "tagline": "Turn every prospect into a tracked relationship: capture leads, work deals through the pipeline, and keep one trusted record of every account.",
     "domain_class": "domain",
     "prompt": "I need a customer relationship management system to manage customers, opportunities, and contacts.",
     "department": [
@@ -1712,6 +1812,8 @@
   },
   {
     "name": "RE-BROKERAGE",
+    "title": "Real Estate Brokerage and Agent Operations",
+    "tagline": "Run the brokerage from first lead to closed deal.",
     "domain_class": "domain",
     "prompt": "I need a real estate brokerage and agent operations system to manage real estate transactions, commission splits, and real estate listings.",
     "department": [
@@ -1743,6 +1845,8 @@
   },
   {
     "name": "INSIDER-RISK",
+    "title": "Insider Risk Management",
+    "tagline": "See, investigate, and contain insider risk before trusted users cause a breach.",
     "domain_class": "domain",
     "prompt": "I need an insider risk management system to manage insider risk cases, user risk scores, and monitored activities.",
     "department": [
@@ -1774,6 +1878,8 @@
   },
   {
     "name": "FLEET-MAINT",
+    "title": "Fleet Maintenance Management",
+    "tagline": "Keep every vehicle on the road and control what each mile costs to maintain.",
     "domain_class": "point_solution",
     "prompt": "I need a fleet maintenance management system to manage vehicle work orders, preventive maintenance schedules, and vehicle parts inventory items.",
     "department": [
@@ -1804,6 +1910,8 @@
   },
   {
     "name": "FLEET-MGMT",
+    "title": "Fleet Management",
+    "tagline": "Run your whole fleet from one place: every vehicle, every driver, and every fuel dollar, with DOT and IFTA compliance built in.",
     "domain_class": "domain",
     "prompt": "Build me a fleet management system to manage fleet assignments, drivers, and fuel transactions.",
     "department": [
@@ -1837,6 +1945,8 @@
   },
   {
     "name": "TELEMATICS",
+    "title": "Vehicle Telematics",
+    "tagline": "See where every vehicle is, how it is driven, and whether it stays compliant, all from one connected view.",
     "domain_class": "point_solution",
     "prompt": "Build me a vehicle telematics system to manage dashcam events, driver behavior events, and driver safety scorecards.",
     "department": [
