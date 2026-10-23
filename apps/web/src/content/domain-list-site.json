@@ -1,0 +1,1872 @@
+[
+  {
+    "name": "ACTIVITY-BOOKING",
+    "domain_class": "domain",
+    "prompt": "I need a tours, activities & experiences booking system to manage activity bookings, activity departures, and activity products.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Arts, Entertainment, and Recreation"
+    ],
+    "entities": [
+      "Activity Booking",
+      "Activity Departure",
+      "Activity Product",
+      "Bookable Resource",
+      "Guide Assignment",
+      "Liability Waiver",
+      "Booking Participant",
+      "Booking Refund",
+      "Booking Payment",
+      "Rate Option"
+    ],
+    "vendors": [
+      "FareHarbor",
+      "Peek Travel Inc.",
+      "Expedition Software Holding",
+      "Tripadvisor, Inc.",
+      "Xola, Inc.",
+      "Fullsteam",
+      "Resmark Systems",
+      "Origin"
+    ],
+    "semantius_score": 83,
+    "semantius_agent_core": 88,
+    "semantius_agent_first": 92,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "AGENCY-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me agency management software to manage agency jobs, agency time entries, and creative deliverables.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Professional Services",
+      "Advertising and Marketing Agencies"
+    ],
+    "entities": [
+      "Agency Job",
+      "Agency Time Entry",
+      "Creative Deliverable",
+      "Agency Estimate",
+      "Creative Brief",
+      "Insertion Order",
+      "Media Plan",
+      "Retainer"
+    ],
+    "vendors": [
+      "Workamajig",
+      "Deltek",
+      "Advantage Software",
+      "Function Point Productivity Software",
+      "Mediaocean",
+      "Scoro",
+      "Aprimo",
+      "ProActive Software",
+      "Magnetic HQ",
+      "Forecast.app"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "s"
+  },
+  {
+    "name": "FMIS",
+    "domain_class": "domain",
+    "prompt": "I need a farm management information system to manage fields, field applications, and crop plans.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Agriculture, Forestry, Fishing and Hunting",
+      "Crop Production"
+    ],
+    "entities": [
+      "Field",
+      "Field Application",
+      "Crop Plan",
+      "Harvest Record",
+      "Machinery Telemetry Record",
+      "Planting Record",
+      "Ag Input Inventory",
+      "Variable-Rate Prescription"
+    ],
+    "vendors": [
+      "Bayer Crop Science",
+      "Corteva Agriscience",
+      "Conservis Corp",
+      "AgriWebb Pty Ltd",
+      "Trimble Inc",
+      "Deere and Company",
+      "Farmbrite Inc",
+      "AgWorld"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "INS-CLAIMS",
+    "domain_class": "domain",
+    "prompt": "Build me an insurance claims management system to manage insurance claims, insurance policies, and claim settlements.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Financial Services",
+      "Insurance"
+    ],
+    "entities": [
+      "Insurance Claim",
+      "Insurance Policy",
+      "Claim Settlement",
+      "Loss Incident",
+      "Claim Adjuster Assignment",
+      "Claim Payment",
+      "Salvage Recovery",
+      "SIU Investigation Case",
+      "Subrogation Case",
+      "Policy Coverage"
+    ],
+    "vendors": [
+      "Guidewire",
+      "Duck Creek Technologies",
+      "Sapiens",
+      "ServiceNow Inc",
+      "Salesforce Inc"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "LIVESTOCK-MGMT",
+    "domain_class": "domain",
+    "prompt": "I need a livestock management system to manage animals, mobs, and grazing plans.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Agriculture, Forestry, Fishing and Hunting",
+      "Animal Production and Aquaculture"
+    ],
+    "entities": [
+      "Animal",
+      "Mob",
+      "Grazing Plan",
+      "Mob Movement",
+      "Paddock",
+      "Pasture Allocation",
+      "Treatment Record",
+      "Breeding Record",
+      "Sale Record",
+      "Weight Record"
+    ],
+    "vendors": [
+      "AgriWebb Pty Ltd",
+      "Herdwatch",
+      "MaiaGrazing",
+      "CattleMax",
+      "Performance Livestock Analytics"
+    ],
+    "semantius_score": 72,
+    "semantius_agent_core": 89,
+    "semantius_agent_first": 89,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "MARINA-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a marina management system to manage vessels, boaters, and slips.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Arts, Entertainment, and Recreation"
+    ],
+    "entities": [
+      "Vessel",
+      "Boater",
+      "Slip",
+      "Reservation",
+      "Slip Contract",
+      "Boatyard Work Order",
+      "Dockage Invoice",
+      "Slip Assignment",
+      "Dry Stack Launch Request",
+      "Fuel Sale"
+    ],
+    "vendors": [
+      "Dockwa",
+      "Storable",
+      "Valsoft",
+      "IRM Pacific",
+      "Scribble Software"
+    ],
+    "semantius_score": 82,
+    "semantius_agent_core": 86,
+    "semantius_agent_first": 89,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "PS-LIC",
+    "domain_class": "domain",
+    "prompt": "I need a public-sector licensing and permitting system to manage permit inspections, code violation / citations, and issued license records.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Public Sector"
+    ],
+    "entities": [
+      "Permit Inspection",
+      "Code Violation / Citation",
+      "Issued License Record",
+      "License Renewal",
+      "Permit Application",
+      "Regulatory Fee"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Accela",
+      "Tyler Technologies",
+      "OpenGov",
+      "Salesforce Inc"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "RE-CRE",
+    "domain_class": "domain",
+    "prompt": "Build me a commercial real estate operations system to manage commercial leases, building certifications, and sublease transactions.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Real Estate"
+    ],
+    "entities": [
+      "Commercial Lease",
+      "Building Certification",
+      "Sublease Transaction",
+      "CAM Charge",
+      "Stacking Plan",
+      "Tenant Credit Record",
+      "Investment Property"
+    ],
+    "vendors": [
+      "Yardi",
+      "MRI Software",
+      "VTS",
+      "CoStar Group",
+      "Accruent",
+      "Altus Group",
+      "London Computer Systems"
+    ],
+    "semantius_score": 78,
+    "semantius_agent_core": 89,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "RE-PROP-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a residential property management system to manage rental units, rental applications, and rental leases.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Real Estate"
+    ],
+    "entities": [
+      "Rental Unit",
+      "Rental Application",
+      "Rental Lease",
+      "Tenant Maintenance Request",
+      "Rent Payment",
+      "Tenant",
+      "Invoice"
+    ],
+    "vendors": [
+      "AppFolio",
+      "RealPage",
+      "Yardi",
+      "Entrata",
+      "London Computer Systems"
+    ],
+    "semantius_score": 83,
+    "semantius_agent_core": 89,
+    "semantius_agent_first": 94,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "STR-MGMT",
+    "domain_class": "domain",
+    "prompt": "I need a short-term and vacation rental management system to manage reservations, short-term rental listings, and channel connections.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Accommodation"
+    ],
+    "entities": [
+      "Reservation",
+      "Short-Term Rental Listing",
+      "Channel Connection",
+      "Rate Plan",
+      "Housekeeping Task",
+      "Owner Statement",
+      "Guest Message",
+      "Property Owner",
+      "Guest",
+      "Guest Review"
+    ],
+    "vendors": [
+      "Guesty Inc",
+      "Hostaway",
+      "Lodgify",
+      "OwnerRez",
+      "Hospitable",
+      "Streamline VRS",
+      "TRACK Hospitality Software",
+      "Expedition Software Holding",
+      "Fullsteam"
+    ],
+    "semantius_score": 69,
+    "semantius_agent_core": 76,
+    "semantius_agent_first": 86,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "VET-PRACT-MGMT",
+    "domain_class": "domain",
+    "prompt": "I need a veterinary practice management system to manage animal patients, veterinary vaccinations, and controlled substance ledger entries.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": [
+      "Professional Services",
+      "Veterinary Services"
+    ],
+    "entities": [
+      "Animal Patient",
+      "Veterinary Vaccination",
+      "Controlled Substance Ledger Entry",
+      "Pet Owner",
+      "Veterinary Lab Result",
+      "Invoice"
+    ],
+    "vendors": [
+      "IDEXX Laboratories",
+      "Covetrus",
+      "Provet Cloud",
+      "Patterson Veterinary",
+      "Hippo Manager",
+      "Shepherd Veterinary Software"
+    ],
+    "semantius_score": 78,
+    "semantius_agent_core": 89,
+    "semantius_agent_first": 89,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "WORK-MGMT",
+    "domain_class": "domain",
+    "prompt": "I need a work management system to manage work items, work projects, and objective / OKRs.",
+    "department": [
+      "Business Operations"
+    ],
+    "industry": null,
+    "entities": [
+      "Work Item",
+      "Work Project",
+      "Objective / OKR",
+      "Work Automation",
+      "Approval Chain",
+      "Custom Field",
+      "Form",
+      "Form Submission",
+      "Key Result",
+      "OKR Check-in"
+    ],
+    "vendors": [
+      "Monday.com Ltd.",
+      "Asana",
+      "Smartsheet",
+      "Mango Technologies Inc.",
+      "Wrike Inc.",
+      "Atlassian",
+      "37signals LLC",
+      "Teamwork.com Ltd.",
+      "Adobe",
+      "Microsoft"
+    ],
+    "semantius_score": 97,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "CSM",
+    "domain_class": "domain",
+    "prompt": "Build me a customer service management system to manage customer cases, customers, and customer entitlements.",
+    "department": [
+      "Customer Service"
+    ],
+    "industry": null,
+    "entities": [
+      "Customer Case",
+      "Customer",
+      "Customer Entitlement",
+      "CSAT Response",
+      "Org Unit",
+      "Contract",
+      "Knowledge Article",
+      "Customer Event"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Salesforce Inc",
+      "Zendesk",
+      "Freshworks",
+      "Intercom",
+      "Ada"
+    ],
+    "semantius_score": 83,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "FSM",
+    "domain_class": "domain",
+    "prompt": "Build me a field service management system to manage installed equipment, service work orders, and dispatch records.",
+    "department": [
+      "Customer Service",
+      "Customer Field Service"
+    ],
+    "industry": null,
+    "entities": [
+      "Installed Equipment Unit",
+      "Service Work Order",
+      "Dispatch Record",
+      "Field Visit",
+      "Customer Site",
+      "Service Contract",
+      "Service PM Schedule",
+      "Customer",
+      "Org Unit",
+      "Location"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "IFS",
+      "Salesforce Inc",
+      "PTC",
+      "Jobber",
+      "Praxedo",
+      "Oracle"
+    ],
+    "semantius_score": 89,
+    "semantius_agent_core": 96,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "ESG",
+    "domain_class": "point_solution",
+    "prompt": "Build me an ESG management system to manage emissions records, ESG metrics, and ESG disclosures.",
+    "department": [
+      "ESG and Sustainability"
+    ],
+    "industry": null,
+    "entities": [
+      "Emissions Record",
+      "ESG Metric",
+      "ESG Disclosure",
+      "ESG Initiative",
+      "ESG Target",
+      "Facility Emissions",
+      "Activity Data Record",
+      "Emission Factor",
+      "Supplier ESG Assessment",
+      "Supplier Qualification"
+    ],
+    "vendors": [
+      "Persefoni",
+      "Sphera",
+      "IBM",
+      "Salesforce Inc",
+      "ServiceNow Inc",
+      "Diligent",
+      "Workiva",
+      "Cority",
+      "Wolters Kluwer",
+      "VelocityEHS"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "l"
+  },
+  {
+    "name": "SEM",
+    "domain_class": "domain",
+    "prompt": "Build me a strategy execution management system to manage strategic initiatives, operating reviews, and strategy decisions.",
+    "department": [
+      "Executive"
+    ],
+    "industry": null,
+    "entities": [
+      "Strategic Initiative",
+      "Operating Review",
+      "Strategy Decision",
+      "Strategy Map",
+      "Objective / OKR"
+    ],
+    "vendors": [
+      "Cascade Strategy",
+      "ClearPoint Strategy",
+      "AchieveIt",
+      "Quantive",
+      "WorkBoard",
+      "Profit.co",
+      "i-nexus",
+      "Spider Strategies",
+      "Envisio",
+      "Microsoft"
+    ],
+    "semantius_score": 86,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "SPM",
+    "domain_class": "domain",
+    "prompt": "I need a strategic portfolio management system to manage strategic initiatives, resource allocations, and roadmap items.",
+    "department": [
+      "Executive"
+    ],
+    "industry": null,
+    "entities": [
+      "Strategic Initiative",
+      "Resource Allocation",
+      "Roadmap Item",
+      "Business Value Assessment",
+      "Demand Intake Request",
+      "Dependency Chain",
+      "Portfolio",
+      "Benefits Tracking Record",
+      "Scenario Plan",
+      "Position Demand Forecast"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Planview",
+      "Broadcom",
+      "Microsoft",
+      "Atlassian",
+      "IBM",
+      "Dragonboat, Inc.",
+      "Asana",
+      "Smartsheet"
+    ],
+    "semantius_score": 91,
+    "semantius_agent_core": 97,
+    "semantius_agent_first": 97,
+    "min_org_size": "l"
+  },
+  {
+    "name": "VIS-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a visitor management system to manage visitor registrations, visitor check-ins, and visitor audit logs.",
+    "department": [
+      "Facilities and Real Estate"
+    ],
+    "industry": null,
+    "entities": [
+      "Visitor Registration",
+      "Visitor Check-In",
+      "Visitor Audit Log",
+      "Visitor Host Assignment",
+      "Visitor Badge",
+      "Visitor Evacuation List",
+      "Visitor NDA Acknowledgment",
+      "Visitor Watchlist Screening"
+    ],
+    "vendors": [
+      "Envoy",
+      "Proxyclick",
+      "SwipedOn",
+      "ServiceNow Inc"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "RE-INVEST",
+    "domain_class": "domain",
+    "prompt": "I need a real estate investment management system to manage capital calls, fund distributions, and investment funds.",
+    "department": [
+      "Finance"
+    ],
+    "industry": [
+      "Real Estate"
+    ],
+    "entities": [
+      "Capital Call",
+      "Fund Distribution",
+      "Investment Fund",
+      "Investment Property",
+      "Limited Partner",
+      "Property Valuation",
+      "Asset Management Fee"
+    ],
+    "vendors": [
+      "Altus Group",
+      "Yardi",
+      "MRI Software",
+      "Juniper Square",
+      "AppFolio",
+      "Accruent"
+    ],
+    "semantius_score": 88,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "LEASE-ACCT",
+    "domain_class": "domain",
+    "prompt": "Build me a lease accounting and administration system to manage lease agreements, lease liabilities, and lease modifications.",
+    "department": [
+      "Finance",
+      "Accounting"
+    ],
+    "industry": null,
+    "entities": [
+      "Lease Agreement",
+      "Lease Liability",
+      "Lease Modification",
+      "Lease Payment Schedule",
+      "Lease Classification",
+      "Lease Critical Date",
+      "Lease Disclosure",
+      "Right-of-Use Asset",
+      "Lease Document",
+      "ASC 842 Journal Entry"
+    ],
+    "vendors": [
+      "FinQuery",
+      "Trullion",
+      "Occupier",
+      "Nakisa",
+      "CoStar Group",
+      "insightsoftware",
+      "Accruent"
+    ],
+    "semantius_score": 58,
+    "semantius_agent_core": 75,
+    "semantius_agent_first": 75,
+    "min_org_size": "m"
+  },
+  {
+    "name": "EXPENSE",
+    "domain_class": "domain",
+    "prompt": "I need an expense management system to manage expense lines, expense reports, and expense policies.",
+    "department": [
+      "Finance",
+      "Accounts Payable"
+    ],
+    "industry": null,
+    "entities": [
+      "Expense Line",
+      "Expense Report",
+      "Expense Policy",
+      "Travel Booking",
+      "Corporate Card",
+      "Card Transaction",
+      "Org Unit"
+    ],
+    "vendors": [
+      "Workday",
+      "SAP SE",
+      "Expensify",
+      "Navan",
+      "Rydoo",
+      "Brex",
+      "Ramp",
+      "Airwallex",
+      "Pleo",
+      "Mesh Payments"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "SPEND-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a corporate spend management system to manage spend policies, card authorizations, and spend requests.",
+    "department": [
+      "Finance",
+      "Accounts Payable"
+    ],
+    "industry": null,
+    "entities": [
+      "Spend Policy",
+      "Card Authorization",
+      "Spend Request",
+      "Corporate Card Account",
+      "Vendor Payment Authorization",
+      "Expense Report",
+      "Expense Policy",
+      "Payment Run",
+      "Invoice"
+    ],
+    "vendors": [
+      "Ramp",
+      "Brex",
+      "Airwallex",
+      "Pleo",
+      "Mesh Payments",
+      "Navan",
+      "Spendesk",
+      "BILL",
+      "Coupa",
+      "Workday"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "INV-CRM",
+    "domain_class": "domain",
+    "prompt": "I need an investor relationship and deal flow management system to manage VC deals, investor contacts, and investment memos.",
+    "department": [
+      "Finance",
+      "Investment Management"
+    ],
+    "industry": [
+      "Financial Services"
+    ],
+    "entities": [
+      "VC Deal",
+      "Investor Contact",
+      "Investment Memo",
+      "LP Prospect",
+      "Relationship Record",
+      "Portfolio Company"
+    ],
+    "vendors": [
+      "Affinity",
+      "Intapp",
+      "4Degrees",
+      "Attio",
+      "Allvue Systems",
+      "Juniper Square"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "BCM",
+    "domain_class": "point_solution",
+    "prompt": "Build me a business continuity management system.",
+    "department": [
+      "Governance, Risk and Compliance"
+    ],
+    "industry": null,
+    "entities": [],
+    "vendors": [
+      "Fusion Risk Management",
+      "Castellan Solutions",
+      "ServiceNow Inc",
+      "Archer",
+      "Riskonnect"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "GRC",
+    "domain_class": "domain",
+    "prompt": "I need a governance, risk and compliance system to manage compliance obligations, issues, and compliance evidences.",
+    "department": [
+      "Governance, Risk and Compliance"
+    ],
+    "industry": null,
+    "entities": [
+      "Compliance Obligation",
+      "Issue",
+      "Compliance Evidence",
+      "Risk",
+      "Control",
+      "Remediation Plan",
+      "Control Assessment",
+      "Policy",
+      "Policy Attestation",
+      "Risk Assessment"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Archer",
+      "MetricStream",
+      "OneTrust",
+      "LogicGate",
+      "Diligent",
+      "Riskonnect",
+      "MEGA International",
+      "AuditBoard",
+      "Workiva"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "HCM",
+    "domain_class": "domain",
+    "prompt": "I need a human capital management system to manage employees, org units, and positions.",
+    "department": [
+      "Human Resources"
+    ],
+    "industry": null,
+    "entities": [
+      "Employee",
+      "Org Unit",
+      "Position",
+      "Job Profile",
+      "Employment Event",
+      "Employment Contract",
+      "Worker Change Request",
+      "Work Eligibility Document",
+      "Emergency Contact",
+      "Employee Dependent"
+    ],
+    "vendors": [
+      "Workday",
+      "SAP SE",
+      "Oracle",
+      "UKG",
+      "ADP",
+      "Dayforce",
+      "BambooHR",
+      "HiBob",
+      "Rippling",
+      "Personio"
+    ],
+    "semantius_score": 85,
+    "semantius_agent_core": 95,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "HRSD",
+    "domain_class": "domain",
+    "prompt": "I need an HR service delivery system to manage HR cases, HR case categories, and employees.",
+    "department": [
+      "Human Resources",
+      "HR Service Delivery"
+    ],
+    "industry": null,
+    "entities": [
+      "HR Case",
+      "HR Case Category",
+      "Employee",
+      "Knowledge Article",
+      "Service Request"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Workday",
+      "Applaud HR",
+      "Enboarder",
+      "Kallidus",
+      "Leena AI",
+      "Workgrid Software"
+    ],
+    "semantius_score": 77,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "LMS",
+    "domain_class": "point_solution",
+    "prompt": "Build me a learning management system to manage courses, compliance training assignments, and course enrollments.",
+    "department": [
+      "Human Resources",
+      "Learning and Development"
+    ],
+    "industry": null,
+    "entities": [
+      "Course",
+      "Compliance Training Assignment",
+      "Course Enrollment",
+      "Learning Path",
+      "Certification",
+      "Course Session",
+      "Course Version",
+      "Learning Record",
+      "Assessment Attempt",
+      "Audience"
+    ],
+    "vendors": [
+      "Workday",
+      "Cornerstone OnDemand",
+      "Docebo",
+      "360Learning",
+      "Absorb LMS",
+      "Epignosis",
+      "SAP SE",
+      "Litmos",
+      "Degreed",
+      "Microsoft"
+    ],
+    "semantius_score": 93,
+    "semantius_agent_core": 95,
+    "semantius_agent_first": 95,
+    "min_org_size": "s"
+  },
+  {
+    "name": "ATS",
+    "domain_class": "point_solution",
+    "prompt": "Build me an applicant tracking and recruiting system to manage candidates, applications, and job requisitions.",
+    "department": [
+      "Human Resources",
+      "Recruiting"
+    ],
+    "industry": null,
+    "entities": [
+      "Candidate",
+      "Application",
+      "Job Requisition",
+      "Offer",
+      "Background Check",
+      "Interview",
+      "Job Posting",
+      "Talent Pool",
+      "Offer Version",
+      "Pre-Employee"
+    ],
+    "vendors": [
+      "Workday",
+      "Greenhouse Software",
+      "Lever",
+      "iCIMS",
+      "SmartRecruiters",
+      "Ashby",
+      "Eightfold AI",
+      "Phenom",
+      "SAP SE"
+    ],
+    "semantius_score": 89,
+    "semantius_agent_core": 98,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "TALENT-MGMT",
+    "domain_class": "point_solution",
+    "prompt": "Build me a talent management system to manage career aspirations, performance reviews, and nine-box placements.",
+    "department": [
+      "Human Resources",
+      "Talent Development"
+    ],
+    "industry": null,
+    "entities": [
+      "Career Aspiration",
+      "Performance Review",
+      "Nine-Box Placement",
+      "Succession Plan",
+      "Feedback Record",
+      "Performance Goal",
+      "Talent Calibration",
+      "Employee",
+      "Org Unit",
+      "Position"
+    ],
+    "vendors": [
+      "Workday",
+      "SAP SE",
+      "Lattice",
+      "15Five",
+      "Betterworks",
+      "Cornerstone OnDemand",
+      "Leapsome",
+      "Zensai",
+      "Oracle",
+      "Eightfold AI"
+    ],
+    "semantius_score": 90,
+    "semantius_agent_core": 90,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "SWP",
+    "domain_class": "domain",
+    "prompt": "I need a strategic workforce planning system to manage headcount plans, position demand forecasts, and workforce scenarios.",
+    "department": [
+      "Human Resources",
+      "Workforce Planning"
+    ],
+    "industry": null,
+    "entities": [
+      "Headcount Plan",
+      "Position Demand Forecast",
+      "Workforce Scenario",
+      "Org Design",
+      "Skills Gap Analysis",
+      "Workforce Cost Projection",
+      "Workforce Plan",
+      "Labor Market Benchmark",
+      "Job Requisition",
+      "Position"
+    ],
+    "vendors": [
+      "eQ8",
+      "OrgVue",
+      "Visier",
+      "Anaplan",
+      "Pigment",
+      "Workday",
+      "ChartHop"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "HAM",
+    "domain_class": "point_solution",
+    "prompt": "I need a hardware asset management system to manage hardware assets, hardware disposal records, and hardware models.",
+    "department": [
+      "IT Operations",
+      "IT Asset Management"
+    ],
+    "industry": null,
+    "entities": [
+      "Hardware Asset",
+      "Hardware Disposal Record",
+      "Hardware Model",
+      "Spare Part Inventory Item",
+      "Hardware Warranty",
+      "Org Unit",
+      "Location",
+      "Configuration Item"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Lansweeper",
+      "Setyl Ltd",
+      "Flexera",
+      "NinjaOne LLC",
+      "Kaseya Limited",
+      "ConnectWise LLC",
+      "N-able Inc.",
+      "Syncro MSP Inc.",
+      "Zoho Corporation Pvt. Ltd."
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "m"
+  },
+  {
+    "name": "ITAM",
+    "domain_class": "domain",
+    "prompt": "Build me an IT asset management system to manage asset lifecycle events, asset contracts, and org units.",
+    "department": [
+      "IT Operations",
+      "IT Asset Management"
+    ],
+    "industry": null,
+    "entities": [
+      "Asset Lifecycle Event",
+      "Asset Contract",
+      "Org Unit",
+      "Location"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Flexera",
+      "Snow Software",
+      "Ivanti",
+      "USU Software",
+      "Certero",
+      "Eracent",
+      "Setyl Ltd"
+    ],
+    "semantius_score": 82,
+    "semantius_agent_core": 86,
+    "semantius_agent_first": 91,
+    "min_org_size": "s"
+  },
+  {
+    "name": "SAM",
+    "domain_class": "point_solution",
+    "prompt": "I need a software asset management system to manage software titles, software licenses, and license audits.",
+    "department": [
+      "IT Operations",
+      "IT Asset Management"
+    ],
+    "industry": null,
+    "entities": [
+      "Software Title",
+      "Software License",
+      "License Audit",
+      "Software Installation",
+      "Org Unit",
+      "Contract",
+      "Configuration Item"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Flexera",
+      "Snow Software",
+      "USU Software",
+      "Lansweeper",
+      "Setyl Ltd",
+      "NinjaOne LLC",
+      "Kaseya Limited",
+      "ConnectWise LLC",
+      "N-able Inc."
+    ],
+    "semantius_score": 81,
+    "semantius_agent_core": 94,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "SMP",
+    "domain_class": "point_solution",
+    "prompt": "I need a SaaS management platforms system to manage SaaS applications, SaaS subscriptions, and SMP license seat assignments.",
+    "department": [
+      "IT Operations",
+      "IT Asset Management"
+    ],
+    "industry": null,
+    "entities": [
+      "SaaS Application",
+      "SaaS Subscription",
+      "SMP License Seat Assignment",
+      "Shadow IT App",
+      "App Catalog Listing",
+      "Automation Workflow",
+      "Optimization Recommendation",
+      "Renewal Engagement",
+      "SaaS Alert",
+      "App Access Request"
+    ],
+    "vendors": [
+      "Zylo",
+      "Productiv",
+      "Torii",
+      "BetterCloud",
+      "SAP SE",
+      "Flexera",
+      "Josys",
+      "Setyl Ltd",
+      "Snow Software",
+      "Nudge Security"
+    ],
+    "semantius_score": 95,
+    "semantius_agent_core": 96,
+    "semantius_agent_first": 99,
+    "min_org_size": "s"
+  },
+  {
+    "name": "APM",
+    "domain_class": "domain",
+    "prompt": "Build me an application portfolio management system to manage enterprise applications, technology platforms, and application interfaces.",
+    "department": [
+      "IT Operations",
+      "IT Infrastructure"
+    ],
+    "industry": null,
+    "entities": [
+      "Enterprise Application",
+      "Technology Platform",
+      "Application Interface",
+      "Business Capability Map",
+      "Technology Fit Assessment",
+      "Application Total Cost of Ownership",
+      "Application Value Score"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "SAP SE",
+      "MEGA International",
+      "Software AG",
+      "Ardoq",
+      "IBM",
+      "BiZZdesign",
+      "Enterprise Architecture Solutions Ltd.",
+      "Mavim"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "l"
+  },
+  {
+    "name": "CMDB",
+    "domain_class": "domain",
+    "prompt": "Build me a configuration management database system to manage configuration items, CI baselines, and service maps.",
+    "department": [
+      "IT Operations",
+      "IT Infrastructure"
+    ],
+    "industry": null,
+    "entities": [
+      "Configuration Item",
+      "CI Baseline",
+      "Service Map",
+      "CI Relationship",
+      "CI Class",
+      "Org Unit",
+      "Location",
+      "Hardware Asset",
+      "Change"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Device42",
+      "BMC Software"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "ITSM",
+    "domain_class": "domain",
+    "prompt": "I need an IT service management system to manage incidents, service requests, and knowledge articles.",
+    "department": [
+      "IT Operations",
+      "IT Service Desk"
+    ],
+    "industry": null,
+    "entities": [
+      "Incident",
+      "Service Request",
+      "Knowledge Article",
+      "Change",
+      "Problem",
+      "SLA",
+      "Service Catalog Item",
+      "CAB Meeting",
+      "Change Collision",
+      "Service Offering"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Atlassian",
+      "Freshworks",
+      "Ivanti",
+      "BMC Software",
+      "NinjaOne LLC",
+      "Kaseya Limited",
+      "ConnectWise LLC",
+      "Syncro MSP Inc.",
+      "Atera Networks Ltd."
+    ],
+    "semantius_score": 83,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "LEGAL-PRACT-MGMT",
+    "domain_class": "domain",
+    "prompt": "I need a legal practice management system to manage legal matters, engagement letters, and client invoices.",
+    "department": [
+      "Legal"
+    ],
+    "industry": [
+      "Professional Services",
+      "Legal Services"
+    ],
+    "entities": [
+      "Legal Matter",
+      "Engagement Letter",
+      "Client Invoice",
+      "Conflict Check",
+      "External Court Filing",
+      "Trust Account",
+      "Time Entry",
+      "Contact"
+    ],
+    "vendors": [
+      "Clio",
+      "AffiniPay",
+      "Paradigm",
+      "Filevine",
+      "Smokeball",
+      "ProfitSolv",
+      "Centerbase",
+      "Aderant"
+    ],
+    "semantius_score": 76,
+    "semantius_agent_core": 82,
+    "semantius_agent_first": 84,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "CLM",
+    "domain_class": "domain",
+    "prompt": "I need a contract lifecycle management system to manage contracts, contract clauses, and contract obligations.",
+    "department": [
+      "Legal",
+      "Contract Operations"
+    ],
+    "industry": null,
+    "entities": [
+      "Contract",
+      "Contract Clause",
+      "Contract Obligation",
+      "Contract Template",
+      "Signature Record",
+      "Contract Amendment",
+      "Contract Renewal Record",
+      "Contract Milestone",
+      "Contract Risk Assessment",
+      "Data Protection Addendum"
+    ],
+    "vendors": [
+      "ServiceNow Inc",
+      "Icertis",
+      "Ironclad",
+      "Agiloft",
+      "DocuSign",
+      "Workday",
+      "ContractPodAi",
+      "Sirion",
+      "LinkSquares",
+      "SAP SE"
+    ],
+    "semantius_score": 81,
+    "semantius_agent_core": 92,
+    "semantius_agent_first": 94,
+    "min_org_size": "s"
+  },
+  {
+    "name": "ABM-PLATFORM",
+    "domain_class": "domain",
+    "prompt": "Build me an account-based marketing platform to manage ABM campaigns, account engagement scores, and account identifications.",
+    "department": [
+      "Marketing"
+    ],
+    "industry": null,
+    "entities": [
+      "ABM Campaign",
+      "Account Engagement Score",
+      "Account Identification",
+      "Account Journey",
+      "Ad Campaign Target",
+      "Intent Signal",
+      "Orchestration Playbook",
+      "Web Experience",
+      "Web Personalization Rule",
+      "Web Visitor Resolution"
+    ],
+    "vendors": [
+      "Demandbase",
+      "6sense",
+      "Madison Logic",
+      "NextRoll",
+      "Terminus",
+      "Mutiny"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "CDP",
+    "domain_class": "point_solution",
+    "prompt": "Build me a customer data platform to manage customers, audience segments, and customer attributes.",
+    "department": [
+      "Marketing"
+    ],
+    "industry": null,
+    "entities": [
+      "Customer",
+      "Audience Segment",
+      "Customer Attribute",
+      "Customer Event",
+      "Customer Journey",
+      "Identity Graph",
+      "Contact"
+    ],
+    "vendors": [
+      "Salesforce Inc",
+      "Adobe",
+      "Treasure Data",
+      "Tealium",
+      "Twilio",
+      "mParticle",
+      "ActionIQ",
+      "Microsoft",
+      "Oracle",
+      "BlueConic"
+    ],
+    "semantius_score": 72,
+    "semantius_agent_core": 83,
+    "semantius_agent_first": 89,
+    "min_org_size": "s"
+  },
+  {
+    "name": "EMP-ADVOCACY",
+    "domain_class": "domain",
+    "prompt": "I need an employee advocacy platform to manage advocate profiles, advocacy content items, and advocacy programs.",
+    "department": [
+      "Marketing"
+    ],
+    "industry": null,
+    "entities": [
+      "Advocate Profile",
+      "Advocacy Content Item",
+      "Advocacy Program",
+      "Advocacy Share",
+      "Advocacy Content Stream",
+      "Advocacy Points Entry",
+      "Advocacy Share Metric",
+      "Advocate Social Account",
+      "Advocacy Campaign",
+      "Advocacy Leaderboard"
+    ],
+    "vendors": [
+      "EveryoneSocial",
+      "GaggleAMP Inc",
+      "DSMN8 Ltd",
+      "Oktopost Ltd",
+      "Hootsuite Inc",
+      "Sociabble",
+      "Sprinklr Inc",
+      "Sprout Social Inc"
+    ],
+    "semantius_score": 56,
+    "semantius_agent_core": 75,
+    "semantius_agent_first": 88,
+    "min_org_size": "s"
+  },
+  {
+    "name": "MRM",
+    "domain_class": "domain",
+    "prompt": "I need a marketing resource management system to manage marketing plan lines, marketing budget allocations, and marketing plans.",
+    "department": [
+      "Marketing"
+    ],
+    "industry": null,
+    "entities": [
+      "Marketing Plan Line",
+      "Marketing Budget Allocation",
+      "Marketing Plan",
+      "Marketing Budget",
+      "Marketing Spend Record",
+      "Marketing Performance Metric",
+      "Marketing Calendar"
+    ],
+    "vendors": [
+      "Uptempo",
+      "Planful",
+      "Aprimo",
+      "Adobe",
+      "Sitecore"
+    ],
+    "semantius_score": 71,
+    "semantius_agent_core": 86,
+    "semantius_agent_first": 86,
+    "min_org_size": "m"
+  },
+  {
+    "name": "PMM",
+    "domain_class": "domain",
+    "prompt": "I need a product marketing management system to manage battlecards, competitive intelligence records, and competitor profiles.",
+    "department": [
+      "Marketing"
+    ],
+    "industry": null,
+    "entities": [
+      "Battlecard",
+      "Competitive Intelligence Record",
+      "Competitor Profile",
+      "Content Engagement Event",
+      "Launch Plan",
+      "Messaging Framework",
+      "Persona Definition",
+      "Product Launch",
+      "Sales Enablement Content",
+      "Value Proposition"
+    ],
+    "vendors": [
+      "Klue",
+      "Crayon",
+      "Highspot",
+      "Seismic Software Inc",
+      "Aha! Labs Inc."
+    ],
+    "semantius_score": 91,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "SRM",
+    "domain_class": "domain",
+    "prompt": "Build me a supplier relationship management system to manage suppliers, supplier qualifications, and supplier risk assessments.",
+    "department": [
+      "Procurement"
+    ],
+    "industry": null,
+    "entities": [
+      "Supplier",
+      "Supplier Qualification",
+      "Supplier Risk Assessment",
+      "Supplier Scorecard",
+      "Supplier Certification",
+      "Supplier Onboarding",
+      "Supplier Bank Account",
+      "Supplier Contact",
+      "Supplier Document",
+      "Supplier Information Request"
+    ],
+    "vendors": [
+      "SAP SE",
+      "HICX",
+      "ServiceNow Inc",
+      "Coupa",
+      "Ivalua",
+      "Jaggaer",
+      "Workday",
+      "JAGGAER"
+    ],
+    "semantius_score": 90,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "CWM",
+    "domain_class": "domain",
+    "prompt": "I need a contingent workforce management system to manage contingent workers, contingent invoices, and contingent timesheets.",
+    "department": [
+      "Procurement",
+      "Indirect Procurement"
+    ],
+    "industry": null,
+    "entities": [
+      "Contingent Worker",
+      "Contingent Invoice",
+      "Contingent Timesheet",
+      "Staffing Supplier",
+      "Preventive Maintenance Work Order",
+      "Rate Card"
+    ],
+    "vendors": [
+      "Workday",
+      "SAP SE",
+      "Beeline",
+      "Magnit",
+      "Utmost",
+      "Kelly Services",
+      "Deel"
+    ],
+    "semantius_score": 88,
+    "semantius_agent_core": 88,
+    "semantius_agent_first": 100,
+    "min_org_size": "m"
+  },
+  {
+    "name": "PROD-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a product management system to manage product features, beta programs, and customer feedback items.",
+    "department": [
+      "Product Management"
+    ],
+    "industry": null,
+    "entities": [
+      "Product Feature",
+      "Beta Program",
+      "Customer Feedback Item",
+      "Product Metric",
+      "Product Release",
+      "Product Roadmap",
+      "Feature Request",
+      "Product Line",
+      "Value Stream"
+    ],
+    "vendors": [
+      "Productboard, Inc.",
+      "Aha! Labs Inc.",
+      "Atlassian",
+      "Pendo.io, Inc.",
+      "Airfocus GmbH",
+      "insightsoftware",
+      "Tempo Software",
+      "Craft.io Ltd.",
+      "Dragonboat, Inc."
+    ],
+    "semantius_score": 90,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "LIB-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a library management system to manage library patrons, bibliographic records, and library loans.",
+    "department": [
+      "Research and Development"
+    ],
+    "industry": [
+      "Libraries and Archives"
+    ],
+    "entities": [
+      "Library Patron",
+      "Bibliographic Record",
+      "Library Loan",
+      "Interlibrary Loan Request",
+      "Library Item",
+      "Library Acquisition Order",
+      "Library Hold",
+      "Library Fine",
+      "Library Vendor Account",
+      "Library Authority Record"
+    ],
+    "vendors": [
+      "Clarivate",
+      "SirsiDynix",
+      "OCLC",
+      "EBSCO Information Services",
+      "ByWater Solutions",
+      "Civica",
+      "Follett Software",
+      "Biblionix"
+    ],
+    "semantius_score": 98,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "s"
+  },
+  {
+    "name": "CRM",
+    "domain_class": "domain",
+    "prompt": "I need a customer relationship management system to manage customers, opportunities, and contacts.",
+    "department": [
+      "Sales"
+    ],
+    "industry": null,
+    "entities": [
+      "Customer",
+      "Opportunity",
+      "Contact",
+      "Lead",
+      "Sales Activity",
+      "Pipeline Stage",
+      "Customer Event",
+      "Sales Email"
+    ],
+    "vendors": [
+      "Salesforce Inc",
+      "HubSpot",
+      "Microsoft",
+      "Oracle",
+      "SAP SE",
+      "Zoho Corporation",
+      "Pipedrive",
+      "SugarCRM",
+      "Creatio",
+      "Freshworks"
+    ],
+    "semantius_score": 83,
+    "semantius_agent_core": 95,
+    "semantius_agent_first": 98,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "RE-BROKERAGE",
+    "domain_class": "domain",
+    "prompt": "I need a real estate brokerage and agent operations system to manage real estate transactions, commission splits, and real estate listings.",
+    "department": [
+      "Sales"
+    ],
+    "industry": [
+      "Real Estate"
+    ],
+    "entities": [
+      "Real Estate Transaction",
+      "Commission Split",
+      "Real Estate Listing",
+      "Disclosure Document",
+      "Tour Appointment",
+      "Contact",
+      "Lead"
+    ],
+    "vendors": [
+      "Lone Wolf Technologies",
+      "Inside Real Estate",
+      "Follow Up Boss",
+      "Zillow Group",
+      "SkySlope"
+    ],
+    "semantius_score": 64,
+    "semantius_agent_core": 84,
+    "semantius_agent_first": 88,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "INSIDER-RISK",
+    "domain_class": "domain",
+    "prompt": "I need an insider risk management system to manage insider risk cases, user risk scores, and monitored activities.",
+    "department": [
+      "Security"
+    ],
+    "industry": null,
+    "entities": [
+      "Insider Risk Case",
+      "User Risk Score",
+      "Monitored Activity",
+      "Insider Risk Alert",
+      "Investigation Evidence Item",
+      "Risk Indicator",
+      "Exit Risk Assessment"
+    ],
+    "vendors": [
+      "DTEX Systems",
+      "Mimecast",
+      "Proofpoint",
+      "Microsoft",
+      "Teramind",
+      "Forcepoint",
+      "Cyberhaven"
+    ],
+    "semantius_score": 73,
+    "semantius_agent_core": 93,
+    "semantius_agent_first": 93,
+    "min_org_size": "l"
+  },
+  {
+    "name": "FLEET-MAINT",
+    "domain_class": "point_solution",
+    "prompt": "I need a fleet maintenance management system to manage vehicle work orders, preventive maintenance schedules, and vehicle parts inventory items.",
+    "department": [
+      "Supply Chain",
+      "Logistics"
+    ],
+    "industry": null,
+    "entities": [
+      "Vehicle Work Order",
+      "Preventive Maintenance Schedule",
+      "Vehicle Parts Inventory Item",
+      "Maintenance Defect",
+      "Location",
+      "Org Unit"
+    ],
+    "vendors": [
+      "Fleetio",
+      "AssetWorks",
+      "Whip Around",
+      "Samsara",
+      "Geotab",
+      "Trimble Inc"
+    ],
+    "semantius_score": 80,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "FLEET-MGMT",
+    "domain_class": "domain",
+    "prompt": "Build me a fleet management system to manage fleet assignments, drivers, and fuel transactions.",
+    "department": [
+      "Supply Chain",
+      "Logistics"
+    ],
+    "industry": null,
+    "entities": [
+      "Fleet Assignment",
+      "Driver",
+      "Fuel Transaction",
+      "Vehicle",
+      "Vehicle Inspection",
+      "Employee"
+    ],
+    "vendors": [
+      "Samsara",
+      "Geotab",
+      "Motive",
+      "Verizon Connect",
+      "Bridgestone",
+      "Trimble Inc",
+      "Solera",
+      "Fleetio",
+      "AssetWorks"
+    ],
+    "semantius_score": null,
+    "semantius_agent_core": null,
+    "semantius_agent_first": null,
+    "min_org_size": "xs"
+  },
+  {
+    "name": "TELEMATICS",
+    "domain_class": "point_solution",
+    "prompt": "Build me a vehicle telematics system to manage dashcam events, driver behavior events, and driver safety scorecards.",
+    "department": [
+      "Supply Chain",
+      "Logistics"
+    ],
+    "industry": null,
+    "entities": [
+      "Dashcam Event",
+      "Driver Behavior Event",
+      "Driver Safety Scorecard",
+      "ELD Log",
+      "Geofence Event",
+      "GPS Waypoint",
+      "Idle Event",
+      "Vehicle Trip"
+    ],
+    "vendors": [
+      "Samsara",
+      "Geotab",
+      "Motive",
+      "Verizon Connect",
+      "Bridgestone",
+      "Trimble Inc",
+      "Solera",
+      "Lytx"
+    ],
+    "semantius_score": 100,
+    "semantius_agent_core": 100,
+    "semantius_agent_first": 100,
+    "min_org_size": "xs"
+  }
+]
