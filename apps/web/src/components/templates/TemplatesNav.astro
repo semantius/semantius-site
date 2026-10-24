@@ -1,0 +1,72 @@
+---
+import TemplatesNavList from './TemplatesNavList.astro';
+
+/**
+ * The template category navigation, built to behave like the docs table of
+ * contents (components/blog/TableOfContents.astro): a sticky column from lg
+ * up, and below lg a closed disclosure above the templates. Render it as the
+ * first child of a `lg:grid-cols-[260px_1fr]` grid; both variants are grid
+ * children, and whichever is hidden takes no cell.
+ *
+ * With `anchors`, the links jump to sections on the page and the section
+ * being read is highlighted while scrolling. Otherwise they link to the
+ * category pages and `current` is highlighted.
+ */
+interface Props {
+  anchors?: boolean;
+  current?: string;
+}
+
+const { anchors = false, current } = Astro.props;
+---
+
+<aside aria-label="Template categories" class="hidden lg:block">
+  <nav data-templates-nav class="sticky top-24 max-h-[calc(100vh-6rem)] overflow-auto pb-10 [scrollbar-width:thin]">
+    <TemplatesNavList anchors={anchors} current={current} />
+  </nav>
+</aside>
+<details data-templates-nav data-pagefind-ignore class="lg:hidden rounded-xl border border-foreground/10 bg-foreground/2">
+  <summary class="cursor-pointer list-none px-4 py-3 text-sm font-bold text-foreground flex items-center justify-between gap-2">
+    Categories
+    <svg class="templates-nav-chevron h-4 w-4 shrink-0 text-foreground/40 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  </summary>
+  <div class="px-4 pb-4">
+    <TemplatesNavList anchors={anchors} current={current} />
+  </div>
+</details>
+
+<style>
+  details[data-templates-nav] > summary::-webkit-details-marker { display: none; }
+  details[data-templates-nav][open] .templates-nav-chevron { transform: rotate(180deg); }
+</style>
+
+<script>
+  // The same scroll highlighting as TableOfContents: a heading becomes current
+  // once it enters the top fifth of the viewport. Only anchor links take part,
+  // so on a category page (page links) this does nothing. Both variants carry
+  // data-templates-nav, so they highlight together.
+  const links = document.querySelectorAll<HTMLAnchorElement>('[data-templates-nav] a[href^="#"]');
+  const ids = [...new Set([...links].map((a) => a.getAttribute('href')!.slice(1)))];
+  const headings = ids.map((id) => document.getElementById(id)).filter((h): h is HTMLElement => h !== null);
+
+  if (headings.length) {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        const id = entry.target.getAttribute('id');
+        if (!entry.isIntersecting || !id) return;
+        links.forEach((a) => {
+          a.classList.remove('text-primary', 'font-medium');
+          a.classList.add('text-foreground/60');
+        });
+        document.querySelectorAll(`[data-templates-nav] a[href="#${CSS.escape(id)}"]`).forEach((a) => {
+          a.classList.remove('text-foreground/60');
+          a.classList.add('text-primary', 'font-medium');
+        });
+      });
+    }, { rootMargin: '0px 0px -80% 0px' });
+
+    headings.forEach((h) => observer.observe(h));
+  }
+</script>

@@ -1,15 +1,13 @@
 /**
  * The /templates pages: every entry of content/domain-list-site.json, shown as
- * its prompt on exactly one category page.
+ * its prompt in exactly one category, both on the full list at /templates and
+ * on that category's own page.
  *
  * An entry with an industry is listed under its first industry only. An entry
  * without one is listed under its first department only. Later array items
  * are sub-categories and are deliberately not used.
- *
- * Imported by astro.config.mjs for the /templates redirect, so this module
- * uses relative imports only (the `~` alias does not resolve there).
  */
-import entries from '../content/domain-list-site.json';
+import entries from '~/content/domain-list-site.json';
 
 export const TEMPLATES_PATH = '/templates';
 

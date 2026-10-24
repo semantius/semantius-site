@@ -1,0 +1,39 @@
+---
+import { clsx } from 'clsx';
+import { TEMPLATE_GROUPS, templateCategoryPath } from '~/data/templates';
+
+/**
+ * The link list shared by both TemplatesNav variants (the same split as
+ * TocList, for the same reason). Styled like the docs table of contents.
+ */
+interface Props {
+  /** Link to `#<slug>` on this page instead of to each category page. */
+  anchors: boolean;
+  /** Slug of the category page being viewed. */
+  current?: string;
+}
+
+const { anchors, current } = Astro.props;
+---
+
+<div class="space-y-6">
+  {TEMPLATE_GROUPS.map((g) => (
+    <div>
+      <h4 class="font-bold text-sm mb-3 text-foreground">{g.label}</h4>
+      <ul class="text-sm space-y-2.5 border-l border-foreground/10 pl-4">
+        {g.categories.map((c) => {
+          const active = c.slug === current;
+          return (
+            <li>
+              <a
+                href={anchors ? `#${c.slug}` : templateCategoryPath(c)}
+                aria-current={active ? 'page' : undefined}
+                class={clsx('block hover:text-primary transition-colors', active ? 'text-primary font-medium' : 'text-foreground/60')}
+              >{c.name}</a>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  ))}
+</div>
