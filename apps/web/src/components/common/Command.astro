@@ -12,7 +12,14 @@ interface Props {
    * https://app.semantius.com/copilot.
    */
   runnable?: boolean;
+  /**
+   * Copy prepends ARCHITECT_PREFIX so the pasted prompt tells the agent
+   * which skill to use. Run still sends the prompt unprefixed.
+   */
+  architect?: boolean;
 }
+
+const ARCHITECT_PREFIX = "Use the semantius-admin skill to implement: ";
 
 // Map of slash-prefixed skill names to the docs page that documents the skill.
 // In chat mode, a leading /skill token is rendered as a link to the matching
@@ -23,7 +30,8 @@ const SKILL_DOC_MAP: Record<string, string> = {
   "/semantic-model-optimizer": "/docs/models/optimize",
 };
 
-const { command, mode = "shell", runnable = false } = Astro.props;
+const { command, mode = "shell", runnable = false, architect = false } = Astro.props;
+const copyPrefix = architect ? ARCHITECT_PREFIX : undefined;
 
 const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;
@@ -38,6 +46,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
         type="button"
         class="command-copy"
         data-command={command}
+        data-copy-prefix={copyPrefix}
         aria-label="copy for your agent"
         title="copy for your agent"
       >
@@ -132,6 +141,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
       type="button"
       class="command-copy"
       data-command={command}
+      data-copy-prefix={copyPrefix}
       aria-label="Copy command"
     >
       <svg
@@ -250,7 +260,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
     const label = button.querySelector<HTMLElement>(".command-copy-label");
     const originalLabel = label?.textContent ?? "Copy";
 
-    await copyText(command);
+    await copyText((button.dataset.copyPrefix ?? "") + command);
 
     root?.classList.add("copied");
     button.classList.add("copied");

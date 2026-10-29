@@ -33,7 +33,7 @@ import { TEMPLATE_CATEGORIES, TEMPLATES_PATH, templateCategoryPath } from '~/dat
 							{c.templates.map((t) => (
 								<li class="flex flex-col p-6 rounded-3xl bg-foreground/2 border border-foreground/10">
 									<h3 class="text-lg font-bold mb-4">{t.title}</h3>
-									<Command mode="chat" runnable command={t.prompt} />
+									<Command mode="chat" runnable architect command={t.prompt} />
 								</li>
 							))}
 						</ul>
