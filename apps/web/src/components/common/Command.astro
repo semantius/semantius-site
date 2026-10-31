@@ -13,13 +13,13 @@ interface Props {
    */
   runnable?: boolean;
   /**
-   * Copy prepends ARCHITECT_PREFIX so the pasted prompt tells the agent
-   * which skill to use. Run still sends the prompt unprefixed.
+   * Name of the system the prompt builds (the template title). Copy starts
+   * with "Build my <architect> with the Semantius-admin skill." and appends
+   * the prompt, so the pasted text tells the agent which skill to use. Run
+   * still sends the prompt alone.
    */
-  architect?: boolean;
+  architect?: string;
 }
-
-const ARCHITECT_PREFIX = "Use the semantius-admin skill to implement: ";
 
 // Map of slash-prefixed skill names to the docs page that documents the skill.
 // In chat mode, a leading /skill token is rendered as a link to the matching
@@ -30,8 +30,8 @@ const SKILL_DOC_MAP: Record<string, string> = {
   "/semantic-model-optimizer": "/docs/models/optimize",
 };
 
-const { command, mode = "shell", runnable = false, architect = false } = Astro.props;
-const copyPrefix = architect ? ARCHITECT_PREFIX : undefined;
+const { command, mode = "shell", runnable = false, architect } = Astro.props;
+const copyPrefix = architect ? `Build my ${architect} with the Semantius-admin skill. ` : undefined;
 
 const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;
