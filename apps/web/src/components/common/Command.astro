@@ -13,10 +13,10 @@ interface Props {
    */
   runnable?: boolean;
   /**
-   * Name of the system the prompt builds (the template title). Copy starts
-   * with "Build my <architect> with the Semantius-admin skill." and appends
-   * the prompt, so the pasted text tells the agent which skill to use. Run
-   * still sends the prompt alone.
+   * Name of the system the prompt builds (the template title). Copy appends
+   * "Build my <architect> with the Semantius-admin skill." after the prompt,
+   * so the pasted text tells the agent which skill to use. Run still sends
+   * the prompt alone.
    */
   architect?: string;
 }
@@ -31,7 +31,7 @@ const SKILL_DOC_MAP: Record<string, string> = {
 };
 
 const { command, mode = "shell", runnable = false, architect } = Astro.props;
-const copyPrefix = architect ? `Build my ${architect} with the Semantius-admin skill. ` : undefined;
+const copySuffix = architect ? ` Build my ${architect} with the Semantius-admin skill.` : undefined;
 
 const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;
@@ -46,7 +46,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
         type="button"
         class="command-copy"
         data-command={command}
-        data-copy-prefix={copyPrefix}
+        data-copy-suffix={copySuffix}
         aria-label="copy for your agent"
         title="copy for your agent"
       >
@@ -141,7 +141,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
       type="button"
       class="command-copy"
       data-command={command}
-      data-copy-prefix={copyPrefix}
+      data-copy-suffix={copySuffix}
       aria-label="Copy command"
     >
       <svg
@@ -260,7 +260,7 @@ const skillHref = skill ? SKILL_DOC_MAP[skill] ?? null : null;
     const label = button.querySelector<HTMLElement>(".command-copy-label");
     const originalLabel = label?.textContent ?? "Copy";
 
-    await copyText((button.dataset.copyPrefix ?? "") + command);
+    await copyText(command + (button.dataset.copySuffix ?? ""));
 
     root?.classList.add("copied");
     button.classList.add("copied");
