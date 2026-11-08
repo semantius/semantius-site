@@ -29,7 +29,7 @@ const SKILL_DOC_MAP: Record<string, string> = {
 };
 
 const { command, mode = "shell", runnable = false, title } = Astro.props;
-const promptSuffix = title ? ` Build my ${title} with Semantius.du li` : undefined;
+const promptSuffix = title ? ` Build my ${title} with Semantius.` : undefined;
 
 const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;
