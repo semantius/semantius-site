@@ -15,8 +15,8 @@ These variables are automatically available inside `computed_fields`, `validatio
 
 | Variable | Description |
 |---|---|
-| `$today` | The current server date (no time component). Useful for date comparisons such as "expires before today". |
-| `$now` | The current server timestamp. Useful for stamping fields like `submitted_at` or comparing against a deadline. |
+| `$today` | The current date in UTC (no time component). Useful for date comparisons such as "expires before today". |
+| `$now` | The current timestamp in UTC. Useful for stamping fields like `submitted_at` or comparing against a deadline. |
 | `$user_id` | The id of the currently authenticated user. `null` when the expression runs outside a user session (for example during a background job). |
 | `$old` | A snapshot of the record's previous state, available on **update and delete** (where it holds the row being removed). `null` on insert. Use it to compare new vs. old values, e.g. `{"!=": [{"var": "status"}, {"var": "$old.status"}]}`. |
 | `$mode` | The operation being performed: `"insert"`, `"update"`, or `"delete"`. Use it to scope a rule to a particular operation — for example, forbid deletion with `{"!=": [{"var": "$mode"}, "delete"]}`. |
@@ -187,6 +187,92 @@ Tests whether a string value matches a regular expression pattern. Returns `true
 ```
 
 Useful in validation rules for format checks (email, phone, postal code, SKU prefix) without needing a separate constraint mechanism.
+
+---
+
+### Move a date: `date_add`
+
+Adds a whole number of units to a date, or an ISO 8601 duration. A negative amount subtracts. The result has the same type as the input: a date stays a date.
+
+**Form:** `{"date_add": [<date>, <amount>, "<unit>"]}` or `{"date_add": [<date>, "<duration>"]}`
+
+```json
+{"date_add": [{"var": "term_end"}, {"-": [0, {"var": "notice_period_days"}]}, "day"]}
+```
+
+Units are `year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`, and `second`. A duration can come from a `duration` field or be written directly, such as `"P1M2DT3H"`. Adding a month to the last days of a month lands on the end of the shorter month, so January 31 plus one month is February 28.
+
+All date operators work in UTC, whatever the time zone of the session or browser. They accept ISO 8601 dates such as `2026-12-31` and `2026-12-31T10:00:00Z`, and a date-time with no offset is read as UTC. A missing date gives `null`, so a record with no date can still be saved. Any other value is an error, and so is a time-based unit on a value with no time of day.
+
+Computed fields run when a record is written. Store a date that depends on the record's own fields, as above, rather than a count of days from `$today`, which would be out of date by tomorrow.
+
+---
+
+### Measure between dates: `date_diff`
+
+Returns the whole units that have elapsed from the second date to the first, as an integer truncated toward zero. It takes the units listed under `date_add`.
+
+**Form:** `{"date_diff": [<end>, <start>, "<unit>"]}`
+
+```json
+{"date_diff": [{"var": "term_end"}, {"var": "$today"}, "day"]}
+```
+
+A month counts only once the same day of the month has been reached again, so January 31 to February 28 is 0 months.
+
+---
+
+### Read one part of a date: `date_part`
+
+Returns one field of a date as an integer.
+
+**Form:** `{"date_part": [<date>, "<part>"]}`
+
+```json
+{"date_part": [{"var": "start_date"}, "quarter"]}
+```
+
+Parts are `year`, `iso_year`, `quarter`, `month`, `week` (ISO), `day`, `weekday` (Monday is 1), `day_of_year`, `hour`, `minute`, `second`, and `epoch`.
+
+---
+
+### Find the start of a period: `date_trunc`
+
+Returns the start of the period that contains a date. A week starts on Monday. It takes the units listed under `date_add`.
+
+**Form:** `{"date_trunc": [<date>, "<unit>"]}`
+
+```json
+{"date_trunc": [{"var": "invoice_date"}, "month"]}
+```
+
+For the last day of a month, truncate to the month, add one month, and subtract one day.
+
+---
+
+### Get a calendar date: `to_date`
+
+Returns the calendar date in UTC of a date, a date-time, or a number of seconds since 1970.
+
+**Form:** `{"to_date": <value>}`
+
+```json
+{"to_date": {"var": "submitted_at"}}
+```
+
+---
+
+### Format a date as text: `date_format`
+
+Renders a date as text, for example in a computed label.
+
+**Form:** `{"date_format": [<date>, "<pattern>"]}`
+
+```json
+{"date_format": [{"var": "term_end"}, "Dy, DD Mon YYYY"]}
+```
+
+A pattern is made of `YYYY`, `YY`, `Q`, `MM`, `Mon`, `Month`, `DD`, `Dy`, `Day`, `HH24`, `MI`, and `SS`, with spaces or any of `- / . : ,` between them. Month and day names are in English.
 
 ---
 
