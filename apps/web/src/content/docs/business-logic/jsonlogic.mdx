@@ -1,11 +1,11 @@
 ---
 title: 'JsonLogic Overview'
 navTitle: 'JsonLogic'
-description: 'A short tour of the standard JsonLogic expression language used to author Semantius business rules.'
+description: 'A short tour of the standard JsonLogic expression language used to author Semantius business rules, and how Semantius evaluates it.'
 order: 1
 ---
 
-[JsonLogic](https://jsonlogic.com/) is a small, portable rule language that expresses boolean tests, arithmetic, and data lookups as plain JSON. Semantius uses it as the substrate for all four [business-logic extension points](/docs/business-logic), with a few [Semantius-specific additions](/docs/business-logic/extensions) layered on top.
+[JsonLogic](https://jsonlogic.com/) is a small, portable rule language that expresses boolean tests, arithmetic, and data lookups as plain JSON. Semantius uses it as the substrate for all five [business-logic extension points](/docs/business-logic), with a few [Semantius-specific additions](/docs/business-logic/extensions) layered on top.
 
 This page is a quick orientation. For the full operator catalog, refer to the upstream documentation:
 
@@ -22,22 +22,28 @@ A JsonLogic expression is a single JSON object whose top-level key is the operat
 
 This reads as: take the value of the `status` field of the current row, compare it to the string `"active"`, return `true` if they match.
 
-Anything that is not an object with one of the known operator keys is returned as-is. That includes literals (`42`, `"hello"`, `true`, `null`) and plain arrays.
+Anything that is not an object with exactly one key is returned as-is. That includes literals (`42`, `"hello"`, `true`, `null`), plain arrays, and objects with several keys. Because such a value is truthy, Semantius refuses a `select_rule` or validation rule that is not a single operation: it would pass every record without ever being evaluated.
 
 ## Common operators
 
 | Operator | Purpose |
 |---|---|
-| `var` | Read a field from the current context. Dotted paths walk into nested objects: `{"var": "customer.email"}`. |
-| `==`, `!=`, `<`, `<=`, `>`, `>=` | Equality and ordered comparison. |
-| `and`, `or`, `!` | Boolean composition and negation. |
-| `if` | Three-argument ternary: `{"if": [<cond>, <then>, <else>]}`. Accepts more arguments for `if / elseif / else` chains. |
-| `+`, `-`, `*`, `/`, `%` | Arithmetic. |
-| `cat` | String concatenation (treats `null` as `"null"`, unlike the Semantius [`concat`](/docs/business-logic/extensions) extension). |
+| `var` | Read a field from the current context. Dotted paths walk into nested objects, and a numeric segment indexes an array: `{"var": "customer.email"}`, `{"var": "items.0.sku"}`. A second argument is the default when the path is missing: `{"var": ["discount", 0]}`. |
+| `==`, `!=` | Loose equality, with JavaScript's type coercion. |
+| `===`, `!==` | Strict equality: the JSON types must match as well as the values. |
+| `<`, `<=`, `>`, `>=` | Ordered comparison. `<` and `<=` also take three arguments as a range: `{"<": [0, {"var": "pct"}, 100]}`. |
+| `and`, `or` | Boolean composition. Each stops at the first argument that decides, and returns that argument's value. |
+| `!`, `!!` | Negation, and conversion to a boolean. |
+| `if`, `?:` | Three-argument ternary: `{"if": [<cond>, <then>, <else>]}`. Accepts more arguments for `if / elseif / else` chains. `?:` is the same operator. |
+| `+`, `-`, `*`, `/`, `%` | Arithmetic. `-` with one argument negates it. |
+| `min`, `max` | The smallest or largest of the arguments. |
+| `cat` | String concatenation. `null` becomes an empty string. |
+| `substr` | Part of a string: `{"substr": [<text>, <start>, <length>]}`. A negative start counts from the end; a negative length stops that many characters before the end. |
 | `in` | Membership test in an array or substring test in a string. |
-| `map`, `filter`, `reduce`, `all`, `none`, `some` | Array combinators. |
-| `merge` | Flatten arrays. |
-| `missing`, `missing_some` | Report missing required fields. |
+| `map`, `filter`, `reduce`, `all`, `none`, `some` | Array combinators. Inside them, `var` reads the current element; `reduce` exposes `current` and `accumulator`. |
+| `merge` | Flatten arrays into one. |
+| `missing`, `missing_some` | Report missing required fields. A field holding `null` or `""` counts as missing. |
+| `log` | Return the argument unchanged and log it (in the database as a notice, in the browser to the console). Useful while debugging a rule. |
 
 ## Samples
 
@@ -57,7 +63,7 @@ Anything that is not an object with one of the known operator keys is returned a
 ] }
 ```
 
-**Order must have at least one line item.** Using the standard `missing` operator to report a required field:
+**Order must name a customer.** Using the standard `missing` operator to report a required field:
 
 ```json
 { "==": [{ "missing": ["customer_id"] }, []] }
@@ -84,6 +90,19 @@ Anything that is not an object with one of the known operator keys is returned a
 ] }
 ```
 
+## How Semantius evaluates
+
+The database and the browser evaluate rules the same way. Both follow JavaScript's semantics, except where those would make a stored result wrong or depend on where the rule ran. The places worth knowing:
+
+- **Truthiness.** `false`, `null`, `0`, `""` and `[]` are falsy. Everything else is truthy, including `{}`.
+- **Numbers from text.** Text that JavaScript's `Number()` reads as a number counts as that number, and blank text is 0. As a Semantius extension, an ISO 8601 date or date-time also counts as a number: its seconds since 1970 in UTC. So subtracting two date-times gives the seconds between them. For days, months or years, use [`date_diff`](/docs/business-logic/extensions#measure-between-dates-date_diff).
+- **Ordering.** Two strings compare as text, by code point, so `"10" < "9"` is true. Any other pair compares as numbers, with `null` as 0. Text that carries no number makes the comparison false.
+- **Equality.** Arrays and objects compare by value, so `[1] == [1]` is true. JavaScript itself would compare them by reference.
+- **Arithmetic.** `null`, `""` and a missing field count as 0, so an empty field is no error. Text that carries no number, division or `%` by zero, and any result that is not a finite number raise an error (90920) instead of producing `NaN` or `Infinity`, which JSON cannot store. A whole-number result comes back without a fraction: `5`, not `5.0`.
+- **Time zone.** Everything runs in UTC, whatever the time zone of the session or the browser.
+
 ## What Semantius adds
 
-Semantius extends standard JsonLogic with reserved variables (`$today`, `$now`, `$user_id`, `$old`) and platform operators (`let`, `set_record`, `has_permission`, `require_permission`, `is_raci_actor`, `has_consultation`, `value_changed`, `concat`, `is_match`, `throw_error`, `date_add`, `date_diff`, `date_part`, `date_trunc`, `to_date`, `date_format`). The extensions are scoped to the request the rule runs in and have no analog upstream. See [JsonLogic extensions](/docs/business-logic/extensions) for the full list.
+Semantius extends standard JsonLogic with reserved variables (`$today`, `$now`, `$user_id`, `$old`, `$mode`) and platform operators (`let`, `set_record`, `has_permission`, `require_permission`, `is_raci_actor`, `has_consultation`, `value_changed`, `concat`, `is_match`, `throw_error`, `date_add`, `date_diff`, `date_part`, `date_trunc`, `to_date`, `date_format`). The extensions are scoped to the request the rule runs in and have no analog upstream. See [JsonLogic extensions](/docs/business-logic/extensions) for the full list, the shape each rule takes, and the checks a rule passes when it is saved.
+
+A rollup filter is the exception to all of the above: it is compiled to SQL from a subset of the standard operators and answers a few cases differently. See [Rollup fields](/docs/business-logic/rollups#the-filter).

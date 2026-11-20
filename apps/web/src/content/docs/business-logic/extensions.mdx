@@ -1,11 +1,97 @@
 ---
 title: 'JsonLogic Extensions'
 navTitle: 'Extensions'
-description: 'Semantius-specific variables and operators that extend standard JsonLogic for computed fields, validation rules, and row-level select rules.'
+description: 'Semantius-specific variables, operators, and rule shapes that extend standard JsonLogic for computed fields, validation rules, row-level select rules, and field input modes.'
 order: 2
 ---
 
-Semantius extends the [standard JsonLogic spec](https://jsonlogic.com/operations.html) with additional variables and operators tailored to record-level computed fields, validation rules, and row-level select rules. This page documents only the extensions; all standard operators (`if`, `and`, `or`, `var`, `==`, `+`, `map`, `filter`, `reduce`, etc.) work as defined upstream.
+Semantius extends the [standard JsonLogic spec](https://jsonlogic.com/operations.html) with additional variables and operators tailored to record-level computed fields, validation rules, and row-level select rules. This page documents the extensions and the shape each rule takes; all standard operators (`if`, `and`, `or`, `var`, `==`, `+`, `map`, `filter`, `reduce`, etc.) work as described in the [JsonLogic overview](/docs/business-logic/jsonlogic). Rollup filters use a compiled subset of their own, described under [Rollup fields](/docs/business-logic/rollups#the-filter).
+
+---
+
+## Rule shapes
+
+Each extension point stores its rules in a fixed shape.
+
+### `computed_fields`
+
+An array of entries, each naming the field it writes:
+
+```json
+[
+  { "name": "subtotal", "jsonlogic": { "*": [{ "var": "quantity" }, { "var": "unit_price" }] } },
+  { "name": "total", "jsonlogic": { "+": [{ "var": "subtotal" }, { "var": "tax" }] } }
+]
+```
+
+- Entries run in the order listed, and each result is written into the row before the next entry runs, so `total` above reads the `subtotal` just computed.
+- A dotted `name` such as `settings.theme` writes into a key of a JSON column.
+- The `jsonlogic` may be a literal: a constant is a legitimate value for a field.
+- A field that an entry names gets the `ctype` `computed` (`computed_label` on the label column). Forms show it disabled, and any value a client sends is overwritten.
+- `required` still applies to a computed field. The check runs after the rule, so it refuses a write whose rule produced no value.
+- A computed entry cannot write a [rollup field](/docs/business-logic/rollups) (90907), though it can read one.
+
+**Existing records follow the rule.** Saving a new or changed entry applies it to the records that already exist, and does the same when the field it names is added later. Only records whose value moves are written, and each one goes through the entity's normal write path, so its validation rules run. This is a recalculation, not an edit: it moves no `updated_at` and writes no audit row, queue message or RACI event. If any record cannot take its new value, because a validation rule or a constraint refuses it or the rule itself fails, the whole save is refused (90908) and nothing is left half applied.
+
+During this pass a rule sees `$mode` as `"update"` and `$old` as the record itself. An insert-only stamp such as `{"if": [{"==": [{"var": "$mode"}, "insert"]}, {"var": "$user_id"}, {"var": "$old.created_by"}]}` therefore keeps the value it already holds, while a rule that stamps `$now` unconditionally moves on every record.
+
+### `validation_rules`
+
+An array of entries, each with its own error code and message:
+
+```json
+[
+  {
+    "code": "99001",
+    "message": "Quantity must be at least 1",
+    "hint": "Enter a positive quantity",
+    "jsonlogic": { ">=": [{ "var": "quantity" }, 1] }
+  }
+]
+```
+
+- `code`, `message` and `jsonlogic` are required (90902, 90903, 90904). `hint` is optional.
+- `code` is the error code the failure raises, and it must lie between `99000` and `99999` (90905). Class 99 is reserved for rule authors, so a code never collides with a platform error. Two entities may use the same code for different things: clients translate class 99 errors by entity and code together.
+- The `jsonlogic` must be a single operation (90919). See [Checks when a rule is saved](#checks-when-a-rule-is-saved).
+- A failing rule raises its `message` with a JSON hint holding `entity` (the table name), `rule` (the code) and your `hint`, if given. It never copies values of the row into the error. To put a value in the message, use [`throw_error`](#raise-a-validation-error-throw_error) with parameters inside the rule.
+
+Rules the platform itself ships carry `"source_module": "platform"` and a 90xxx code. Rules you write never do.
+
+### `select_rule`
+
+A single JsonLogic operation that returns truthy for the rows the caller may see:
+
+```json
+{ "or": [{ "has_permission": "tickets:read_all" }, { "==": [{ "var": "assignee_id" }, { "var": "$user_id" }] }] }
+```
+
+- `{}` means no rule, and the entity's `view_permission` decides alone. Once a rule is set, it takes the place of `view_permission`, and it also decides which rows an update or delete can reach.
+- A rule that raises an error on a row hides that row. The database logs a warning naming the entity once per transaction, without the error message, which could quote a value of the hidden row.
+- For an `is_a` or `has_a` entity, the row the rule sees includes the fields of its base entities.
+
+### `input_type_rule`
+
+A rule on a field that returns its input mode for the record being edited:
+
+```json
+{ "if": [{ "==": [{ "var": "status" }, "closed"] }, "readonly", "default"] }
+```
+
+- The result must be one of `default`, `required`, `readonly`, `disabled` or `hidden`, and it replaces the field's static `input_type`. A rule that throws, or returns anything else, keeps the static mode, and the form shows why.
+- It runs in the browser only (see [In the browser](#in-the-browser)), so it is a presentation aid, never a security gate.
+- It may be a literal, and `{}` means no rule.
+
+---
+
+## Checks when a rule is saved
+
+Every rule is checked when its entity or field is saved, so a mistake is refused at save time instead of surfacing on an unrelated record later:
+
+- **Unknown operators.** A rule that names an operator the engine does not implement is refused (90909), wherever it stands, including a branch of an `if` that rarely runs and a field's `input_type_rule`. The error names the rule's place: `select_rule`, `validation_rules[0]`, `computed_fields[2]` or `<field>.input_type_rule`.
+- **One operation.** A `select_rule` or a validation rule must be an object with exactly one key (90919). The engine reads anything else (a literal such as `true`, a string, an object with two keys) as a plain value, which is truthy, so the rule would pass every record without ever being evaluated. Computed fields and `input_type_rule` may be literals.
+- **Renames.** A field that any rule names cannot be renamed (90275): change the rule first, then rename. A field read through a `set_record` alias in another entity's rule is not detected. Renaming an entity rewrites the entity argument of `set_record` in the rules of other entities.
+
+An entity that already stores a rule failing these checks (restored from a dump, for example) cannot be saved again until the rule is fixed.
 
 ---
 
@@ -17,19 +103,19 @@ These variables are automatically available inside `computed_fields`, `validatio
 |---|---|
 | `$today` | The current date in UTC (no time component). Useful for date comparisons such as "expires before today". |
 | `$now` | The current timestamp in UTC. Useful for stamping fields like `submitted_at` or comparing against a deadline. |
-| `$user_id` | The id of the currently authenticated user. `null` when the expression runs outside a user session (for example during a background job). |
+| `$user_id` | The id of the currently authenticated user. In computed fields and validation rules it is `null` when the expression runs outside a user session (for example during a background job). |
 | `$old` | A snapshot of the record's previous state, available on **update and delete** (where it holds the row being removed). `null` on insert. Use it to compare new vs. old values, e.g. `{"!=": [{"var": "status"}, {"var": "$old.status"}]}`. |
-| `$mode` | The operation being performed: `"insert"`, `"update"`, or `"delete"`. Use it to scope a rule to a particular operation — for example, forbid deletion with `{"!=": [{"var": "$mode"}, "delete"]}`. |
+| `$mode` | The operation being performed: `"insert"`, `"update"`, or `"delete"`. Use it to scope a rule to a particular operation, for example to forbid deletion with `{"!=": [{"var": "$mode"}, "delete"]}`. |
 
-> Built-in variables are scoped to the record being evaluated. They are not written back to the record, they exist only for the duration of the expression.
+> Built-in variables are scoped to the record being evaluated. They are not written back to the record, they exist only for the duration of the expression. A field of the record with the same name is shadowed by the variable.
 
 ### Availability by context
 
-`computed_fields` and `validation_rules` run during a mutation and see all five variables. `select_rule` runs during a read and sees only `$today`, `$now`, and `$user_id`. `$old` and `$mode` are not bound in a select rule — a read has no previous image and is not a mutation, so they would be meaningless there.
+`computed_fields` and `validation_rules` run during a mutation and see all five variables. `select_rule` runs during a read and sees only `$today`, `$now`, and `$user_id`. `$old` and `$mode` are not bound in a select rule: a read has no previous image and is not a mutation, so they would be meaningless there. A select rule never sees a null `$user_id`: a read without a valid session is refused with a permission error (42501) before the rule runs.
 
 ### Evaluation on delete
 
-`validation_rules` also run on **delete**, evaluated against the row being removed (bound as the root context, with `$old` set to that same row and `$mode` equal to `"delete"`). A rule that evaluates falsy aborts the delete, so a rule such as `{"!=": [{"var": "$mode"}, "delete"]}` forbids deletion outright. `computed_fields` still run on delete, but their output is discarded — there is no surviving row to write it to.
+`validation_rules` also run on **delete**, evaluated against the row being removed (bound as the root context, with `$old` set to that same row and `$mode` equal to `"delete"`). A rule that evaluates falsy aborts the delete, so a rule such as `{"!=": [{"var": "$mode"}, "delete"]}` forbids deletion outright. `computed_fields` still run on delete, but their output is discarded, since there is no surviving row to write it to. A statement that deletes many rows is judged one row at a time, and a single refusal aborts the whole statement.
 
 ---
 
@@ -74,17 +160,19 @@ Fetches an entire record from another entity by its id and binds it to a name, t
 
 The lookup runs through the same access boundary as a normal read. The bound name resolves to `null` when the referenced record does not exist **or** when the current user does not have permission to view it. These two cases are deliberately indistinguishable, so a rule cannot use `set_record` to probe whether a record the caller is not allowed to see exists. Use dotted paths in `var` to read fields of the loaded record (e.g. `{"var": "customer.email"}`).
 
+The id may be a number, text, a UUID or a TypeID, whatever the target entity's key type is. A whole number produced by arithmetic, such as `5.0`, is read as `5`. An id that does not fit the key type raises 90238.
+
 ---
 
 ### Check the current user's permission: `has_permission`
 
-Returns `true` when the current user holds the named permission, `false` otherwise. Does not throw.
+Returns `true` when the current user holds the named permission, `false` otherwise. Does not throw. The name may be an expression, such as `{"var": "view_permission"}`.
 
 **Form:** `{"has_permission": "<permission_name>"}`
 
 ```json
 {"if": [
-  {"has_permission": "orders.approve"},
+  {"has_permission": "orders:approve"},
   "approved",
   "pending_review"
 ]}
@@ -94,12 +182,12 @@ Returns `true` when the current user holds the named permission, `false` otherwi
 
 ### Enforce a permission: `require_permission`
 
-Returns `true` when the current user holds the named permission, and raises an authorization error otherwise. Use this in validation rules to forbid an action outright.
+Returns `true` when the current user holds the named permission, and raises an authorization error (42501) otherwise. Use this in validation rules to forbid an action outright.
 
 **Form:** `{"require_permission": "<permission_name>"}`
 
 ```json
-{"require_permission": "orders.delete"}
+{"require_permission": "orders:delete"}
 ```
 
 ---
@@ -164,7 +252,7 @@ Returns `true` when the named field's value differs from its previous value on u
 
 ### Concatenate strings with SQL semantics: `concat`
 
-Concatenates all arguments into a single string. Unlike the standard `cat` operator, `concat` treats `null` arguments as empty strings (mirroring SQL `CONCAT`) and serializes non-string values (numbers, booleans, arrays, objects) to their JSON text form.
+Concatenates all arguments into a single string. `null` arguments become empty strings (mirroring SQL `CONCAT`), and non-string values (numbers, booleans, arrays, objects) are serialized to their JSON text form.
 
 **Form:** `{"concat": [<value1>, <value2>, ...]}`
 
@@ -172,13 +260,13 @@ Concatenates all arguments into a single string. Unlike the standard `cat` opera
 {"concat": ["Order #", {"var": "id"}, " for ", {"var": "customer_name"}]}
 ```
 
-Choose `concat` when some inputs may be null and you want them to disappear rather than produce the string `"null"`.
+In the database, `concat` and the standard `cat` give the same result.
 
 ---
 
 ### Test a string against a regular expression: `is_match`
 
-Tests whether a string value matches a regular expression pattern. Returns `true` on a match, `false` otherwise. `null` values always return `false`.
+Tests whether a string value matches a regular expression pattern. Returns `true` on a match, `false` otherwise. `null` values always return `false`. A malformed pattern raises an error (2201B).
 
 **Form:** `{"is_match": [<value>, "<pattern>"]}`
 
@@ -186,7 +274,7 @@ Tests whether a string value matches a regular expression pattern. Returns `true
 {"is_match": [{"var": "email"}, "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"]}
 ```
 
-Useful in validation rules for format checks (email, phone, postal code, SKU prefix) without needing a separate constraint mechanism.
+Useful in validation rules for format checks (email, phone, postal code, SKU prefix) without needing a separate constraint mechanism. The database matches with PostgreSQL regular expressions and the browser with JavaScript's, so keep to the features both share: anchors, character classes, groups, alternation and quantifiers.
 
 ---
 
@@ -280,7 +368,7 @@ A pattern is made of `YYYY`, `YY`, `Q`, `MM`, `Mon`, `Month`, `DD`, `Dy`, `Day`,
 
 Aborts the current operation with the given error message. Typically used as a branch of an `if` expression to enforce a business rule with a custom message.
 
-**Form:** `{"throw_error": "<message>"}`
+**Form:** `{"throw_error": "<message>"}` or `{"throw_error": ["<message>", "<code>", [<name>, <value>, ...]]}`
 
 ```json
 {"if": [
@@ -290,4 +378,66 @@ Aborts the current operation with the given error message. Typically used as a b
 ]}
 ```
 
-The message surfaces to the caller as a constraint-violation error.
+The short form raises code `99000`. The long form takes a code of your own and named parameters that a client can place into its own translated wording:
+
+```json
+{"throw_error": [
+  "Order ${id} is already shipped",
+  "99017",
+  ["id", {"var": "id"}]
+]}
+```
+
+- The code must lie between `99000` and `99999` (90911).
+- The parameters are a flat list of name, value, name, value. A list rather than an object, because JsonLogic would read `{"id": 3}` as a call of an operator named `id`. An odd-length list is refused (90914).
+- Each value is evaluated and keeps its JSON type, so a number arrives as a number and a client can pluralize or format it. A value must be a scalar, not an object or an array (90913).
+- `hint`, `code`, `entity`, `rule` and `field` are reserved names (90912).
+- The message is a template: `${id}` names a parameter, and the client substitutes it.
+
+Inside a validation rule the error also carries `entity` and `rule` (the rule's code); inside a computed field, `entity` and `field` (the computed field's name).
+
+---
+
+## In the browser
+
+The form in the Semantius app evaluates two kinds of rules in the browser, with the same operators and the same coercion rules as the database:
+
+- **`input_type_rule`** runs only there.
+- **`computed_fields`** run there as a live preview: when the user changes an input, the form recomputes the computed fields so they show their new values before the save. Opening a record does not recompute it. The server recomputes on every write, and its value is the one stored.
+
+`validation_rules` and `select_rule` run only in the database.
+
+What differs in the browser:
+
+- `$today`, `$now` and `$user_id` are bound. Computed fields also get `$old` and `$mode` (`"insert"` or `"update"`); an `input_type_rule` gets neither.
+- `set_record` rows are fetched over the API as the signed-in user, so a record the user cannot see binds `null`, as it does on the server. Until the row has arrived, the rule is skipped.
+- `is_raci_actor` and `has_consultation` read the database and cannot run in the browser. They raise an error there, so an `input_type_rule` that uses them always falls back to the static input mode.
+- A rule that throws leaves the computed field at its current value, or the field at its static input mode, and the form shows the error under the field.
+
+---
+
+## Errors
+
+Errors raised while a rule is saved or evaluated. Codes in the 90xxx range belong to the platform; your own rules raise 99xxx codes.
+
+| Code | Raised when |
+|---|---|
+| 42501 | `require_permission` fails, or a `select_rule` or `set_record` is evaluated without a valid session. |
+| 2201B | `is_match` is given a malformed pattern. |
+| 90238 | A `set_record` id does not fit the target entity's key type. |
+| 90275 | A field that a rule names is renamed. |
+| 90900, 90901 | A `computed_fields` entry lacks its `name` or its `jsonlogic`. |
+| 90902, 90903, 90904 | A `validation_rules` entry lacks its `code`, `message` or `jsonlogic`. |
+| 90905 | A validation rule's code is not between `99000` and `99999`. |
+| 90907 | A `computed_fields` entry names a rollup field. |
+| 90908 | A changed computed rule cannot be applied to an existing record. |
+| 90909 | A rule names an unknown operator (at save time). |
+| 90910 | A rule stored without passing the save names an unknown operator (at evaluation time). |
+| 90911 to 90914 | `throw_error` got a code outside class 99, a reserved parameter name, a non-scalar parameter value, or an odd-length parameter list. |
+| 90915 | A date operator got a value that is not an ISO 8601 date or date-time. |
+| 90916 | A date unit or part is unknown, or needs a time of day the value does not have. |
+| 90917 | `date_format` got a pattern it does not support. |
+| 90918 | `date_add` got an amount that is neither a whole number nor an ISO 8601 duration. |
+| 90919 | A `select_rule` or validation rule is not a single operation. |
+| 90920 | Arithmetic has no finite result: division or `%` by zero, or an operand that is text carrying no number. |
+| 99000 to 99999 | Your validation rules and `throw_error` calls. |

@@ -1,0 +1,139 @@
+---
+title: 'Rollup Fields'
+navTitle: 'Rollups'
+description: 'Fields whose value the database aggregates from the records of a child entity, with an optional JsonLogic filter compiled to SQL.'
+order: 3
+---
+
+A rollup field holds an aggregate over the records of a child entity: the sum of an order's line amounts, the number of open tickets a customer has, the latest ship date of an order's lines. The database keeps the value current. Every insert, update, delete or truncate on the child table recomputes the parents it touched, so the stored value is never stale and no client can write it.
+
+A rollup is a **property of a field, not a format**. The field keeps an ordinary format, which still drives forms and grids, and its `rollup` column holds the definition that makes it a rollup.
+
+## The definition
+
+```json
+{
+  "link_field": "order_lines.order_id",
+  "function": "sum",
+  "value_field": "amount",
+  "filter": { "==": [{ "var": "status" }, "open"] },
+  "include_hidden_rows": false
+}
+```
+
+| Key | Meaning |
+|---|---|
+| `link_field` | `<child entity>.<field>`: a `reference` or `parent` field of the child that points at this entity. Required. |
+| `function` | `sum`, `min`, `max`, `avg` or `count`. Required. |
+| `value_field` | The child field to aggregate. Required for every function except `count`, and not allowed with `count`. |
+| `filter` | Optional JsonLogic over the child record. Only matching children count. See [The filter](#the-filter). |
+| `include_hidden_rows` | Optional. `true` accepts aggregating child records that some readers of this entity may not see. See [Hidden child rows](#hidden-child-rows). |
+
+Saving a definition sets the field's `ctype` to `rollup`. The marker is derived, never sent by a client, and it is the one to query for (`/fields?ctype=eq.rollup`). A form shows a rollup field disabled, and a create form leaves it out, since a new record has no children yet. The field stays yours to rename, retype within its column type, and delete. It cannot be `required`, `searchable` or `unique_value`.
+
+Setting `rollup` back to `{}` removes the definition. The field keeps its last values as ordinary data and becomes an ordinary editable field.
+
+## The result format
+
+The format of the rollup field has to fit what the function returns, and a definition whose format does not fit is refused (90268):
+
+| `function` | `value_field` | Format of the rollup field |
+|---|---|---|
+| `count` | none | An integer format (`int64` recommended) or `number`. |
+| `sum` | a numeric format | A numeric format. `number` keeps every digit; an integer format is your choice, and so is the risk of overflow. |
+| `avg` | a numeric format | `number`, `float` or `double`. |
+| `min`, `max` | a numeric, text, `date` or `date-time` format | One with the same column type as the value field. `email` over `text` passes (both are text); `date` over `date-time` does not. |
+
+- **Decimal places are copied.** Over a `number` value field, the rollup field takes the value field's `precision` when the definition is saved, so a sum of three-decimal amounts has three decimals.
+- **Empty aggregates.** A parent with no matching child holds `0` for numbers, `''` for text, and null for `date` and `date-time`.
+- **Exact sums.** `sum` and `avg` are computed in exact decimal arithmetic whatever the value column is, so an integer sum cannot overflow before it is stored.
+- **Changing the type.** A definition that needs another column type, such as `sum(amount)` to `max(ship_date)`, is a format change: drop and recreate the field.
+
+Keys, booleans, times, durations, UUIDs, binaries and JSON cannot be aggregated (90264).
+
+## Which links qualify
+
+- The child must point at this entity through a `reference` or `parent` field (90262).
+- A tree is allowed: the child may be the entity itself, for example a task's total effort over its subtasks.
+- A rollup may aggregate another rollup, such as a sum of order totals on a customer. A chain of rollups that comes back to the same field is refused (90267).
+- A field has one derivation. A field that a `computed_fields` rule writes cannot be a rollup (90261), and a computed rule cannot write a rollup field (90907). A computed field *can* read a rollup: the rollup is settled before the entity's computed fields run.
+- Neither side may be an `is_a` or `has_a` entity (90249), because their records span several tables.
+
+## The filter
+
+The filter is the one JsonLogic expression in Semantius that is **compiled to SQL instead of interpreted**. It runs inside the generated aggregate on every child write, so it is limited to a closed subset that maps directly to SQL:
+
+| JsonLogic | Compiles to |
+|---|---|
+| `and`, `or` | `AND`, `OR` |
+| `!`, `!!` | `NOT (x)`, `(x)` |
+| `==`, `!=` | `IS NOT DISTINCT FROM`, `IS DISTINCT FROM`, so `null` compares the way JsonLogic expects. |
+| `===`, `!==` | The same, after the JSON type of the literal is checked against the column: a string against a number column is refused. |
+| `<`, `<=`, `>`, `>=` | The SQL comparison. `<` and `<=` also take three operands (`a < b < c`). Text is ordered by code point. |
+| `in` with a list | `x IN (...)`. The list holds literals only and is never empty. |
+| `var` | A column of the child, by plain name. No dotted paths, no default value. |
+| A bare `var` | A boolean column used as a condition. |
+| A string, number or boolean | A literal, cast to the type of the column it is compared with. |
+| `date_add`, `date_diff`, `date_part`, `date_trunc`, `to_date`, `date_format` | The same date functions the interpreter uses, so a filter and a validation rule cannot disagree about a date. |
+
+Anything else is refused when the definition is saved (90265), and the error names what was refused. That includes `if`, arithmetic, `cat`, `merge`, `missing`, `some`, the other [Semantius extensions](/docs/business-logic/extensions), and the request variables `$user_id`, `$now` and `$today`. A trigger can only keep a rollup correct if the rollup depends on the child row alone. A literal the column cannot be cast from is caught at save time too, not at the first child write.
+
+A date operator takes a `date` or `date-time` column, an ISO 8601 literal or another date operator as its date. Its unit, part or pattern must be a literal, and its amount a literal or an integer column. A child whose column holds a value the operator has no answer for (a date of `infinity`, a year beyond 9999) refuses its write with 90272, which names the rollup. Date operators also cost one function call per sibling row, so keep them out of filters over parents with many thousands of children.
+
+### Where the filter differs
+
+The compiled filter compares values of the column's type, where the interpreter compares the JSON a row turns into. Four differences follow, all intended:
+
+- **Null in a comparison excludes the row.** A child whose `n` is null is in neither `{">": [{"var": "n"}, 5]}` nor its negation `{"!": {">": [{"var": "n"}, 5]}}`. The interpreter would read null as 0. To count such a row, say so: `{"or": [{"==": [{"var": "n"}, null]}, ...]}`.
+- **Date-time literals compare as moments.** `2026-02-20T12:00:00Z` and `2026-02-20T12:00:00+00:00` are equal. A date literal has to be ISO 8601 and is read in UTC.
+- **UUID literals ignore case.**
+- **A fraction against an integer column is refused** when the definition is saved.
+
+## Hidden child rows
+
+The aggregate is computed over **every** child record and stored on the parent, where every reader of the parent sees it. When the child is more restricted than the parent, because it has a `select_rule` of its own or a different `view_permission`, a rollup would show readers of the parent a sum, count, minimum or maximum over rows they are not allowed to see.
+
+Such a rollup is refused (90269) unless its definition sets `"include_hidden_rows": true`. The flag records your decision in the definition. Adding a restriction to a child that unflagged rollups aggregate over is refused with the same code, so a restriction added later cannot turn an existing rollup into a leak.
+
+## What happens on the parent
+
+A child write that moves a total runs the parent's own rules: its `computed_fields` and `validation_rules` (evaluated as the user who wrote the child), its queue mappings and its RACI triggers. This is deliberate. A rule such as "the order total stays under the customer's credit limit" is a rule across records, and it holds whichever record changed. The cost is that a parent rule that tests the writer's permission also blocks child writes by users who cannot edit the parent.
+
+A moved total is not an edit of the parent record. When a child write changes nothing on the parent but rollup columns, the parent's `updated_at` does not move and no audit row is written.
+
+## Lifecycle
+
+- **Creating or changing a definition** recalculates every parent whose stored value differs. Like a computed-field backfill, this is a recalculation, not an edit: it moves no `updated_at` and writes no audit row, queue message or RACI event.
+- **Renames are followed.** Renaming the child or parent entity, the link field, the value field, a filtered column or the rollup field rewrites the definitions that name it.
+- **Deleting** the link field, the value field or the child entity is refused while a rollup on another entity depends on it (90266), unless the same module delete removes both sides.
+- **Order of definition does not matter.** When a whole model is applied at once, a rollup may be listed before the child entity it aggregates over: rollup fields are applied after every other field of every entity. That is also why a rollup's column comes after its entity's other columns.
+
+## Cost and concurrency
+
+A statement that touches the children of N parents runs one aggregate query per parent and rollup, kept to the siblings by the link field's index. It locks those parents first, in key order, so concurrent writes to children of the same parent wait for each other until commit. That is what keeps two concurrent inserts from both computing the same count.
+
+Key order prevents deadlocks between statements through one link. It cannot order locks taken in separate steps, so these can still deadlock:
+
+- two links from one child entity to the same parent table, written in opposite directions;
+- a tree, with one statement writing under a node and its parent while another writes under the node alone;
+- a transaction that writes a parent and then one of its children.
+
+PostgreSQL then aborts one transaction with `40P01`. The totals stay right, and the writer has to retry.
+
+## Errors
+
+| Code | Raised when |
+|---|---|
+| 90249 | Either side is an `is_a` or `has_a` entity. |
+| 90261 | The definition is invalid, for example on a computed field, or on a `required`, `searchable` or `unique_value` field. |
+| 90262 | `link_field` does not name a `reference` or `parent` field that points at this entity. |
+| 90263 | `function` is not `sum`, `min`, `max`, `avg` or `count`. |
+| 90264 | `value_field` cannot be aggregated by the function. |
+| 90265 | The filter uses something outside the compiled subset. |
+| 90266 | A field or entity a rollup depends on is being deleted. |
+| 90267 | The rollup depends on itself through a chain of rollups. |
+| 90268 | The field's format does not fit the function. |
+| 90269 | The child hides rows that readers of the parent could see aggregated, and `include_hidden_rows` is not set. |
+| 90272 | A child write carries a value the filter's date operator cannot evaluate. |
+| 90280, 90281 | A name the database generates for the rollup would collide with one already in use. |
+| 90907 | A `computed_fields` rule names a rollup field. |
