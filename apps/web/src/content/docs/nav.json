@@ -6,20 +6,23 @@
       "folders": []
     },
     {
-      "folder": "self-hosted",
-      "folders": ["self-hosted"]
+      "folder": "data-catalog",
+      "folders": ["business-logic"]
     },
     {
       "folder": "reference",
       "folders": [
         "overview",
         "models",
-        "business-logic",
         "mcp-connectors",
         "agent-skills",
         "cli",
         "pg-semantius"
       ]
+    },
+    {
+      "folder": "self-hosted",
+      "folders": ["self-hosted"]
     }
   ]
 }
