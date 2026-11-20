@@ -28,12 +28,14 @@ An array of entries, each naming the field it writes:
 - A dotted `name` such as `settings.theme` writes into a key of a JSON column.
 - The `jsonlogic` may be a literal: a constant is a legitimate value for a field.
 - A field that an entry names gets the `ctype` `computed` (`computed_label` on the label column). Forms show it disabled, and any value a client sends is overwritten.
-- `required` still applies to a computed field. The check runs after the rule, so it refuses a write whose rule produced no value.
+- `required` still applies to a computed field, unless the field also has an `input_type_rule`: such a field gets no database `required` check. The check runs after the rule, so it refuses a write whose rule produced no value.
 - A computed entry cannot write a [rollup field](/docs/business-logic/rollups) (90907), though it can read one.
 
-**Existing records follow the rule.** Saving a new or changed entry applies it to the records that already exist, and does the same when the field it names is added later. Only records whose value moves are written, and each one goes through the entity's normal write path, so its validation rules run. This is a recalculation, not an edit: it moves no `updated_at` and writes no audit row, queue message or RACI event. If any record cannot take its new value, because a validation rule or a constraint refuses it or the rule itself fails, the whole save is refused (90908) and nothing is left half applied.
+**Existing records follow the rule.** Saving a new or changed entry applies it to the records that already exist, and does the same when the field it names is added later. Only records whose value moves are written, and each one goes through the entity's normal write path, so its validation rules run. This is a recalculation, not an edit: it moves no `updated_at` and writes no audit row, queue message or RACI event. If any record cannot take its new value, because a validation rule or a constraint refuses it or the rule itself fails, the whole save is refused (90908) and nothing is left half applied. When any record has to be written, other writes to the entity's table, and to the tables that write reaches (the rest of an `is_a` or `has_a` family, rollup parents), wait until the save commits.
 
-During this pass a rule sees `$mode` as `"update"` and `$old` as the record itself. An insert-only stamp such as `{"if": [{"==": [{"var": "$mode"}, "insert"]}, {"var": "$user_id"}, {"var": "$old.created_by"}]}` therefore keeps the value it already holds, while a rule that stamps `$now` unconditionally moves on every record.
+During this pass a rule sees `$mode` as `"update"`, `$old` as the record itself, and `$user_id` as the user who saved the rule. An insert-only stamp such as `{"if": [{"==": [{"var": "$mode"}, "insert"]}, {"var": "$user_id"}, {"var": "$old.created_by"}]}` therefore keeps the value it already holds, while a rule that stamps `$now` or `$user_id` unconditionally moves on every record: a `$user_id` stamp writes the id of the user who saved the rule into all of them.
+
+Removing an entry writes nothing. The field keeps the values it holds, now as ordinary data, and loses the `computed` ctype.
 
 ### `validation_rules`
 
@@ -66,6 +68,7 @@ A single JsonLogic operation that returns truthy for the rows the caller may see
 ```
 
 - `{}` means no rule, and the entity's `view_permission` decides alone. Once a rule is set, it takes the place of `view_permission`, and it also decides which rows an update or delete can reach.
+- An update or delete reaches a row only when the caller holds the entity's `edit_permission` and the rule passes on the row as stored. The row an insert or update writes is held to `edit_permission` only, so an editor can write a row outside the rule: the write returns it, and from then on the editor can no longer read, update or delete it.
 - A rule that raises an error on a row hides that row. The database logs a warning naming the entity once per transaction, without the error message, which could quote a value of the hidden row.
 - For an `is_a` or `has_a` entity, the row the rule sees includes the fields of its base entities.
 
@@ -89,9 +92,11 @@ Every rule is checked when its entity or field is saved, so a mistake is refused
 
 - **Unknown operators.** A rule that names an operator the engine does not implement is refused (90909), wherever it stands, including a branch of an `if` that rarely runs and a field's `input_type_rule`. The error names the rule's place: `select_rule`, `validation_rules[0]`, `computed_fields[2]` or `<field>.input_type_rule`.
 - **One operation.** A `select_rule` or a validation rule must be an object with exactly one key (90919). The engine reads anything else (a literal such as `true`, a string, an object with two keys) as a plain value, which is truthy, so the rule would pass every record without ever being evaluated. Computed fields and `input_type_rule` may be literals.
-- **Renames.** A field that any rule names cannot be renamed (90275): change the rule first, then rename. A field read through a `set_record` alias in another entity's rule is not detected. Renaming an entity rewrites the entity argument of `set_record` in the rules of other entities.
+- **Renames.** A field that any rule names cannot be renamed (90275): change the rule first, then rename. A field read through a `set_record` alias in another entity's rule is not detected. Renaming an entity rewrites the entity argument of every `set_record` that names it in the `computed_fields`, `validation_rules` and `select_rule` of every entity, its own included. An `input_type_rule` is never rewritten.
 
-An entity that already stores a rule failing these checks (restored from a dump, for example) cannot be saved again until the rule is fixed.
+An entity that already stores a rule failing these checks (restored from a dump, for example) cannot be saved again until the rule is fixed. A stored `select_rule` that is not one operation hides every row.
+
+The rules of an entity with `managed` set to `false` are stored and checked like any other, but the database does not enforce them.
 
 ---
 
@@ -112,6 +117,8 @@ These variables are automatically available inside `computed_fields`, `validatio
 ### Availability by context
 
 `computed_fields` and `validation_rules` run during a mutation and see all five variables. `select_rule` runs during a read and sees only `$today`, `$now`, and `$user_id`. `$old` and `$mode` are not bound in a select rule: a read has no previous image and is not a mutation, so they would be meaningless there. A select rule never sees a null `$user_id`: a read without a valid session is refused with a permission error (42501) before the rule runs.
+
+Inside `map`, `filter`, `reduce`, `all`, `none` and `some`, `var` reads the element instead of the record (`current` and `accumulator` in `reduce`), so a field of the record is out of reach there.
 
 ### Evaluation on delete
 
@@ -160,13 +167,13 @@ Fetches an entire record from another entity by its id and binds it to a name, t
 
 The lookup runs through the same access boundary as a normal read. The bound name resolves to `null` when the referenced record does not exist **or** when the current user does not have permission to view it. These two cases are deliberately indistinguishable, so a rule cannot use `set_record` to probe whether a record the caller is not allowed to see exists. Use dotted paths in `var` to read fields of the loaded record (e.g. `{"var": "customer.email"}`).
 
-The id may be a number, text, a UUID or a TypeID, whatever the target entity's key type is. A whole number produced by arithmetic, such as `5.0`, is read as `5`. An id that does not fit the key type raises 90238.
+The id may be a number, text, a UUID or a TypeID, whatever the target entity's key type is. A whole number produced by arithmetic, such as `5.0`, is read as `5`. An id that does not fit the key type raises 90238 for a caller who can see the entity in the catalog. Anyone else gets `null`, which is also what an unknown entity or a `null` id binds.
 
 ---
 
 ### Check the current user's permission: `has_permission`
 
-Returns `true` when the current user holds the named permission, `false` otherwise. Does not throw. The name may be an expression, such as `{"var": "view_permission"}`.
+Returns `true` when the current user holds the named permission, `false` otherwise. Without a valid session it raises a permission error (42501), and that is exactly when `$user_id` is `null` in a computed field or validation rule. The name may be an expression, such as `{"var": "view_permission"}`.
 
 **Form:** `{"has_permission": "<permission_name>"}`
 
@@ -194,7 +201,7 @@ Returns `true` when the current user holds the named permission, and raises an a
 
 ### Check the current user's RACI role: `is_raci_actor`
 
-Returns `true` when the current user holds a role assigned the given RACI letter for the process that governs an `(entity, to_state)` transition, and `false` otherwise (including when no user is authenticated). Does not throw.
+Returns `true` when the current user holds a role assigned the given RACI letter for the process that governs an `(entity, to_state)` transition, and `false` otherwise. Without a valid session it raises a permission error (42501).
 
 The RACI letter is one of `responsible`, `accountable`, `consulted`, or `informed`. The first two arguments name the governed table and the target lifecycle state; together they select the process gate, and the operator then checks the current user's roles against that process's RACI matrix.
 
@@ -216,9 +223,9 @@ Use it in `validation_rules` to gate a transition on the caller's RACI role. It 
 
 The companion to `is_raci_actor`, this operator enforces the **C** (Consulted) letter of RACI. Where `is_raci_actor` checks *who* the caller is, `has_consultation` checks *whether the Consulted parties have actually been consulted* before a record is allowed to move forward.
 
-Returns `true` when an acted *consulted* event already exists for the record under an `(entity, to_state)` gate, that is, a `raci_events` row with `raci = 'consulted'` and `status = 'acted'`. Returns `false` otherwise. Does not throw.
+Returns `true` when an acted *consulted* event already exists for the record in the process that governs an `(entity, to_state)` gate, that is, a `raci_events` row with `raci = 'consulted'` and `status = 'acted'`, and `false` otherwise. A caller who holds no role with a RACI assignment on that process always gets `false`. Without a valid session it raises a permission error (42501). The third argument is the id of the record being gated, usually read from the current row with `{"var": "id"}`.
 
-This backs **C-block** gates: a record may not enter the target state until the RACI actors marked *consulted* (with `consult_mode = 'block'`) have responded. The third argument is the id of the record being gated, usually read from the current row with `{"var": "id"}`.
+The operator only reports, and it ignores `consult_mode`. Holding a record back is the platform's gate: when a record enters the state of a gate that emits events, every consulted and informed role of the process gets a pending event. While the event of a consulted role whose assignment has `consult_mode = 'block'` is not acted, an update of the record keeps its other changes but leaves each state column a gate governs at its stored value. A blocking consultation therefore holds the record's next move, not the move into the state that raised it.
 
 **Form:** `{"has_consultation": ["<entity>", "<to_state>", <record_id>]}`
 
@@ -238,6 +245,8 @@ Use it in `validation_rules` to block a transition until the consultation it dep
 
 Returns `true` when the named field's value differs from its previous value on update, and `true` on insert (treating a new record as "changed"). Returns `false` only when the field's value is the same as before.
 
+It reads a top-level field only: a dotted name such as `settings.theme` is not followed into a JSON column, so on an update it is always `false`. On delete it is `false`, since the row being removed is compared with itself, and in a `select_rule`, which has no `$old`, it is always `true`.
+
 **Form:** `{"value_changed": "<field_name>"}`
 
 ```json
@@ -252,7 +261,7 @@ Returns `true` when the named field's value differs from its previous value on u
 
 ### Concatenate strings with SQL semantics: `concat`
 
-Concatenates all arguments into a single string. `null` arguments become empty strings (mirroring SQL `CONCAT`), and non-string values (numbers, booleans, arrays, objects) are serialized to their JSON text form.
+Concatenates all arguments into a single string. `null` arguments become empty strings (mirroring SQL `CONCAT`), and non-string values (numbers, booleans, arrays, objects) become PostgreSQL's text of their JSON value: `[1, 2]`, `{"a": 1}`, and a stored decimal keeps its digits, as in `10.50`.
 
 **Form:** `{"concat": [<value1>, <value2>, ...]}`
 
@@ -290,7 +299,7 @@ Adds a whole number of units to a date, or an ISO 8601 duration. A negative amou
 
 Units are `year`, `quarter`, `month`, `week`, `day`, `hour`, `minute`, and `second`. A duration can come from a `duration` field or be written directly, such as `"P1M2DT3H"`. Adding a month to the last days of a month lands on the end of the shorter month, so January 31 plus one month is February 28.
 
-All date operators work in UTC, whatever the time zone of the session or browser. They accept ISO 8601 dates such as `2026-12-31` and `2026-12-31T10:00:00Z`, and a date-time with no offset is read as UTC. A missing date gives `null`, so a record with no date can still be saved. Any other value is an error, and so is a time-based unit on a value with no time of day.
+All date operators work in UTC, whatever the time zone of the session or browser. They accept ISO 8601 dates such as `2026-12-31` and `2026-12-31T10:00:00Z`, and a date-time with no offset is read as UTC. A missing date or the empty string gives `null`, and so does a missing or empty `date_add` amount, so a record with no date can still be saved. Any other value is an error, and so is a time-based unit on a value with no time of day, except in `date_diff`, which also counts hours, minutes and seconds between two dates.
 
 Computed fields run when a record is written. Store a date that depends on the record's own fields, as above, rather than a count of days from `$today`, which would be out of date by tomorrow.
 
@@ -410,9 +419,14 @@ The form in the Semantius app evaluates two kinds of rules in the browser, with 
 What differs in the browser:
 
 - `$today`, `$now` and `$user_id` are bound. Computed fields also get `$old` and `$mode` (`"insert"` or `"update"`); an `input_type_rule` gets neither.
+- `$now` is the browser's clock when the rule runs, not the start of the database transaction.
+- Numbers are floating point in the browser and exact decimals in the database, so `0.1 + 0.2` shows `0.30000000000000004` while the user types, and `0.3` is stored.
+- `is_match` uses JavaScript's regular expressions in the browser and PostgreSQL's in the database. `\b` is a word boundary in the browser and a backspace in the database, where the word boundary is `\y`, and `(?i)` works only in the database.
 - `set_record` rows are fetched over the API as the signed-in user, so a record the user cannot see binds `null`, as it does on the server. Until the row has arrived, the rule is skipped.
-- `is_raci_actor` and `has_consultation` read the database and cannot run in the browser. They raise an error there, so an `input_type_rule` that uses them always falls back to the static input mode.
-- A rule that throws leaves the computed field at its current value, or the field at its static input mode, and the form shows the error under the field.
+- `is_raci_actor` and `has_consultation` read the database and cannot run in the browser. They raise an error there when evaluation reaches them, and an `input_type_rule` then falls back to the static input mode. `if`, `and` and `or` evaluate only the arguments they need, so a branch that is not taken never reaches them.
+- A rule that throws leaves the computed field at its current value, or the field at its static input mode, and the form shows the error under the field, though not in view mode or on a hidden field. The error does not block saving.
+
+A [rollup field](/docs/business-logic/rollups) shown as a number has a link to the child records. The link filters by the link field only, not by the rollup's `filter`, so the list can differ from the number shown.
 
 ---
 
@@ -422,13 +436,17 @@ Errors raised while a rule is saved or evaluated. Codes in the 90xxx range belon
 
 | Code | Raised when |
 |---|---|
-| 42501 | `require_permission` fails, or a `select_rule` or `set_record` is evaluated without a valid session. |
+| 42501 | A permission error: `require_permission` fails (hint code 90101), or `has_permission`, `is_raci_actor`, `has_consultation`, a `select_rule` or `set_record` is evaluated without a valid session (90001) or for a user with no enabled account (90006). |
 | 2201B | `is_match` is given a malformed pattern. |
+| 22008 | A date operator got a value shaped like a date that is no real date, such as `2026-02-30`. |
+| 22009 | A date operator got a date-time whose offset is out of range, such as `+99`. |
 | 90238 | A `set_record` id does not fit the target entity's key type. |
+| 90258 | A required field is missing, also when a computed rule produced no value for it. |
 | 90275 | A field that a rule names is renamed. |
 | 90900, 90901 | A `computed_fields` entry lacks its `name` or its `jsonlogic`. |
 | 90902, 90903, 90904 | A `validation_rules` entry lacks its `code`, `message` or `jsonlogic`. |
 | 90905 | A validation rule's code is not between `99000` and `99999`. |
+| 90906 | A platform validation rule (`"source_module": "platform"`) carries a code outside class 90. |
 | 90907 | A `computed_fields` entry names a rollup field. |
 | 90908 | A changed computed rule cannot be applied to an existing record. |
 | 90909 | A rule names an unknown operator (at save time). |

@@ -78,7 +78,9 @@ The filter is the one JsonLogic expression in Semantius that is **compiled to SQ
 
 Anything else is refused when the definition is saved (90265), and the error names what was refused. That includes `if`, arithmetic, `cat`, `merge`, `missing`, `some`, the other [Semantius extensions](/docs/business-logic/extensions), and the request variables `$user_id`, `$now` and `$today`. A trigger can only keep a rollup correct if the rollup depends on the child row alone. A literal the column cannot be cast from is caught at save time too, not at the first child write.
 
-A date operator takes a `date` or `date-time` column, an ISO 8601 literal or another date operator as its date. Its unit, part or pattern must be a literal, and its amount a literal or an integer column. A child whose column holds a value the operator has no answer for (a date of `infinity`, a year beyond 9999) refuses its write with 90272, which names the rollup. Date operators also cost one function call per sibling row, so keep them out of filters over parents with many thousands of children.
+A `var` may name a text, boolean, number, `date`, `date-time`, `time`, UUID or TypeID column, and a duration column only as the amount of `date_add`. `null` can be compared only with `==`, `!=`, `===` or `!==`, and an `in` list cannot hold it. A bare `true`, `false` or `{}` is a valid filter: `true` and `{}` count every child, `false` none.
+
+A date operator takes a `date` or `date-time` column, an ISO 8601 literal or another date operator as its date. Its unit, part or pattern must be a literal, and its amount a literal, an integer column or, when the date is a `date-time`, a duration column. A child whose column holds a value the operator has no answer for (a date of `infinity`, a year beyond 9999) refuses its write with 90272, which names the rollup. Date operators also cost one function call per sibling row, so keep them out of filters over parents with many thousands of children.
 
 ### Where the filter differs
 

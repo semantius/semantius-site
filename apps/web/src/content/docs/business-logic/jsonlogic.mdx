@@ -22,7 +22,7 @@ A JsonLogic expression is a single JSON object whose top-level key is the operat
 
 This reads as: take the value of the `status` field of the current row, compare it to the string `"active"`, return `true` if they match.
 
-Anything that is not an object with exactly one key is returned as-is. That includes literals (`42`, `"hello"`, `true`, `null`), plain arrays, and objects with several keys. Because such a value is truthy, Semantius refuses a `select_rule` or validation rule that is not a single operation: it would pass every record without ever being evaluated.
+Only an object with exactly one key is an operation. A plain array is evaluated element by element, and anything else is returned as-is: literals (`42`, `"hello"`, `true`, `null`) and objects with several keys. Semantius therefore refuses a `select_rule` or validation rule that is not a single operation, `false`, `0` and `""` included (90919): a value is not a rule.
 
 ## Common operators
 

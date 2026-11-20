@@ -23,7 +23,7 @@ JsonLogic gives Semantius a single, portable expression language that:
 - Serializes cleanly as JSON, so rules sit alongside the rest of the model in the same markdown spec, the same database row, and the same diff.
 - Runs in the database (for `computed_fields`, `validation_rules`, `select_rule`) via a PL/pgSQL interpreter, and in the browser (for `input_type_rule`, and for a live preview of `computed_fields` while a form is edited), with no compiler or runtime to ship. A rollup filter is the one exception: it is compiled to SQL.
 - Cannot be bypassed. Because the engine lives in the database, every insert, update, and select is evaluated against the rules regardless of which client, agent, or service issued the request.
-- Is safe to evaluate against untrusted input, since it has no side effects, no I/O, and no host access beyond the variables the platform binds for it.
+- Is safe to evaluate against untrusted input, since it makes no writes and has no host access. Beyond the variables the platform binds for it, a rule reads only what `set_record`, `has_permission`, `is_raci_actor` and `has_consultation` look up in the database.
 - Is readable enough that agents can author, audit, and refactor rules without touching application code.
 
 For the language itself, see the [JsonLogic overview](/docs/business-logic/jsonlogic). For the Semantius-specific variables and operators (such as `$user_id`, `$old`, `set_record`, `has_permission`, `value_changed`, `throw_error`) and the shape of each rule, see [JsonLogic extensions](/docs/business-logic/extensions). For aggregates over child records, see [Rollup fields](/docs/business-logic/rollups).
@@ -33,12 +33,12 @@ For the language itself, see the [JsonLogic overview](/docs/business-logic/jsonl
 The five extension points map onto distinct stages of the request lifecycle:
 
 1. **Insert or update arrives** at the API. The platform loads the entity's `computed_fields` and runs them in declared order. Each derived value is written into the incoming row before validation, so later rules can reference it.
-2. **Validation** runs the entity's `validation_rules` against the merged row. Any rule that evaluates falsy (or that calls `throw_error` / `require_permission` and fails) rejects the write with the rule's `code` and `message`.
+2. **Validation** runs the entity's `validation_rules` against the merged row. Any rule that evaluates falsy rejects the write with the rule's `code` and `message`. A `throw_error` in a rule rejects it with its own message and code instead, and a failing `require_permission` with a permission error (42501).
 3. **Persist.** The row is written.
 4. **Rollups.** When the written row is a child that rollup fields aggregate over, the parents it touched are recomputed in the same transaction. A parent whose total moved runs its own `computed_fields` and `validation_rules`, so a rule such as "the order total stays under the credit limit" holds whichever record changed.
 5. **Delete** runs the entity's `validation_rules` against the row being removed, with `$mode` set to `"delete"` and `$old` bound to that row. Any rule that evaluates falsy aborts the delete; `computed_fields` still run but their output is discarded (there is no surviving row). This lets a rule guard against deletion, for example `{"!=": [{"var": "$mode"}, "delete"]}`.
 6. **Read** requests pass through the entity's `select_rule`. The platform evaluates the rule per row, with the row bound as the root context, and returns only rows where it evaluates truthy. The same rule decides which rows an update or delete can reach, and it takes the place of the entity's `view_permission`. This is row-level security expressed as data. A rule that raises an error on a row hides that row.
-7. **UI render.** When a form is built from the model, each field's `input_type_rule` is evaluated client-side against the current form values. It returns the field's input mode, which replaces the static `input_type`: `hidden` hides the field, `readonly` and `disabled` lock it, `required` makes it mandatory. A rule that throws, or returns anything else, keeps the static mode. The form also re-evaluates `computed_fields` as the user types, so a computed field shows its new value before the save. Both are presentation only and never the authoritative gate: the server recomputes and validates on every write, and its result wins.
+7. **UI render.** When a form is built from the model, each field's `input_type_rule` is evaluated client-side against the current form values. It returns the field's input mode, which replaces the static `input_type`: `hidden` hides the field, `readonly` and `disabled` lock it, `required` makes it mandatory. A rule that throws, or returns anything else, keeps the static mode. The form also re-evaluates `computed_fields` as the user types, so a computed field shows its new value before the save. Neither is the authoritative gate: the server recomputes and validates on every write, and its result wins. Two effects reach the stored record all the same: a field a rule makes `disabled` is left out of the request, and a field with any `input_type_rule` gets no database `required` check.
 
 ## Authoring rules
 
@@ -48,6 +48,7 @@ Rules are stored in the model alongside the entities and fields they govern. In 
 2. Write the expression using standard JsonLogic plus the [Semantius extensions](/docs/business-logic/extensions). Reach for `var` to read fields of the current row, `$old` to compare against the previous state on update, and `set_record` to pull in a related record by id.
 3. Save it. The platform checks every rule when the entity or field is saved, and refuses one that names an unknown operator, so a typo never reaches a live record. See [Checks when a rule is saved](/docs/business-logic/extensions#checks-when-a-rule-is-saved).
 4. Test it with a representative row. The [Optimize](/docs/models/optimize) skill can round-trip a model from a live instance, so you can verify that rules behave as expected in production before locking them in.
+   To evaluate a rule against sample data, call `/rpc/evaluate_json_logic` with the rule as `rule` and a sample record as `data`: it returns the result, evaluated with the caller's rights.
 
 ## Next
 
