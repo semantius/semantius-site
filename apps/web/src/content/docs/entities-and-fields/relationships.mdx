@@ -1,0 +1,60 @@
+---
+title: 'Relationships'
+description: 'How reference and parent fields link records, what deleting the target does, one to many, many to many and one to one relationships, subtypes and extensions, and label columns.'
+order: 4
+---
+
+A `reference` field links a record to one record of `reference_table`, and may be empty. A `parent` field makes the record belong to its parent: it is required, the parent lists the record among its children, and the entity becomes a child entity, which the app leaves out of the sidebar. Both create a foreign key with an index, and both follow a change of the target's key.
+
+## Delete modes
+
+`reference_delete_mode` decides what deleting the target record does:
+
+| Mode | Deleting the target | Allowed on |
+|---|---|---|
+| `restrict` (default) | Is refused while records point at it. | Both. |
+| `clear` | Empties the field. | `reference` fields that are not required (90257). Not on `parent` (90282). |
+| `cascade` | Deletes the records that point at it too. | Both, except the fields of an `is_a` entity (90249). |
+
+- **A cascade does not check the user's permissions on the children.** A child with permissions of its own, such as a signed document, is better a `parent` with `restrict`, so each child is deleted under its own permission.
+
+## One to many
+
+A `reference` or `parent` field is the many side of a one to many relationship: each record points at one target, and any number of records can point at the same target.
+
+- **A field may point at its own entity**, for a tree such as tasks and subtasks.
+
+## Many to many
+
+Many to many goes through a junction entity with two `parent` fields, one to each side. Set its `entity_type` to `junction`. The platform's own `user_roles` is one: it joins `users` and `roles`.
+
+- **The type changes how a record is named.** A junction record's full label (`_label`) is the labels of its parents, joined in field order, such as `Fuller › Westboro` for an employee and a territory. Its own label is not part of it.
+- **Its records still need a label**, typed or computed, because the label field is required on every entity.
+- **An entity whose only fields are two or more `parent` fields**, besides its key, label and timestamps, is labeled the same way, and has the same `label_parent` limits, even before its `entity_type` is set to `junction`.
+- **A junction cannot have a `label_parent`**, and no `label_parent` can point at one.
+
+## One to one
+
+- **An extension.** A `has_a` entity adds fields to a base record, which has one extension or none. The extension shares the base record's key. See [Subtypes and extensions](#subtypes-and-extensions).
+- **A unique reference.** A `reference` field with `unique_value` lets each target record be pointed at by one record at most: the database adds a unique index on the column, and a second record that points at the same target is refused (23505). Empty references are not compared, so any number of records can have none.
+
+## Subtypes and extensions
+
+Entities with `id_type` `is_a` or `has_a` share their records with a base entity, named by `id_refentity`. The chain ends at a root with `id_type` `typeid`.
+
+- **`is_a`** makes a subtype. Each record is of exactly one type, told by its id's prefix: a `parties` root can have `people` and `organizations` as subtypes. Writing through the subtype writes every level, and an update or delete through the root reaches the record's own type, so every level's rules and permissions apply. Reading the root lists every record, with the root's fields only.
+- **`has_a`** makes an optional extension: a base record has one or none. An insert without an id creates the base record too; an insert with the id of an existing base record attaches to it. Deleting an extension detaches it and keeps the base record, and a base record with an extension cannot be deleted until the extension is (90251).
+
+The subtype's own fields live in a table named `<table_name>_ext`, and `/<table_name>` is a view over every level. Write through the entity, never to the `_ext` table (90244).
+
+- A reference to an `is_a` entity accepts records of that type and its subtypes. A reference to the root of the family accepts any of them.
+- The label comes from the root (90242), and field names must be unique along the chain (90243).
+- The base is fixed once set (90241), and so is the prefix of an `is_a` entity (90245).
+- These entities cannot have an `order_column` or a rollup, and the fields of an `is_a` entity cannot `cascade` (90249).
+- An `is_a` or `has_a` entity, or the base of one, cannot be deleted while it has records (90247). An entity that other entities are based on cannot be deleted until those entities are (90248).
+
+## Label columns
+
+Every `reference` and `parent` field also has a read-only `<field_name>_label` column with the target's label, and every entity a `_label` column with the record's full label (`label_parent` included). Name them in `select`, since `*` leaves them out.
+
+A label the caller may not read falls back to what they may: a hidden parent leaves only the record's own label.

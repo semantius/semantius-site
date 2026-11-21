@@ -1,32 +1,38 @@
 ---
 title: "Reference"
-description: "Detailed documentation for business logic, MCP connectors, agent skills, the CLI and the pg_semantius extension."
+description: "Detailed documentation for the app, agent skills, the CLI, MCP connectors and the pg_semantius extension."
 order: 1
 ---
 
-Reference documentation for every part of Semantius. Start with the
-[Overview](/docs/overview) if you are new, or jump straight to the
-area you are working in. To run the whole platform on your own
-machine or server, see [Self-Hosting](/docs/self-hosted).
+Semantius is an **agentic data platform**. It lets you describe your business as a semantic model: the entities you care about, the attributes that define them, and the relationships between them. It then puts that model to work for both humans and AI agents.
 
-## Overview
+Instead of stitching together a database, an admin UI, an API layer, and a permissions system every time your domain evolves, you evolve the model. Everything else follows.
 
-[What Semantius is](/docs/overview) and how semantic models, MCP
-servers, agent skills and the CLI fit together.
+Reference documentation for every part of Semantius follows. To run the
+whole platform on your own machine or server, see
+[Self-Hosting](/docs/self-hosted).
 
-## Business Logic
+## App
 
-[Business logic](/docs/business-logic) is expressed in
-[JsonLogic](/docs/business-logic/jsonlogic), plus the
-[extensions](/docs/business-logic/extensions) Semantius adds for
-record-level computed fields, validation rules and permissions.
-
-## MCP Connectors
-
-[MCP connectors](/docs/mcp-connectors) expose your model to AI chats.
-See [installation](/docs/mcp-connectors/installation) to connect one.
+The [Semantius app](/docs/app) is a responsive web app. It provides traditional
+access to the data platform, beyond the agent-optimized skills and
+CLI. You can host the app yourself to brand and customize it
+completely. A self-hosted app works with both
+[Semantius Cloud](https://app.semantius.com) and a
+[self-hosted](/docs/self-hosted) Semantius backend. Its source is in
+the [semantius-app](https://github.com/semantius/semantius-app)
+repository.
 
 ## Agent Skills
+
+Semantius is **agentic** by design. It ships with **[skills](/docs/agent-skills)** that agents can use to build, test, and deploy models end to end:
+
+- Generate a model from a description of your domain.
+- Add or refactor entities and fields without breaking existing data.
+- Configure roles, permissions, and access policies.
+- Deploy changes to a live environment, then optimize by pulling the live module back into a fresh spec.
+
+Skills give agents a structured, repeatable way to do real work on your data, not just talk about it. Start with ready-to-use templates or build a model from scratch with the Business Analyst skill.
 
 [Agent skills](/docs/agent-skills) give coding agents domain
 expertise for your model. See
@@ -34,9 +40,26 @@ expertise for your model. See
 
 ## CLI
 
+For coding agents like **OpenClaw** and **Claude Code**, Semantius provides a **[CLI](/docs/agent-skills/installation)**. The CLI lets agents work with your data autonomously from the terminal: introspect schemas, query data, apply changes, run validations, and integrate the results back into your codebase.
+
+This makes Semantius a natural fit for workflows where an agent needs to reason about your domain while writing code, whether that means generating typed clients, building dashboards, scaffolding features, or migrating data.
+
 The [CLI](/docs/cli) drives Semantius from your terminal: the
 [semantius command](/docs/cli/command) and the
 [use-semantius skill](/docs/cli/use-semantius).
+
+## MCP Connectors
+
+Semantius exposes its model through **[MCP servers](/docs/mcp-connectors)**, so you can connect AI chats like **ChatGPT** and **Claude** directly to your data.
+
+From a chat window you can:
+
+- Ask questions about your data in natural language and get answers grounded in the semantic model.
+- Create, read, update, and delete records with the model's permissions enforced.
+- Evolve the schema by describing the change you want: add entities, fields, and relationships.
+- Run analytical queries through a semantic layer that understands measures, dimensions, and joins.
+
+The MCP layer is the bridge between conversational AI and your operational data, with the semantic model providing the vocabulary. See [MCP Connectors](/docs/mcp-connectors) for the full list of servers and clients, and [Installation](/docs/mcp-connectors/installation) for setup.
 
 ## pg_semantius
 
@@ -45,3 +68,14 @@ platform is built on. Use it on its own to add Semantius to a
 PostgreSQL you already run: [install](/docs/pg-semantius/install)
 it, or [run the Docker image](/docs/pg-semantius/docker), then
 [upgrade and back it up](/docs/pg-semantius/maintain).
+
+## Typical Setup
+
+You can run Semantius in two ways: as a managed service at [app.semantius.com](https://app.semantius.com), or free on your own machine or server with **Semantius Open Source**, the [self-hosted edition](/docs/self-hosted). The MCP servers are part of the managed service. Everything else below works on both.
+
+After creating a new data platform, you:
+
+1. **[Set up the MCP servers](/docs/mcp-connectors/installation)** so you can chat with your platform from any MCP-compatible client (ChatGPT, Claude, and others).
+2. **[Install the CLI and skills](/docs/agent-skills/installation)** in any agent that supports Agent Skills, such as OpenClaw or Claude Code. From there, install one of the ready-to-use models we provide, customize it, or use the **Business Analyst** skill to build a custom model from scratch.
+
+The result is a single source of truth that humans, conversational AI, and coding agents can all use, speaking the same semantic language.

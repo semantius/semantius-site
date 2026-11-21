@@ -15,11 +15,7 @@ Both are written by database triggers, in the same transaction as the change the
 
 ## What is logged
 
-Logging records is **opt-in per entity**. An entity's `audit_log` defaults to `false`. Turn it on with an update of the entity:
-
-```bash
-semantius call crud update_entity '{"table_name":"orders","data":{"audit_log":true}}'
-```
+Logging records is **opt-in per entity**. An entity's `audit_log` defaults to `false`. Turn it on by setting `audit_log` to `true` on the entity.
 
 Changing `audit_log` takes the `admin` permission, the edit permission of `entities`. Turning it off stops the logging and keeps every row already written; the update of the `entities` row that turned it off is itself logged.
 
@@ -71,17 +67,7 @@ Temporary objects and the scripts of database extensions are not logged.
 
 Only users with the `admin` permission can read either log. Anyone else gets an empty result, not an error, so nobody else sees history, not even of the records they created. An administrator sees every row of every table, whatever the entity's `view_permission` or [`select_rule`](/docs/business-logic/extensions#select_rule): the log sits outside the row rules of the records it describes.
 
-Both logs are ordinary endpoints, `/audit_record_logs` and `/audit_ddl_logs`, and the app lists them in the administration module as Audit Logs and Audit Logs Database. There is no tool of their own: read them with `postgrestRequest`. The history of one record, oldest first:
-
-```bash
-semantius call crud postgrestRequest '{"method":"GET","path":"/audit_record_logs?table_name=eq.orders&record_pk=eq.42&order=id.asc&select=id,op,ts,user_id,old_record,record"}'
-```
-
-The schema changes to one table, newest first:
-
-```bash
-semantius call crud postgrestRequest '{"method":"GET","path":"/audit_ddl_logs?object_identity=eq.public.orders&order=id.desc"}'
-```
+Both logs are ordinary endpoints, `/audit_record_logs` and `/audit_ddl_logs`, and the app lists them in the administration module as Audit Logs and Audit Logs Database. There is no tool of their own: read them with `postgrestRequest`. For the history of one record, oldest first, filter `audit_record_logs` on `table_name` and `record_pk` and order by `id`. For the schema changes to one table, newest first, filter `audit_ddl_logs` on `object_identity`, such as `public.orders`, and order by `id` descending.
 
 - **Users.** `user_id` is not a reference, so it cannot be embedded in the query. Look the users up in a second request, `/users?id=in.(7,12)`.
 - **Order.** Sort by `id`, not by `ts`: the rows of one transaction share their time.
@@ -100,11 +86,7 @@ Deleting an entity drops its table with its records. No delete row is written fo
 
 ## Pruning
 
-There is no retention period and no automatic purge. An administrator prunes the log by deleting rows, for example everything before 2025:
-
-```bash
-semantius call crud postgrestRequest '{"method":"DELETE","path":"/audit_record_logs?ts=lt.2025-01-01"}'
-```
+There is no retention period and no automatic purge. An administrator prunes the log by deleting rows, for example every row whose `ts` is before 2025.
 
 A delete by anyone else removes nothing, without an error. Pruning is not itself logged.
 

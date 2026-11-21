@@ -21,7 +21,7 @@ A module groups the entities, permissions and roles of one application, such as 
 | `domain_code` | A short uppercase code for the business domain, such as `CRM` or `ATS`. |
 | `catalog_module_code` | The catalog blueprint the module was built from. Write-once: it can be set on create, or filled once while empty, and never changed after that (90701). |
 | `module_type` | `domain` (the default) or `master`, a module promoted for sharing. |
-| `access_scope` | How the module's permissions are structured: `custom` (the default); `basic` (view and edit); `advanced` (view, edit and admin); `gated` (as `advanced`, plus a permission per process gate, held by admins); `raci` (as `advanced`, plus a permission per process gate, held by RACI roles). |
+| `access_scope` | How the module's permissions are structured: `custom` (the default); `basic` (view and edit); `advanced` (view, edit and admin); `gated` (as `advanced`, plus a permission for each restricted step of a `workflow_state`, held by admins and by the role that takes the step); `raci` (as `advanced`, with the restricted steps enforced through [RACI](/docs/raci) process gates). See [Workflow States, Gates and Access](/docs/workflow-and-access). |
 | `manage_permission`, `admin_permission` | The module's manage and admin permissions. |
 | `default_viewer_role_id`, `default_manager_role_id`, `default_admin_role_id` | The module's standard roles. A role named here cannot be deleted while the module names it. |
 
@@ -42,16 +42,12 @@ The last five rows describe the module for the tools that build and read models.
 
 Users belong to no module.
 
-- **Seeing a module is not reading its data.** The module's `view_permission` decides who sees the module, its tile and its section of the app. Each entity has a `view_permission` and an `edit_permission` of its own, which decide who reads and writes its records. A module's permissions are not passed down to its entities. See [Permissions and Roles](/docs/permissions).
+- **Seeing a module is not reading its data.** The module's `view_permission` decides who sees the module, its tile and its section of the app. Each entity has a `view_permission` and an `edit_permission` of its own, which decide who reads and writes its records. A module's permissions are not passed down to its entities. See [Permissions and Roles](/docs/permissions-and-roles).
 - **Permission names are free.** A permission belongs to its module through `module_id`, not through its name. Names such as `crm:read` and `crm:manage` are a convention of the modeling tools; the platform does not derive them from the slug.
 
 ## Creating a module
 
-```bash
-semantius call crud create_module '{"data":{"module_name":"Helpdesk","description":"Tickets and service requests","icon_name":"life-buoy"}}'
-```
-
-The module gets the slug `helpdesk` and the `view_permission` `user:read`. Every user holds `user:read`, so **a new module is visible to everyone**.
+A module is created by inserting a record into `modules`. It needs only a `module_name`. A `module_slug` left empty is derived from the name, so a module named `Helpdesk` gets the slug `helpdesk`; send a `module_slug` to choose it yourself. The `view_permission` defaults to `user:read`, which every user holds, so **a new module is visible to everyone**.
 
 To restrict it, give the module a permission of its own. The `view_permission` must name a permission that exists when the request commits (23503), and a permission needs its module first, so it takes three requests:
 

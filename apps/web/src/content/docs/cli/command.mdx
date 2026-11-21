@@ -166,7 +166,7 @@ semantius call crud postgrestRequest '{
 semantius call crud postgrestRequest '{"method":"DELETE","path":"/orders?id=eq.42"}'
 
 # Full-text search on a searchable entity
-semantius call crud postgrestRequest '{"method":"GET","path":"/contacts?search_vector=wfts.Monica"}'
+semantius call crud postgrestRequest '{"method":"GET","path":"/contacts?search_vector=wfts(simple).Monica"}'
 ```
 
 `postgrestRequest` works against **any table on the platform**, including the system tables behind the typed tools. So if you ever want to mass-update schema metadata, the same tool covers it:

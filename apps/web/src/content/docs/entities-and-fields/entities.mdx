@@ -1,0 +1,63 @@
+---
+title: 'Entities'
+description: 'The columns of an entity record, how its key is chosen, what changing or deleting an entity does to its table, and managed and unmanaged entities.'
+order: 1
+---
+
+When a record is added to or deleted from `entities`, the database structure is updated to match: each entity is mapped to a table in the underlying database. Adding a record creates the table, and deleting it drops the table with every record in it.
+
+## The entity record
+
+| Column | Meaning |
+|---|---|
+| `table_name` | The table's name and the API path. `a-z`, `0-9` and `_`, starting with a letter, at most 41 bytes (90273), and not ending in `_ext`. A leading `_` is reserved (90271). |
+| `singular`, `singular_label` | Derived from `table_name` when left empty: `tickets` gives `ticket` and `Ticket`. |
+| `plural_label` | The plural name the app shows, such as `Tickets`. Not derived. |
+| `plural` | Always equal to `table_name`, whatever you send. |
+| `description` | What the entity is. It becomes the table's comment, which the API shows. |
+| `module_id` | The [module](/docs/modules) the entity belongs to. Required. |
+| `view_permission`, `edit_permission` | The permissions to read and to write its records. Defaults `public:read` and `admin`. See [How entities use permissions](/docs/permissions-and-roles/permissions#how-entities-use-permissions). |
+| `icon_name`, `name_sort` | The entity's icon, and its sort key in the app's sidebar. |
+| `id_type`, `id_column`, `id_prefix`, `id_refentity` | The key. See [Keys](#keys). |
+| `label_column`, `label_column_label` | The field that is the record's label (default `label`), and that field's title. |
+| `label_parent` | A `reference` or `parent` field whose record's label prefixes this one: `Acme › Q3 renewal`. |
+| `order_column` | The name of an integer column for manual ordering. The table gets it, and a new record that sends no value takes the highest value below 900000 plus 10, or 10 for the first record. Changing or clearing it drops the old column and its values. |
+| `edit_mode` | Where the app opens a record to edit it: `auto` (the default), `sidebar`, `modal` or `page`. |
+| `entity_type` | `operational_workflow`, `operational_record`, `catalog`, `junction`, `computed` or `unclassified` (the default). Only `junction` changes behavior: see [Many to many](/docs/entities-and-fields/relationships#many-to-many). |
+| `managed` | Whether Semantius owns the table. Default `true`. See [Managed entities](#managed-entities). |
+| `audit_log` | Whether changes to its records are logged. Default `false`. See [Audit Logs](/docs/audit-logs). |
+| `cube_mode` | `auto` (the default) or `disabled`: whether an analytics cube is generated for the entity. |
+| `computed_fields`, `validation_rules`, `select_rule` | The entity's [business logic](/docs/business-logic). |
+| `catalog_entity_code`, `catalog_owner_module`, `catalog_entity_aliases` | The catalog blueprint the entity came from. The code is write-once (90201), and aliases can only be added (90213). |
+
+The platform sets `searchable` (true when any field is searchable), `is_child` (true when the entity has a `parent` field), `created_at` and `updated_at`. A value sent for them is ignored.
+
+## Keys
+
+The key is chosen when the entity is created: `id_type` (90233) and `id_column` (90253) cannot change afterwards.
+
+| `id_type` | Key column | Filled by |
+|---|---|---|
+| `auto_increment` (default) | `BIGINT` | The database, counting up. |
+| `bigint` | `BIGINT` | The client. |
+| `text` | `TEXT` | The client. |
+| `uuid` | `UUID` | The database, as a UUIDv7. |
+| `typeid` | A TypeID, such as `acct_01h455vb4pex5vsknk084sn02q` | The database, with the entity's `id_prefix`. |
+| `is_a`, `has_a` | The TypeID of the base record | See [Subtypes and extensions](/docs/entities-and-fields/relationships#subtypes-and-extensions). |
+
+- **A record's key never changes** (90236). Sending the unchanged key back is allowed.
+- **`id_prefix`** is lowercase letters and `_`, starting and ending with a letter, and unique among entities. A `typeid` entity may change its prefix later; existing ids keep the old one. An id a client supplies must carry the current prefix (90237).
+- **Explicit ids in an `auto_increment` entity** are accepted. Call `/rpc/fix_id_sequence` with `p_table` afterwards, so the counter continues above them.
+
+## Changing an entity
+
+- **Renaming** (`table_name` in an update) renames the table and keeps its records. The API path changes with it. Fields that point at the entity follow, and so do the entity names in `set_record` rules and rollup definitions. An entity that a field of the platform's own entities points at cannot be renamed (90286): `users`, `roles`, `permissions`, `modules` and `entities`.
+- **`view_permission`, `edit_permission` and `select_rule`** rebuild the access policies at once.
+- **`label_column`** moves the label to another field. A key, a timestamp or a rollup field cannot be the label (90270).
+- **Deleting** an entity drops its table with every record in it. It is refused while a field of another entity points at it, whatever that field's delete mode (90260), while a [rollup](/docs/business-logic/rollups) of another entity aggregates over it (90266), while [RACI events](/docs/raci#raci-events) name it (`23503`, or `23001` on PostgreSQL 18), and in the cases listed under [Subtypes and extensions](/docs/entities-and-fields/relationships#subtypes-and-extensions).
+
+## Managed entities
+
+A managed entity (`managed` is `true`, the default) has a table that Semantius owns: it creates it, applies every change, and enforces the permissions and rules. An unmanaged entity is metadata only: no table is created, rules are stored but not enforced, and deleting the entity leaves the table alone. Changing the entity or its fields does not change the table's structure either: keep the table in sync with the model by other means.
+
+Setting `managed` to `true` creates the table, or adopts a table of that name that already exists, if its key matches the `id_type` (90235). Adopting adds row-level security, the access policies and any missing columns. A required check goes only onto fields whose records already comply; the others are reported as warnings. The [audit logs](/docs/audit-logs) cannot become managed.

@@ -1,0 +1,73 @@
+---
+title: 'Entities and Fields'
+description: 'How an entity becomes a database table with an API, the columns that describe entities and fields, the field formats and relationships, and what each change does to the data.'
+order: 1
+---
+
+An entity is a kind of record, such as a ticket or an order. Inserting a record into `entities` creates a database table, its REST API endpoint at `/<table_name>`, its access policies and its schema; deleting the record drops the table with every record in it. Each record in `fields` is a column of that table: inserting one adds the column, and deleting one drops the column with its values. A change to either is applied to the table in the same transaction, so the model and the database cannot drift apart.
+
+Creating, changing and deleting entities and fields takes the `admin` permission.
+
+## Creating an entity
+
+A new entity's table starts with four columns, each with its row in `fields`:
+
+| Column | What it holds |
+|---|---|
+| `id` | The record's key, in the column named by `id_column` (default `id`). Its type depends on the entity's `id_type`; see [Keys](/docs/entities-and-fields/entities#keys). |
+| `label` | The record's name, in the column named by `label_column` (default `label`), shown wherever the record is listed or linked. Required. |
+| `created_at`, `updated_at` | Set by the database. `updated_at` moves on every change. |
+
+The table also gets a full-text `search_vector` over its searchable fields (the label is searchable from the start), row-level security built from the entity's [permissions](/docs/permissions-and-roles), and its endpoint, `/<table_name>`. The API picks up the change at once.
+
+- **Every record needs a label.** The label field is required, so an insert without one is refused (90258), unless a [computed field](/docs/business-logic/extensions#computed_fields) writes it. Junction records need one too.
+- **There is no `created_by`.** Add a `reference` field to `users` with the default `$user_id` to record who created a record.
+
+## Entities
+
+The [entity record](/docs/entities-and-fields/entities) describes the table: its name and labels, its module and permissions, its key, and whether Semantius manages it.
+
+## Fields
+
+The [field record](/docs/entities-and-fields/fields) describes a column: its name and title, its format, whether it is required, its default, and what changing it does to the stored values.
+
+## Formats
+
+A field's [format](/docs/entities-and-fields/formats) decides the column's type, and with it what the database accepts.
+
+## Relationships
+
+[Relationships](/docs/entities-and-fields/relationships) link records to each other through `reference` and `parent` fields: one to many, many to many and one to one. Subtypes and extensions share records with a base entity.
+
+## API
+
+| Call | What it does |
+|---|---|
+| `/entities` | The entities, keyed by `table_name`, through `create_entity`, `read_entity`, `update_entity` and `delete_entity`. |
+| `/fields` | The fields, keyed by `id` (`tickets.status`), through `create_field`, `read_field`, `update_field` and `delete_field`. |
+| `/<table_name>` | The entity's records, through `postgrestRequest`. |
+| `/rpc/get_schema` | The schema of `p_table_name`: its entity row, its fields as `properties` with their `inputMode`, `width`, `ctype` and references, and its children. Unknown entities and hidden ones both answer `404`, with code `42P01`. |
+| `/rpc/get_schemas` | The schemas of `p_table_names`, a comma-separated list. |
+| `/rpc/get_schema_children` | The child entities of `p_table_name`: the entities with a `parent` field to it. |
+| `/rpc/get_record_by_id` | One record of `p_entity_name` by `p_id`, whatever its key type. |
+| `/rpc/fix_id_sequence` | Moves the key counter of `p_table` above its highest id. |
+
+The schema's `required` list is not the database's: read each property's `inputMode` to know whether a field is required.
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `90223` | A format change that would change the column type. |
+| `90236` | A record's key cannot change. |
+| `90257`, `90282` | `clear` on a required reference, or on a `parent`. |
+| `90258` | A required field holds no value. |
+| `90259` | A field cannot become required while records lack a value. |
+| `90260` | The entity is still referenced by a field of another entity. |
+| `90275` | The field is named by a rule. |
+| `90283`, `90284` | A `$user_id` or relative-date default on a field that cannot take it. |
+| `23505` | A duplicate: a `unique_value` field, a field name, a table name or an `id_prefix`. |
+| `23514` | A value outside `enum_values`, or a name that breaks its pattern. |
+| `23503` | A reference to a record that does not exist. |
+
+The codes that business logic raises are listed under [JsonLogic extensions](/docs/business-logic/extensions#errors).

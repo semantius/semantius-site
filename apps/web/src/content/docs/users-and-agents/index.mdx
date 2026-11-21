@@ -1,0 +1,39 @@
+---
+title: 'Users and Agents'
+description: 'Who works in Semantius: people and agents, both kept as records of users, how they sign in, and the API keys they work with.'
+order: 1
+---
+
+Everyone who works in Semantius is a record of `users`: a person who signs in, or an agent, a service principal rather than a person. Both hold [roles and permissions](/docs/permissions-and-roles) the same way, and their changes are logged under their user id alike.
+
+- **No anonymous access.** Every request to data or to a function needs a signed-in user.
+- **A disabled user holds no permissions**, and every request fails with hint code 90006.
+
+## Users
+
+A [user](/docs/users-and-agents/users) signs in through an identity provider, and their first request creates their record.
+
+## Agents
+
+An [agent](/docs/users-and-agents/agents) is a user with `is_agent` set. It gets a generated identity and works through an API key.
+
+## API keys
+
+An [API key](/docs/users-and-agents/api-keys) acts as its owner, user or agent, with every permission the owner holds.
+
+## API
+
+| Call | What it does |
+|---|---|
+| `/users` | The users and agents, through `create_user`, `read_user`, `update_user` and `delete_user`. |
+| `/rpc/get_userinfo` | The caller's profile, roles, effective permissions and visible modules. The first call of a new user creates their record. |
+| `/rpc/generate_api_key`, `/rpc/list_api_keys`, `/rpc/delete_api_key` | The caller's API keys. See [API keys](/docs/users-and-agents/api-keys). |
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `42501` with hint code `90006` | The caller has no user record yet, or the user is disabled. |
+| `90401`, `90402` | The user or the API key does not exist. |
+
+The guards that protect users and their roles (90103, 90104, 90107) are listed under [Who can manage access](/docs/permissions-and-roles/roles#who-can-manage-access).

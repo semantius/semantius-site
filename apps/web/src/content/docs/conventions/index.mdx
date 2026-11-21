@@ -1,0 +1,99 @@
+---
+title: 'Conventions'
+description: 'Optional naming and modeling conventions that keep a data catalog consistent for people and agents: names, labels, entity types, fields, enums, relationships, permissions and rules.'
+---
+
+These conventions are optional, and the platform does not check them, except where an item says a name is refused, with the error code you then get. They keep a catalog consistent, so that whoever knows one module can read the next, and an agent can tell from a name what a table or field holds without reading its records. An agent with the [use-semantius skill](/docs/cli/use-semantius) follows them when it builds a module, and checks a module against them when you ask for a review.
+
+Steps that only some users may take, approvals, and what each role can see are covered in the guide [Workflow States, Gates and Access](/docs/workflow-and-access).
+
+## Modules
+
+| Column | Convention |
+|---|---|
+| `module_name` | The name people read in the module selector. Keep acronyms as acronyms: `CRM`, `ITSM`. |
+| `module_slug` | Set it yourself instead of leaving it empty: lowercase words joined by `-`, such as `ben-admin`. It appears in the module's URLs and starts the name of each of its permissions. |
+| `description` | A tagline of at most 60 characters. For an acronym, what it stands for: `Customer Relationship Management`. |
+
+## Entities
+
+- **`table_name` is plural snake_case and names the thing in full:** `sales_opportunities`, `order_lines`, never `opps` or `orderLine`. No two modules can have an entity of the same name, so the name has to make sense on its own.
+- **One real-world thing is one entity.** Before adding an entity, look for one that already holds the same thing, in any module, and relate to it instead. People who sign in are always the built-in `users`: never create a `users` or `user` entity of your own.
+- **`singular_label` and `plural_label` are the plain noun**, such as `Product` and `Products`, never `Product Name`. Always set `singular_label`: left empty, it is made from the table name, and `crm_products` becomes `Crm Product`.
+- **`description` says what one record is.** It becomes the table's comment, which the API shows.
+- **Keep the default key, `auto_increment`**, a number the database counts up. Use `typeid` only for an entity in an `is_a` or `has_a` family, or when the ids are shown outside Semantius, for example in URLs, emails or another system: a TypeID such as `vendor_contract_01h455vb4pex5vsknk084sn02q` cannot be guessed and is unique across all entities. Its `id_prefix` is the entity's singular, `vendor_contract`. See [Keys](/docs/entities-and-fields/entities#keys).
+
+## Labels
+
+The label is the field that names a record. Lists and forms show it, and every field that points at the record shows it too, in its `<field>_label` column. Choose it in this order:
+
+1. **A name, title or number the record already has**, one people use outside Semantius: a product's name, a contract's title, a supplier's invoice number.
+2. **Otherwise, a name made from the records it relates.** Add a field named `<singular>_name` and let a [computed field](/docs/business-logic/extensions#computed_fields) fill it. An enrollment, for example, is named after its student and its course. When the same student can enroll in the same course twice, add a field that tells the two apart, such as the start date.
+
+Never use the id as the label: a list whose names are only numbers tells nobody which record is which.
+
+Set `label_parent` when a record's name repeats across parents. A section titled "Introduction" exists in many documents, so its label should start with the document's. Leave it out when the label is already made from the parent, as in case 2. A junction's label comes from its parents; see [Many to many](/docs/entities-and-fields/relationships#many-to-many).
+
+## Entity types
+
+`entity_type` describes who writes an entity's records. The platform acts only on `junction`. For the other types the value is a description, and the convention ties each type to the `edit_permission` the entity gets. Choose the first type that fits:
+
+| `entity_type` | Who writes the records | `edit_permission` |
+|---|---|---|
+| `junction` | Nobody directly. Its only fields are a `parent` field to each entity it relates, and a record exists only to relate them. | `<slug>:manage`, or `<slug>:admin` when every entity it relates is a `catalog`. |
+| `computed` | Nobody: every field is filled in by the platform. | Left at its default, `admin`. |
+| `catalog` | Only administrators: setup data and reference values that other records point at. | `<slug>:admin` |
+| `operational_workflow` | The people who do the module's daily work, and some step is restricted to a role, such as an approval. See [Gates](/docs/workflow-and-access#gates). | `<slug>:manage` |
+| `operational_record` | The people who do the module's daily work, with no restricted step. | `<slug>:manage` |
+
+`view_permission` is `<slug>:read` for every type. `unclassified`, the default, means nobody chose a type: give every entity one. The records a module exists to manage are never a `catalog`, however few there are.
+
+## Fields
+
+- **Names are snake_case, descriptive, and include the noun they describe**, with no abbreviations: `customer_email_address`, `invoice_total_amount`, not `cust_email` or `total`.
+- **A relationship field is named `<target singular>_id`**, or after the record's part in the relationship, ending in `_id`: `account_id`, `assigned_user_id`, `parent_case_id`.
+- **A field that refers to another record is a relationship field**, never a copy of the other record's name, such as `vendor_name` beside a `vendors` entity. An identifier from another system, such as a Salesforce account id, stays a text field.
+- **Money is `number`**, with `precision` 2, or 4 to 6 for tax and exchange rates. `float` and `double` are for values that are imprecise by nature, such as measurements. `multiline` is for prose, `text` for one line, and `rating` only for star ratings and five-point scores.
+- **Leave `field_order` out** when creating fields: they are placed in the order they are sent.
+- **Don't end a name in `_id_label`.** Every relationship field gets a read-only column named after it: `customer_id` gets `customer_id_label`, which holds the customer's label. A field of your own named `customer_id_label` would hide that column. A name that starts with `_` is refused (90224).
+
+Some fields have fixed names, so that rules, gates and other modules can rely on them:
+
+| Field | Name |
+|---|---|
+| The state of a record that moves through steps | `workflow_state`: one required `enum`, its values in the order records move through them, its default the first one. Never `status`, `state` or `stage`, and never a second state field. Its title is the word the domain uses, such as `Stage` or `Status`. |
+| Who created a record | `<verb>_by_user_id`, a `reference` to `users` with the default `CURRENT_USER`, so that it starts as the user who creates the record: `requested_by_user_id`, `reported_by_user_id`. One per entity. |
+| Who took a step, and when | `<step>_by_user_id` and `<step>_at`: `approved_by_user_id` and `approved_at`. |
+| A person named on the record for a task | `<task>_user_id`, named after what the person does: `approver_user_id`, `hiring_manager_user_id`. |
+
+A field that applies only in some states, such as a rejection reason, gets an `input_type_rule` and a validation rule; see [Fields needed in some states](/docs/workflow-and-access#fields-needed-in-some-states).
+
+## Enums
+
+- **Every entry is an object with a `value` and a `label`.** The value is snake_case and is what records store; the label is what people read, in sentence case: `{"value": "on_hold", "label": "On hold"}`. For a code, the label is the full term: `nda` is "Non-disclosure agreement".
+- **Every entry has a `color`**, in lowercase `#rrggbb`, and an `icon` (a [Lucide](https://lucide.dev/icons) name) where one fits. No two entries of an enum share a color, and red, amber and green go only to entries that mean failure, waiting and success.
+- **Add a `description` only when the label does not explain itself**, such as an internal code, or two choices a user could confuse.
+- **List the values in the order records move through them**, and give a required enum a `default_value`.
+
+## Relationships
+
+- **Use `parent` only when all three hold:** the child is never saved without its parent, not even as a draft or in an import; it is created as part of the work on its parent; and people only ever reach it through its parent, so it has no number of its own that people quote and no list of its own. Otherwise use `reference`. An order line is a `parent` of its order and a `reference` to its product.
+- **A chain of `parent` relationships holds at most three entities**: a parent, its child and that child's child.
+- **Choose the delete mode** by what should happen to the children when their parent is deleted. `cascade` deletes them too: use it only on a `parent` whose children mean nothing without the parent, and only when everyone who may delete the parent may also delete the children. `restrict` refuses to delete the parent while it has children: use it on every other `parent`, on every required `reference`, and wherever records are kept for audit or by law, which are closed or voided instead of deleted. `clear` empties the field: use it only on an optional `reference`.
+- **`relationship_label` is a verb from the domain.** It reads as a sentence from the record the field points at to the record that holds the field: Account owns Opportunity, Order contains Order Line. Never `has`, `references`, `belongs to` or `relates to`. Two fields that point at the same entity get different verbs: a task's creator `created` it, its assignee `works on` it.
+- **Label a junction's `parent` fields after the entity at the other end.** On `product_tags`, the field `product_id` gets the label `is tagged with`, and `singular_label_parent` and `plural_label_parent` set to `Tag` and `Tags`, so a product's page lists Tags, not Product Tags.
+
+## Permissions and roles
+
+| Item | Convention |
+|---|---|
+| Permission | `<module_slug>:<action>`: `crm:read`, `crm:manage`, `crm:admin`. A name with other characters than `a-z`, `0-9`, `-`, `_` and `:` is refused (23514). The platform does not derive the names from the slug. |
+| Levels | `<slug>:read` reads the module, `<slug>:manage` does its daily work, `<slug>:admin` maintains its setup data and may take every restricted step. Each includes the one below through the [hierarchy](/docs/permissions-and-roles/permissions#the-hierarchy). |
+| Restricted step | `<slug>:<verb>_<noun>`, such as `spend:approve_purchase_request`. See [Gates](/docs/workflow-and-access#gates). |
+| Roles | Every module has a viewer, a manager and an admin role, holding the three levels. The name is the module name and the role's title, such as `CRM Manager`. The slug is the module slug and the title in lowercase, joined by `_`, with any `-` turned into `_`: `crm_manager`, `ben_admin_manager`. A role slug with `-` is refused (23514). |
+
+## Rules
+
+- **Give each validation rule a `code` of class 99**, such as `99001`, numbering the rules of a module one after another so that no two share a code; a snake_case `name` that is unique within the entity; and a `message` that says what was refused and who may do it: "Only a Buyer can order a purchase request."
+- **To limit a rule to inserts, updates or deletes, test `$mode`.** Testing `$old` does not work: it is empty on an insert, but set on both an update and a delete.
+- **Name only permissions that exist.** The platform saves a rule that names a permission that does not exist, and the check is then false for everyone, administrators included.

@@ -27,7 +27,7 @@ There are three ways to get Semantius, and only one of them is this section:
 
 - **Your data stays with you.** The database runs on your machine or your server, and nothing has to leave it.
 - **It runs air-gapped.** Once the images are on the machine, nothing connects to Semantius or the internet: no telemetry and no license check. People reach it over your own network. Only installing and updating download images, and automatic HTTPS for a public domain needs to reach Let's Encrypt.
-- **It is the full open-source platform.** The same semantic model, API, web app and permissions the managed service runs. This is not a trimmed-down demo edition.
+- **It is the full open-source platform.** The same [data catalog](/docs/data-catalog), API and web app the managed service runs. This is not a trimmed-down demo edition.
 - **It is easy to throw away.** One command creates it, one command removes it, so it is a safe place to experiment.
 
 ## Is Self-Hosting Right for You?
@@ -44,7 +44,7 @@ If you would rather not run it yourself, [app.semantius.com](https://app.semanti
 
 | | Self-hosted | Managed at app.semantius.com |
 | --- | --- | --- |
-| Semantic model, API, web app, permissions | Included | Included |
+| [Data catalog](/docs/data-catalog), API, web app | Included | Included |
 | Sign-in | semantius-idp, or your own identity provider | Managed for you |
 | Operations, monitoring and updates | You | Semantius |
 | Backups and restores | You | Semantius |
@@ -112,7 +112,7 @@ The platform is assembled from separate open-source projects, each with its own 
 
 | Building block | Role | Source | Image | Version setting |
 | --- | --- | --- | --- | --- |
-| PostgreSQL 18 with [pg_semantius](/docs/pg-semantius) | The database and the semantic model | [semantius/semantius](https://github.com/semantius/semantius) (MIT) | `ghcr.io/semantius/postgres` | `SEMANTIUS_DB_VERSION` |
+| PostgreSQL 18 with [pg_semantius](/docs/pg-semantius) | The database and the [data catalog](/docs/data-catalog) | [semantius/semantius](https://github.com/semantius/semantius) (MIT) | `ghcr.io/semantius/postgres` | `SEMANTIUS_DB_VERSION` |
 | Semantius web app | The app people work in | [semantius/semantius-app](https://github.com/semantius/semantius-app) (MIT) | `ghcr.io/semantius/semantius-app` | `SEMANTIUS_APP_VERSION` |
 | semantius-idp | Sign-in and accounts, plus a built-in API gateway for personal API keys. Used when you do not bring your own identity provider | [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT) | `ghcr.io/semantius/semantius-idp` | `SEMANTIUS_IDP_VERSION` |
 | PostgREST | The API server, generated from the database | [PostgREST/postgrest](https://github.com/PostgREST/postgrest) (MIT) | `postgrest/postgrest` | Not yet |

@@ -1,0 +1,71 @@
+---
+title: 'RACI'
+description: 'How Semantius records who is responsible, accountable, consulted and informed for a process, ties processes to the states of an entity, and notifies or consults roles when a record enters a state.'
+---
+
+RACI names, for each process, the roles that are Responsible, Accountable, Consulted and Informed. Semantius keeps the matrix in four tables and enforces it in the database: a process gate ties a process to a state of an entity's records, and a record that enters that state notifies or consults the roles the matrix names. Rules check the matrix with the JsonLogic operators [`is_raci_actor`](/docs/business-logic/extensions#check-the-current-users-raci-role-is_raci_actor) and [`has_consultation`](/docs/business-logic/extensions#require-that-a-raci-consultation-occurred-has_consultation).
+
+Only holders of `admin` can read and change the four tables.
+
+## Processes
+
+A record of `processes` is one process, such as approving an order.
+
+| Column | Meaning |
+|---|---|
+| `name` | The process's name, its label. |
+| `module_id` | The [module](/docs/modules) the process belongs to, or none. Deleting the module keeps the process, without a module. |
+| `process_key` | A stable identifier: lowercase `a-z`, `0-9` and `_`, not starting with a digit. Required, and unique within the module, or among the processes without a module. |
+| `description` | What the process is. |
+| `ordering` | A number to sort processes by. |
+
+Deleting a process deletes its assignments, its gates and its events.
+
+## RACI assignments
+
+A record of `raci_assignments` gives a role one letter for a process: one cell of the matrix.
+
+| Column | Meaning |
+|---|---|
+| `process_id` | The process. |
+| `role_id` | The [role](/docs/permissions-and-roles/roles) given the letter. Required. Deleting the role deletes its assignments. |
+| `raci` | `responsible`, `accountable`, `consulted` or `informed`. The record's label repeats it. |
+| `consult_mode` | For `consulted` only: `read` (passive, the default), `notify` (push) or `block` (gate). Only `block` changes what the database does; see [RACI events](#raci-events). |
+| `origin` | `user` (the default) or `system`: whether a user or the platform created the row. |
+
+- **A process has at most one `accountable` role.**
+- **A role holds each letter at most once** per process.
+
+## Process gates
+
+A record of `process_gates` ties a process to the records of an entity.
+
+| Column | Meaning |
+|---|---|
+| `process_id` | The process. |
+| `entity` | The entity whose records the process governs. Required. Deleting the entity deletes its gates, and renaming it carries them along. |
+| `gate_kind` | `approval`, `submit_lock`, `ownership`, `create` or `transition`. It describes the gate, and the record's label repeats it; the database does not act on it. |
+| `to_state` | The state the gate is about, such as `approved`. Empty for a gate that targets no state. |
+| `state_column` | The column of the entity that holds the state. Default `status`. For an entity that follows the [Conventions](/docs/conventions#fields), set it to `workflow_state`. |
+| `emits_events` | Whether entering `to_state` writes [RACI events](#raci-events). |
+
+- **One gate per process, entity, kind and state.**
+- **An `is_a` or `has_a` entity cannot have gates** (90249).
+
+## RACI events
+
+When a record is inserted in a gate's `to_state`, or updated into it, and the gate's `emits_events` is on, the database writes one record of `raci_events` for each `consulted` and each `informed` role of the gate's process. Responsible and accountable roles get none.
+
+| Column | Meaning |
+|---|---|
+| `process_id` | The process. |
+| `entity`, `record_id` | The record that entered the state. `record_id` holds its key as text, whatever the key type. |
+| `raci` | `consulted` or `informed`. |
+| `target_role_id` | The role to notify or consult. |
+| `status` | `pending` (the default), `sent` or `acted`. `acted` means the consulted role responded. |
+| `acted_at` | When the consulted role responded. |
+
+- **Every new event is put on the `raci_notify` queue**, for whatever sends the notifications.
+- **The database writes events as `pending` and never moves them on.** Whoever handles an event sets `sent`, `acted` and `acted_at` with an update.
+- **A blocking consultation holds the record's state.** While the record has a `consulted` event that is not `acted`, and that role's assignment has `consult_mode` `block`, an update that changes a state column one of the entity's gates names keeps the stored value. Every other change in the same update is saved, and nothing replays the held change once the consultation is acted. The consultation is raised by entering the state, so it holds the record's next move. For example, a record that enters `approved` stays `approved` until the consulted roles have responded.
+- **An entity or a role that events name cannot be deleted.**

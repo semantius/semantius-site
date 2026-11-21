@@ -1,0 +1,56 @@
+---
+title: 'Roles'
+description: 'The role record, how roles get their permissions and their users, the built-in User and Administrator roles, and the guards that keep an instance administrable.'
+order: 2
+---
+
+A role is a named set of permissions, assigned to users and agents. It belongs to a module, or to none. Roles are flat: a role cannot contain another role, so build broader access with the [hierarchy](/docs/permissions-and-roles/permissions#the-hierarchy) of permissions instead.
+
+## The role record
+
+| Column | Meaning |
+|---|---|
+| `role_name` | The role's name, unique. |
+| `slug` | A unique identifier of `a-z`, `0-9` and `_`. Left empty, it is derived from the name. |
+| `description` | What the role is for. |
+| `module_id` | The module the role belongs to, or none. Deleting the module deletes the role and its assignments. |
+| `origin` | `user` (the default), `model`, `model_master` or `system`: how the role was created. Set on insert and never changed (90203). |
+| `catalog_role_code` | The catalog persona the role was built from. Write-once (90206). |
+
+## Grants and assignments
+
+A role gets its permissions through `role_permissions` and its users through `user_roles`; a user gets a direct grant through `user_permissions`. Each row records when (`granted_at`, `assigned_at`) and by whom (`granted_by`, `assigned_by`, the calling user unless the request names another). Their ids are generated from the pair they join: `1001.10001` for user 1001 in role 10001, `10001.helpdesk:manage` for a grant.
+
+Direct grants have no tool of their own: write them to `/user_permissions` with `postgrestRequest`.
+
+**Prefer roles to direct grants.** A role describes a job, so it maps to a persona or a position in the org chart, and access follows the job rather than the person. For example, a Helpdesk Agent role holds `helpdesk:read` and `helpdesk:manage`, and a Helpdesk Lead role holds those and `helpdesk:admin`. When someone joins the team, moves to another position or leaves, you change their roles; when a job needs one more permission, you add it to the role once, and it reaches everyone in that job. Direct grants have to be found and changed user by user, so keep them for exceptions.
+
+## Built-in roles
+
+Every instance starts with two roles:
+
+| Role | Permissions | Who has it |
+|---|---|---|
+| User (id 1) | `user:read`, `public:read` | Every user, automatically. A user cannot lose it (90103). |
+| Administrator (id 2) | `user:manage`, `public:read`, `admin`, and every permission created later | The first user to sign in, and whoever an administrator assigns. |
+
+- **`admin` is not a wildcard.** Administrators hold every permission because each new one is granted to the Administrator role when it is created. A permission taken away from that role stays away, and a user who holds `admin` through another role, or directly, does not gain the other permissions. They can grant themselves any of them, though: see [Who can manage access](#who-can-manage-access).
+- **Both roles can be renamed.** Their slugs, `user` and `administrator`, cannot change (90204).
+- **Every signed-in user can read every user**, email included, because the User role holds `user:read`.
+
+The permissions they hold are under [Built-in permissions](/docs/permissions-and-roles/permissions#built-in-permissions).
+
+## Who can manage access
+
+Reading and writing `roles`, `permissions`, `role_permissions`, `user_roles`, `user_permissions` and `permission_hierarchy` takes `admin`. Anyone else reads an empty list from them, an insert is refused with `42501`, and an update or delete changes nothing. To see their own roles and permissions, a user calls `/rpc/get_userinfo`.
+
+There is no rule that a user may only grant what they hold: anyone with `admin` can grant any permission and assign any role, Administrator included.
+
+These guards keep an instance administrable. Each is refused with `42501` (HTTP 403) and carries its code in the hint:
+
+| Code | Refused |
+|---|---|
+| `90103` | Removing the User role from a user. Deleting the user removes it with them. |
+| `90104` | Leaving the instance without an enabled Administrator: removing the role from its last holder, disabling or deleting that user, or deleting the role. |
+| `90107` | Setting or changing a user's `external_id` without `admin`. Sending the unchanged value is allowed. |
+| `90108` | Removing `admin` from the Administrator role, or deleting or renaming the `admin` permission. |

@@ -1,0 +1,90 @@
+---
+title: 'Formats'
+description: 'The field formats: what each one holds, the column type it creates, its empty value, what the database and the app check, and the properties some formats need.'
+order: 3
+---
+
+A field's format controls validation at two levels. In the database it decides the column's type, and with it what the database accepts. In the [app](/docs/app) it decides how the field is shown and edited: the app supports every format below as an input, and validates the value's syntax in its forms. Every column is `NOT NULL` except dates, times, UUIDs and references: an empty field holds its format's empty value.
+
+| Format | Holds | Column type | Empty value |
+|---|---|---|---|
+| `array` | Any JSON array | `JSONB` | `[]` |
+| `binary` | Binary data; no format check | `BYTEA` | Empty |
+| `boolean` | true or false | `BOOLEAN` | `false` |
+| `byte` | Base64-encoded data | `TEXT` | `''` |
+| `code` | Source code; no format check | `TEXT` | `''` |
+| `color` | HTML color | `TEXT` | `''` |
+| `date` | Full date, RFC 3339 (`2026-09-15`) | `DATE` | null |
+| `date-time` | Date and time, RFC 3339 (`2026-09-15T14:30:00Z`) | `TIMESTAMPTZ` | null |
+| `double` | Double-precision floating-point number | `DOUBLE PRECISION` | `0` |
+| `duration` | Duration, ISO 8601 (`P3DT4H`) | `INTERVAL` | `0` |
+| `email` | Email address, RFC 5321; Unicode allowed as in RFC 6531 (`jörg@müller.de`); validates the same as idn-email | `TEXT` | `''` |
+| `enum` | One of the values listed in enum. See [Enum](#enum). | `TEXT` | `''` |
+| `float` | Single-precision floating-point number | `REAL` | `0` |
+| `hostname` | Host name, RFC 1123; Unicode allowed as in RFC 5890 (`müller.de`, `xn--mller-kva.de`); validates the same as idn-hostname | `TEXT` | `''` |
+| `html` | HTML markup; must contain at least one tag | `TEXT` | `''` |
+| `icon` | Name of a built-in icon | `TEXT` | `''` |
+| `idn-email` | Internationalized email address, RFC 6531 (`jörg@müller.de`); validates the same as email | `TEXT` | `''` |
+| `idn-hostname` | Internationalized host name, RFC 5890 (`müller.de`, `xn--mller-kva.de`); validates the same as hostname | `TEXT` | `''` |
+| `int32` | Signed 32-bit integer | `INTEGER` | `0` |
+| `int64` | Signed 64-bit integer | `BIGINT` | `0` |
+| `integer` | Any integer | `INTEGER` | `0` |
+| `ipv4` | IPv4 address | `TEXT` | `''` |
+| `ipv6` | IPv6 address | `TEXT` | `''` |
+| `iri` | Absolute IRI, RFC 3987 (`https://müller.de/straße`); validates the same as uri | `TEXT` | `''` |
+| `iri-reference` | IRI or relative reference, RFC 3987 (`/straße`, `#top`); validates the same as uri-reference | `TEXT` | `''` |
+| `json` | JSON value, or JSON text that parses to one | `JSONB` | `{}` |
+| `json-pointer` | JSON Pointer, RFC 6901 (`/a/0`) | `TEXT` | `''` |
+| `json-pointer-uri-fragment` | JSON Pointer as a URI fragment (`#/a/0`) | `TEXT` | `''` |
+| `jsonata` | JSONata expression; no format check | `TEXT` | `''` |
+| `jsonlogic` | JsonLogic rule, checked against the operators of the Semantius backend | `JSONB` | `{}` |
+| `multiline` | Multi-line text; no format check | `TEXT` | `''` |
+| `number` | Any number. See [Number](#number). | `NUMERIC(18, precision)` | `0` |
+| `object` | Any JSON object | `JSONB` | `{}` |
+| `parent` | Key of the record that owns this one. Required. See [Reference and parent](#reference-and-parent). | The type of the target's key | Always holds one |
+| `password` | Password; no format check | `TEXT` | `''` |
+| `rating` | Rating from 0 to 5, where 0 means not rated | `INTEGER` | `0` |
+| `reference` | Key of a record in another entity. May be empty. See [Reference and parent](#reference-and-parent). | The type of the target's key | null |
+| `regex` | Regular expression | `TEXT` | `''` |
+| `relative-json-pointer` | Relative JSON Pointer (`1/a`) | `TEXT` | `''` |
+| `string` | Any string | `TEXT` | `''` |
+| `text` | Single-line text; no format check | `TEXT` | `''` |
+| `time` | Time of day, RFC 3339 (`14:30:00Z`) | `TIME` | null |
+| `uri` | Absolute URI, RFC 3986; Unicode allowed as in an IRI (`https://müller.de/straße`); validates the same as iri | `TEXT` | `''` |
+| `uri-reference` | URI or relative reference, RFC 3986; Unicode allowed as in an IRI (`/straße`, `#top`); validates the same as iri-reference | `TEXT` | `''` |
+| `uri-template` | URI template, RFC 6570 (`/users/{id}`) | `TEXT` | `''` |
+| `url` | URL with an http, https or ftp scheme | `TEXT` | `''` |
+| `uuid` | UUID, RFC 4122 | `UUID` | null |
+
+- **The database checks types, not syntax.** It refuses a value that is not a date, a number, a UUID or JSON, and an `enum` value outside `enum_values` (23514). It does not check that an `email`, `url` or `html` value is well formed, that a `rating` is between 0 and 5, or that a `jsonlogic` value is a valid rule. The app checks those in its forms.
+- **`password` is stored as plain text**, like any text field.
+- **`time` has no time zone.** A `date-time` is stored as a point in time.
+
+## Enum
+
+An `enum` field holds one of the values listed in its `enum_values`: a list of strings, or of objects `{"value", "label", "description", "color", "icon"}`. The database checks only the `value`; the label, description, color and icon are for the app.
+
+- **A value outside the list is refused** (23514). A field without `enum_values` accepts any text.
+- **An enum that is not required also accepts `''`**, its empty value. A required one refuses it (90258).
+- **Removing a value** that records still hold is refused (23514).
+
+## Number
+
+A `number` field is stored as `NUMERIC(18, precision)`: 18 digits in all, `precision` of them after the decimal point. `precision` is 0 to 18, default 2. Changing it rewrites the column, and lowering it rounds the stored values.
+
+## Reference and parent
+
+Both hold the key of a record of `reference_table`, and their column takes the type of that key. They need more properties than the other formats:
+
+| Property | Meaning |
+|---|---|
+| `reference_table` | The entity the field points at. Required, and it must name an existing entity (90212). |
+| `reference_delete_mode` | What deleting the target record does: `restrict` (the default), `clear` or `cascade`. See [Delete modes](/docs/entities-and-fields/relationships#delete-modes). |
+| `relationship_label` | The verb for the relationship in diagrams and navigation. Default `has`. |
+| `singular_label_parent`, `plural_label_parent` | For a `parent` only: how the parent's list of children names these records. |
+
+A `reference` may be empty and links to a record with a life of its own. A `parent` is required and makes the record belong to its parent. See [Relationships](/docs/entities-and-fields/relationships).
+
+## Rollups
+
+A rollup is not a format but a property of a field: its `rollup` column holds the definition. The field keeps an ordinary format, which has to fit the rollup's function (90268), such as `int64` for a `count`. See [Rollup fields](/docs/business-logic/rollups).

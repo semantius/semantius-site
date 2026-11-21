@@ -1,0 +1,33 @@
+---
+title: 'Users'
+description: 'How people sign in to Semantius through an identity provider, how their user record is created, the columns of the user record, and who can read and manage users.'
+order: 1
+---
+
+A user is a person who signs in to Semantius. Their record in `users` is created by their first request and holds their identity and names; what they may do comes from their [roles](/docs/permissions-and-roles/roles).
+
+## Sign-in
+
+Semantius has no sign-in of its own: an identity provider decides who may sign in, and Semantius checks the token it issues. On [Semantius Cloud](https://app.semantius.com) sign-in is managed for you. A [self-hosted](/docs/self-hosted) instance uses either an identity provider you already run, such as [Microsoft Entra ID](/docs/self-hosted/entra-id), or the optional bundled [semantius-idp](/docs/self-hosted/semantius-idp).
+
+A user is identified by `external_id`, the subject of their sign-in token (for Microsoft Entra ID, `entra.<tid>.<oid>`). The first request of a new user must be `POST /rpc/get_userinfo`, which creates their user record; until then every request fails with `42501` and the hint code 90006. The app and the CLI make that call for you. Each later call copies the email and names from the token into the record.
+
+## The user record
+
+| Column | Meaning |
+|---|---|
+| `id` | The user's key, a number. |
+| `external_id` | The identity: the subject of the sign-in token. Required and unique. Setting or changing it takes `admin` (90107). |
+| `email`, `first_name`, `last_name`, `display_name` | Copied from the token's `email`, `given_name`, `family_name` and `name` on each `get_userinfo` call. `display_name` is the user's label. |
+| `is_disabled` | A disabled user holds no permissions, and every request fails with hint code 90006. |
+| `is_agent` | Whether the user is an [agent](/docs/users-and-agents/agents). Default `false`. |
+| `settings` | JSON settings of the user. |
+| `last_seen` | When the user last called `get_userinfo`, to within five minutes: a repeat call in that time that changes nothing does not move it. Set by the platform. |
+| `created_at`, `updated_at` | Set by the database. |
+
+## Who can read and manage users
+
+- **Every signed-in user can read every user**, email included, because the User role holds `user:read`.
+- **`user:manage`** lets a user create, edit, disable and delete users, but not assign roles, set a user's `external_id` (90107) or create API keys for others. Those take `admin`.
+- **Every user has the User role**, and cannot lose it (90103). The last enabled Administrator cannot be disabled or deleted (90104). See [Who can manage access](/docs/permissions-and-roles/roles#who-can-manage-access).
+- **Deleting a user** deletes their [API keys](/docs/users-and-agents/api-keys).

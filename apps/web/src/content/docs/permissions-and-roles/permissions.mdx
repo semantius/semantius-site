@@ -1,0 +1,66 @@
+---
+title: 'Permissions'
+description: 'The permission record, the hierarchy in which one permission includes others, how entities use their view and edit permissions, conditional read access, and the built-in permissions.'
+order: 1
+---
+
+A permission is a name, such as `crm:read`, that an entity names for reading or for writing its records. It belongs to a module, can include other permissions through the [hierarchy](#the-hierarchy), and reaches users and agents through roles or direct grants.
+
+## The permission record
+
+| Column | Meaning |
+|---|---|
+| `permission_name` | The permission and its key. Colon-separated segments of `a-z`, `0-9`, `-` and `_`, each starting with a letter or digit, such as `crm:read` or `service-catalog:view` (23514). No spaces, dots or capitals. |
+| `description` | What the permission allows. |
+| `module_id` | The module it belongs to. Required: deleting the module deletes its permissions, with their grants. |
+
+- **Every new permission is granted to the Administrator role** when it is created.
+- **Renaming a permission** carries the new name to every entity, module, grant and hierarchy entry that names it, and rebuilds the access policies of those entities. Names inside rules, such as `{"has_permission": "crm:read"}`, are not rewritten: a rule that names the old permission then answers false for everyone.
+- **Deleting a permission** that an entity uses is refused (`23503`, or `23001` on PostgreSQL 18).
+
+Names such as `crm:read` and `crm:manage` follow a convention of the modeling tools, `<module_slug>:<verb>`. The platform does not derive them; a permission belongs to its module through `module_id`.
+
+## The hierarchy
+
+A `permission_hierarchy` entry names an `including_permission_name` and an `included_permission_name`. Holding the including permission grants the included one, and everything that one includes in turn. For example, an entry with `helpdesk:manage` as the including permission and `helpdesk:read` as the included one lets whoever may manage the helpdesk read it too.
+
+The direction matters: the broader permission includes the narrower one, never the reverse. An entry that includes itself (23514), repeats another (23505), closes a cycle (90210) or makes a chain longer than eleven entries (90211) is refused.
+
+## How entities use permissions
+
+Every entity has a `view_permission` (default `public:read`) and an `edit_permission` (default `admin`). Its table's policies check them as follows:
+
+| Operation | Without a `select_rule` | With a `select_rule` |
+|---|---|---|
+| Read | `view_permission` | The rule |
+| Insert | `edit_permission` | `edit_permission` |
+| Update, delete | `edit_permission` and `view_permission` | `edit_permission` and the rule |
+
+- **`public:read` is not anonymous.** Every signed-in user holds it, so a new entity can be read by everyone who signs in and written only by administrators.
+- **Writers need the view permission too.** An update or delete without it reaches no record and changes nothing, without an error. An insert that asks for the new record back, as the MCP tools always do, is refused with `42501`.
+- **A refused read is empty, not an error.** A user without the view permission gets no records.
+- **One permission covers every write.** To let only some writers delete, approve or close, add a [validation rule](/docs/business-logic/extensions#validation_rules) that tests `$mode` and [`has_permission`](/docs/business-logic/extensions#check-the-current-users-permission-has_permission). To filter rows per user, use a [`select_rule`](#conditional-read-access).
+- **The schema follows the permissions.** An entity's `entities` row, its fields and its schema are visible only to holders of its `view_permission`, its `edit_permission` or `admin`. Anyone else gets `404` (code `42P01`) from `/rpc/get_schema`, the same answer as for an entity that does not exist. A user whom a `select_rule` lets read rows, while holding neither permission, reads the rows but not the schema.
+- **A cascade does not check the children.** Deleting a parent deletes its `cascade` children whatever the deleting user's rights on them. See [Delete modes](/docs/entities-and-fields/relationships#delete-modes).
+- **A module's permission is not passed down.** A module's `view_permission` decides who sees the module, not who reads its entities. See [Modules](/docs/modules).
+
+Changing an entity's `view_permission`, `edit_permission` or `select_rule` takes `admin`, and rebuilds its policies at once.
+
+## Conditional read access
+
+A view permission is all or nothing: whoever holds it reads every record. To make reading conditional, give the entity a [`select_rule`](/docs/business-logic/extensions#select_rule), a JsonLogic rule each record must pass. It takes the place of the `view_permission`, so a rule that should still require the permission names it with `has_permission`. To let each user read only their own records, add an owner field (a `reference` to `users` with the default `$user_id`) and set the rule to `{"==": [{"var": "owner_id"}, {"var": "$user_id"}]}`.
+
+## Built-in permissions
+
+Every instance starts with four permissions in the administration module, and two hierarchy entries:
+
+| Permission | Includes | What uses it |
+|---|---|---|
+| `public:read` | | The default `view_permission` of a new entity. |
+| `user:read` | | Reading users, and the default `view_permission` of a new module. |
+| `user:manage` | `user:read` | Creating, changing, disabling and deleting users. |
+| `admin` | `public:read` | The platform's own entities: modules, entities, fields, roles, permissions and the [audit logs](/docs/audit-logs). The default `edit_permission` of a new entity. |
+
+- **`user:manage` is not `admin`.** It lets a user create, edit, disable and delete users, but not assign roles, set a user's `external_id` (90107) or create API keys for others.
+
+The roles that hold them are under [Built-in roles](/docs/permissions-and-roles/roles#built-in-roles).

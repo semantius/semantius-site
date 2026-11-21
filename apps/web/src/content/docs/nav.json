@@ -2,28 +2,31 @@
   "$schema": "./nav.schema.json",
   "tabs": [
     {
-      "folder": "guide",
-      "folders": []
-    },
-    {
       "folder": "data-catalog",
       "folders": [
         "modules",
-        "entities",
-        "permissions",
+        "entities-and-fields",
+        "conventions",
+        "permissions-and-roles",
+        "users-and-agents",
         "business-logic",
-        "audit-logs"
+        "audit-logs",
+        "raci"
       ]
     },
     {
       "folder": "reference",
       "folders": [
-        "overview",
-        "mcp-connectors",
+        "app",
         "agent-skills",
         "cli",
+        "mcp-connectors",
         "pg-semantius"
       ]
+    },
+    {
+      "folder": "guide",
+      "folders": ["workflow-and-access"]
     },
     {
       "folder": "self-hosted",

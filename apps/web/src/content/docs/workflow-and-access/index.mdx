@@ -1,0 +1,363 @@
+---
+title: 'Workflow States, Gates and Access'
+navTitle: 'Workflows and Access'
+description: 'How to give an entity a lifecycle, restrict steps of it to a role, add the controls an approval needs, and decide what each role can change and see, with a purchase request as the example.'
+---
+
+This guide follows one example from start to finish: purchase requests in a module named Spend, with the slug `spend`. Employees prepare a request and submit it, an approver approves or rejects it, and a buyer orders it from the supplier. The guide builds everything that makes this work: the field that holds a request's state, the rules that decide who may move a request from one state to the next, and the roles people are given.
+
+Semantius has no separate workflow engine. Everything here is made from parts documented elsewhere: an `enum` field, [permissions and roles](/docs/permissions-and-roles), and [validation rules and computed fields](/docs/business-logic/extensions). An agent with the [use-semantius skill](/docs/cli/use-semantius) builds this pattern for you when it builds a module, so you rarely write these rules yourself. The guide shows what it builds, so that you can read it, review it and change it.
+
+## The example
+
+A purchase request names a supplier (`supplier_id`), a date it is needed by (`needed_by_date`) and, optionally, the person who should approve it (`approver_user_id`). Its lines are records of their own, `purchase_request_lines`, and the request's `total_amount` is a [rollup](/docs/business-logic/rollups) of them. The buyer fills in `po_number` when ordering.
+
+A request moves through five states:
+
+| State | Meaning | Who moves a request into it |
+|---|---|---|
+| `draft` | Being prepared | An employee |
+| `submitted` | Waiting for approval | An employee |
+| `approved` | Approved | An approver |
+| `rejected` | Turned down | An approver |
+| `ordered` | Ordered from the supplier | A buyer |
+
+Preparing and submitting requests is the module's daily work. Employees get it through the Spend Manager role, which holds the permission `spend:manage`. The role is named after that permission, not after a job title.
+
+## The state field
+
+A request's state is one required `enum` field named `workflow_state`. Its values are the states, in the order a request moves through them, and its default is the first one, so a new request starts as a draft:
+
+```json
+{"table_name": "purchase_requests", "field_name": "workflow_state", "title": "Status",
+ "format": "enum", "input_type": "required", "default_value": "draft",
+ "enum_values": [
+   {"value": "draft", "label": "Draft", "color": "#64748b", "icon": "file-pen"},
+   {"value": "submitted", "label": "Submitted", "color": "#f59e0b", "icon": "send"},
+   {"value": "approved", "label": "Approved", "color": "#22c55e", "icon": "circle-check"},
+   {"value": "rejected", "label": "Rejected", "color": "#ef4444", "icon": "x"},
+   {"value": "ordered", "label": "Ordered", "color": "#16a34a", "icon": "check-check"}
+ ]}
+```
+
+- **Give it a default.** Without a `default_value`, every new request must send a state or it is refused (90258), and the field cannot be added to an entity that already has records (90259).
+- **Keep one state field.** Every rule below reads `workflow_state`. A second field such as `status` would let a request be in two states at once.
+- **RACI uses the same field.** A [RACI](/docs/raci) process gate names the field that holds the state in `state_column`. Its default is `status`, so set it to `workflow_state`.
+
+## Fields needed in some states
+
+A rejection reason only makes sense once a request is rejected. Two rules handle such a field: an `input_type_rule` on the field, which controls the form, and a validation rule on the entity, which the database enforces.
+
+The `input_type_rule` of `rejection_reason` asks for the field when the request is rejected and hides it otherwise. The field's own `input_type` stays `default`:
+
+```json
+{"if": [{"==": [{"var": "workflow_state"}, "rejected"]}, "required", "hidden"]}
+```
+
+The form applies this rule, but a write through the API never sees the form. A field with an `input_type_rule` also gets no database `required` check, because the rule decides when the field is required. So the entity gets a validation rule that refuses a rejected request without a reason, whoever writes it:
+
+```json
+{"code": "99009", "name": "rejection_reason_when_rejected",
+ "message": "A rejected request needs a rejection reason.",
+ "jsonlogic": {"if": [{"==": [{"var": "$mode"}, "delete"]}, true,
+   {"if": [{"==": [{"var": "workflow_state"}, "rejected"]},
+     {"!=": [{"var": "rejection_reason"}, ""]}, true]}]}}
+```
+
+The rule lets every delete through, so that a request rejected before the rule existed can still be deleted.
+
+What the `input_type_rule` returns in the states where the field applies depends on how the field is filled in. In every other state it returns `hidden`:
+
+| In those states, the field is | The rule returns | Validation rule needed |
+|---|---|---|
+| Required, filled in by a person | `required` | Yes |
+| Optional, filled in by a person | `default` | No |
+| Filled in by a computed field | `readonly` | No |
+
+## Gates
+
+A gate is a step that only some users may take: moving a record into a state that the people who do the module's daily work may not move it into. The example has two gates, approving and ordering. Rejecting belongs to the approval gate (see [Approval controls](#approval-controls)). Submitting is not a gate, because every employee may submit.
+
+A gate has two parts:
+
+- **A permission for the step**, named `<module slug>:<verb>_<noun>`: `spend:approve_purchase_request` and `spend:order_purchase_request`.
+- **A validation rule** that refuses the move into the state to anyone without that permission.
+
+The rule for ordering:
+
+```json
+{"code": "99004", "name": "order_purchase_request",
+ "message": "Only a Buyer can order a purchase request.",
+ "jsonlogic": {"if": [
+   {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "ordered"]}]},
+   {"has_permission": "spend:order_purchase_request"},
+   true]}}
+```
+
+It reads: when a write changes `workflow_state` to `ordered`, the user must hold `spend:order_purchase_request`; every other write passes.
+
+- **`value_changed` is true on an insert too**, so creating a request directly in `ordered` needs the permission as well.
+- **Use `has_permission`, not `require_permission`.** A refused write then returns the rule's own code and message. `require_permission` would return a generic permission error instead.
+- **The entity's `edit_permission` stays `spend:manage`.** Employees still need it to prepare requests. The gate adds a condition to one step and takes nothing else away. Set the entity's `entity_type` to `operational_workflow`, the type for an entity with a gate.
+
+Who holds the gate permissions is covered under [Roles](#roles).
+
+### No skipping a gate
+
+A buyer must not order a request that was never approved. So each state that comes after a gate gets a second rule: a request may move into `ordered` only from `approved`, unless the user may approve it, because moving straight to `ordered` would skip the approval. In its simplest form:
+
+```json
+{"code": "99005", "name": "approve_purchase_request_first",
+ "message": "A purchase request must be approved before it is ordered.",
+ "jsonlogic": {"if": [
+   {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "ordered"]}]},
+   {"or": [
+     {"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]},
+     {"has_permission": "spend:approve_purchase_request"}]},
+   true]}}
+```
+
+With the approval controls below, the last check is replaced by the full approval check, so that a requester cannot skip past their own approval. The complete version is under [The complete rules](#the-complete-rules).
+
+## Approval controls
+
+Approving is a gate of a special kind: one person authorizes what another person prepared. Purchasing, finance and HR products guard such a step with more than a permission, and so does this pattern, for every move into `approved`, `signed`, `posted`, `released` or `verified`. For the purchase request:
+
+| Control | What it does |
+|---|---|
+| The requester cannot approve | Whoever created the request may not approve or reject it, administrators included. The request records its creator in `requested_by_user_id` when it is created. |
+| Only a submitted request is approved | A request moves into `approved` from `submitted`, or back from `ordered`. |
+| Rejecting takes the same check | Only someone who may approve a submitted request may reject it. Rejecting has no permission of its own. |
+| Only the requester can recall | A submitted or rejected request goes back to `draft` only through its requester or an administrator. That ends the lock below, so the request can be changed and submitted again. |
+| Locked once submitted | From `submitted` on, only an administrator, or someone who may approve the request, can change or delete it or its lines. Fields that a later step fills in, such as `po_number`, stay open. |
+| Approved stays approved | Moving an approved or ordered request back to an earlier state takes the same check as approving it. |
+| Who approved, and when | `approved_by_user_id` and `approved_at` are filled in when the request is approved. |
+| A named approver | When a request names an approver in `approver_user_id`, only that person or an administrator may approve it. |
+
+These rules share one check, the **approval check**: the user is an administrator, or holds `spend:approve_purchase_request` and is the named approver when one is named; and the user is not the requester. Because every control uses it, skipping the approval, undoing it or changing what it covered is never easier than approving. A request created directly in `approved` or `ordered`, as an import does, passes only for an administrator.
+
+A step that pays money out, a move into `paid`, `reimbursed` or `disbursed`, gets the first control only: the requester cannot pay themselves.
+
+The requester is recorded by a computed field that writes the current user on insert and keeps the stored value on every later write:
+
+```json
+{"name": "requested_by_user_id",
+ "jsonlogic": {"if": [{"==": [{"var": "$mode"}, "insert"]},
+   {"var": "$user_id"}, {"var": "$old.requested_by_user_id"}]}}
+```
+
+The other rules are under [The complete rules](#the-complete-rules).
+
+## Roles
+
+Every module has three standard roles, one for each level of access, and one more role for each group of people who take a gate:
+
+| Role | Holds | Can |
+|---|---|---|
+| Spend Viewer | `spend:read` | Read requests. |
+| Spend Manager | `spend:manage` | Read, prepare and submit requests: the module's daily work. |
+| Spend Admin | `spend:admin` | Everything, including every gate and the module's setup data. |
+| Spend Approver | `spend:approver` | What a Spend Manager can, and approve or reject requests. |
+| Spend Buyer | `spend:buyer` | What a Spend Manager can, and order requests. |
+
+`spend:approver` and `spend:buyer` are **bundles**: permissions that exist only to include other permissions through the [permission hierarchy](/docs/permissions-and-roles/permissions#the-hierarchy), so that a role holds one permission instead of several. `spend:approver` includes `spend:manage` and `spend:approve_purchase_request`, and `spend:buyer` includes `spend:manage` and `spend:order_purchase_request`. `spend:admin` includes every gate permission. A role holds a bundle, never a gate permission directly, so to see who may take a step, follow the hierarchy.
+
+To let someone approve requests, give them the Spend Approver role.
+
+### Roles that see only their own records
+
+So far every employee sees every request. Suppose instead that a purchasing team does the module's daily work, and other employees should only file requests and follow their own. They get a role of their own, Spend Requester, which does part of the work. It is built in five parts:
+
+1. **Reading.** Its bundle, `spend:requester`, includes `spend:read`.
+2. **Writing.** `purchase_requests` and `purchase_request_lines` get write permissions of their own as their `edit_permission`: `spend:write_purchase_requests` and `spend:write_purchase_request_lines`. `spend:manage` includes both, so the purchasing team keeps its access, and `spend:requester` includes both too. A requester never gets `spend:manage`, which would let them change every entity of the module.
+3. **Which requests they see.** A `select_rule` on `purchase_requests` shows a requester only the requests they created:
+
+   ```json
+   {"and": [{"has_permission": "spend:read"}, {"or": [
+     {"!": [{"has_permission": "spend:requester"}]},
+     {"has_permission": "spend:manage"},
+     {"and": [{"!=": [{"var": "requested_by_user_id"}, null]},
+              {"==": [{"var": "requested_by_user_id"}, {"var": "$user_id"}]}]}]}]}
+   ```
+
+   A `select_rule` takes the place of the `view_permission` when reading, which is why the rule first checks `spend:read`. It then lets through everyone who does not hold `spend:requester`, everyone who also holds `spend:manage`, and otherwise only the request's own requester. `purchase_request_lines` gets a `select_rule` that reads each line's request with `set_record` and shows the line when its request is visible.
+4. **Which requests they change.** A `select_rule` limits which records a user can change, but not which records they can create. So a validation rule refuses a write by anyone without `spend:manage` unless the request names them as its requester:
+
+   ```json
+   {"code": "99010", "name": "requester_own_purchase_requests",
+    "message": "A requester can only change their own purchase requests.",
+    "jsonlogic": {"if": [{"has_permission": "spend:manage"}, true,
+      {"and": [{"!=": [{"var": "requested_by_user_id"}, null]},
+               {"==": [{"var": "requested_by_user_id"}, {"var": "$user_id"}]}]}]}}
+   ```
+
+   The lines get the same kind of rule, which reads each line's request with `set_record`.
+5. **Fields they leave to others.** A field the purchasing team fills in, such as `po_number`, gets a validation rule that, for anyone without `spend:manage`, refuses any value other than the default on a new request, and any change later:
+
+   ```json
+   {"code": "99011", "name": "requester_leaves_po_number",
+    "message": "Only the purchasing team can set a purchase request's PO number.",
+    "jsonlogic": {"if": [{"has_permission": "spend:manage"}, true,
+      {"if": [{"==": [{"var": "$mode"}, "insert"]},
+        {"==": [{"var": "po_number"}, ""]},
+        {"!": [{"value_changed": "po_number"}]}]}]}}
+   ```
+
+Once the lines have a `select_rule`, the request's `total_amount` rollup sums lines that some readers cannot see. Saving that `select_rule` is refused (90269) until the rollup sets `include_hidden_rows`. See [Hidden child rows](/docs/business-logic/rollups#hidden-child-rows).
+
+## The access level
+
+A module's `access_scope` records which of these structures it uses. The platform stores the value and does not act on it; it tells people and agents what to expect. The values that matter here (see [Modules](/docs/modules#the-module-record) for all of them):
+
+| `access_scope` | The module has |
+|---|---|
+| `advanced` | Read, manage and admin permissions, and no gate. |
+| `gated` | One or more gates, as in this guide. |
+| `raci` | Gates decided by the module's [RACI](/docs/raci) matrix. |
+
+In a `raci` module, the RACI matrix names the role that is Accountable for each step, and a process gate ties the step to a process. The step's rule then also lets the Accountable role through, beside holders of the gate permission:
+
+```json
+{"or": [{"is_raci_actor": ["purchase_requests", "approved", "accountable"]},
+        {"has_permission": "spend:approve_purchase_request"}]}
+```
+
+The Accountable role still needs `spend:manage` to change the request at all.
+
+## Letting an agent build it
+
+You rarely write these rules by hand. Ask an agent with the use-semantius skill to build a module, and it works out, from how the leading products in the domain divide the work, who prepares the records, who else uses the module, and who moves a record into each state. From that it creates the permissions, roles, grants and rules on this page, checks the module against them, and ends with a summary of each role, what it can do and see, and each gate. To change who takes a step, tell the agent, and it changes the rules and the roles together.
+
+## The complete rules
+
+All the rules for the purchase request and its lines, with every approval control, as the pattern writes them. Rule codes continue from the highest code the module already uses.
+
+The `computed_fields` of `purchase_requests`. The two approval stamps first keep what an insert sends, so that an imported request keeps its approver and date:
+
+```json
+[
+  {"name": "requested_by_user_id", "jsonlogic": {"if": [{"==": [{"var": "$mode"}, "insert"]}, {"var": "$user_id"}, {"var": "$old.requested_by_user_id"}]}},
+  {"name": "approved_by_user_id", "jsonlogic": {"if": [
+    {"and": [{"==": [{"var": "$mode"}, "insert"]}, {"in": [{"var": "workflow_state"}, ["approved", "ordered"]]}, {"!=": [{"var": "approved_by_user_id"}, null]}]},
+    {"var": "approved_by_user_id"},
+    {"if": [
+      {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "approved"]}, {"!": [{"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]}]}]},
+      {"var": "$user_id"}, {"var": "$old.approved_by_user_id"}]}]}},
+  {"name": "approved_at", "jsonlogic": {"if": [
+    {"and": [{"==": [{"var": "$mode"}, "insert"]}, {"in": [{"var": "workflow_state"}, ["approved", "ordered"]]}, {"!=": [{"var": "approved_at"}, null]}]},
+    {"var": "approved_at"},
+    {"if": [
+      {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "approved"]}, {"!": [{"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]}]}]},
+      {"var": "$now"}, {"var": "$old.approved_at"}]}]}}
+]
+```
+
+The `validation_rules` of `purchase_requests`, beside 99009 above:
+
+```json
+[
+  {"code": "99001", "name": "approve_purchase_request",
+   "message": "Only the named approver, or an Approver when none is named, can approve a submitted purchase request, and never the person who requested it.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "approved"]}]},
+     {"and": [
+       {"or": [{"==": [{"var": "$mode"}, "insert"]}, {"in": [{"var": "$old.workflow_state"}, ["submitted", "ordered"]]}]},
+       {"or": [{"has_permission": "spend:admin"},
+         {"and": [{"has_permission": "spend:approve_purchase_request"},
+           {"or": [{"==": [{"var": "$old.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "$old.approver_user_id"}]}]}]}]},
+       {"if": [{"==": [{"var": "$mode"}, "insert"]}, {"has_permission": "spend:admin"}, {"!=": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+     true]}},
+  {"code": "99002", "name": "reject_purchase_request",
+   "message": "Only the named approver, or an Approver when none is named, can reject a submitted purchase request, and never the person who requested it.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "rejected"]}, {"==": [{"var": "$old.workflow_state"}, "submitted"]}]},
+     {"and": [
+       {"or": [{"has_permission": "spend:admin"},
+         {"and": [{"has_permission": "spend:approve_purchase_request"},
+           {"or": [{"==": [{"var": "$old.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "$old.approver_user_id"}]}]}]}]},
+       {"if": [{"==": [{"var": "$mode"}, "insert"]}, {"has_permission": "spend:admin"}, {"!=": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+     true]}},
+  {"code": "99003", "name": "recall_purchase_request",
+   "message": "Only the person who requested it, or an admin, can move a submitted or rejected purchase request back to draft.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"}, {"in": [{"var": "$old.workflow_state"}, ["submitted", "rejected"]]}, {"==": [{"var": "workflow_state"}, "draft"]}]},
+     {"or": [{"has_permission": "spend:admin"},
+       {"and": [{"!=": [{"var": "$old.requested_by_user_id"}, null]}, {"==": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+     true]}},
+  {"code": "99004", "name": "order_purchase_request",
+   "message": "Only a Buyer can order a purchase request.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "ordered"]}]},
+     {"has_permission": "spend:order_purchase_request"},
+     true]}},
+  {"code": "99005", "name": "approve_purchase_request_first",
+   "message": "A purchase request must be approved before it is ordered.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "ordered"]}]},
+     {"or": [
+       {"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]},
+       {"and": [
+         {"or": [{"has_permission": "spend:admin"},
+           {"and": [{"has_permission": "spend:approve_purchase_request"},
+             {"or": [{"==": [{"var": "$old.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "$old.approver_user_id"}]}]}]}]},
+         {"if": [{"==": [{"var": "$mode"}, "insert"]}, {"has_permission": "spend:admin"}, {"!=": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]}]},
+     true]}},
+  {"code": "99006", "name": "approved_stays_approved",
+   "message": "Only the named approver, or an Approver when none is named, can move an approved or ordered purchase request back, and never the person who requested it.",
+   "jsonlogic": {"if": [
+     {"and": [{"value_changed": "workflow_state"},
+       {"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]},
+       {"!": [{"in": [{"var": "workflow_state"}, ["approved", "ordered"]]}]}]},
+     {"and": [
+       {"or": [{"has_permission": "spend:admin"},
+         {"and": [{"has_permission": "spend:approve_purchase_request"},
+           {"or": [{"==": [{"var": "$old.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "$old.approver_user_id"}]}]}]}]},
+       {"if": [{"==": [{"var": "$mode"}, "insert"]}, {"has_permission": "spend:admin"}, {"!=": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+     true]}},
+  {"code": "99007", "name": "lock_submitted_purchase_request",
+   "message": "Only an admin, or someone who may approve it, can change or delete a submitted, approved or ordered purchase request; its requester can move a submitted one back to draft to change it.",
+   "jsonlogic": {"if": [
+     {"and": [
+       {"in": [{"var": "$old.workflow_state"}, ["submitted", "approved", "ordered"]]},
+       {"or": [{"==": [{"var": "$mode"}, "delete"]}, {"value_changed": "supplier_id"}, {"value_changed": "needed_by_date"}, {"value_changed": "approver_user_id"}]}]},
+     {"or": [{"has_permission": "spend:admin"},
+       {"and": [{"has_permission": "spend:approve_purchase_request"},
+         {"or": [{"==": [{"var": "$old.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "$old.approver_user_id"}]}]},
+         {"!=": [{"var": "$old.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+     true]}}
+]
+```
+
+The `validation_rules` of `purchase_request_lines`. The lock reads the line's request with `set_record`, and a second time for the request a line was moved away from:
+
+```json
+[
+  {"code": "99008", "name": "lock_purchase_request_lines_of_submitted_purchase_request",
+   "message": "Only an admin, or someone who may approve the purchase request, can change the purchase request lines of a submitted, approved or ordered purchase request.",
+   "jsonlogic": {"and": [
+     {"if": [
+       {"or": [{"==": [{"var": "$mode"}, "insert"]}, {"==": [{"var": "$mode"}, "delete"]},
+         {"value_changed": "purchase_request_id"}, {"value_changed": "quantity"}, {"value_changed": "unit_price"}]},
+       {"set_record": ["purchase_request", "purchase_requests", {"var": "purchase_request_id"},
+         {"if": [{"==": [{"var": "purchase_request"}, null]},
+           {"or": [{"==": [{"var": "$mode"}, "delete"]}, {"has_permission": "spend:admin"}]},
+           {"if": [{"in": [{"var": "purchase_request.workflow_state"}, ["submitted", "approved", "ordered"]]},
+             {"or": [{"has_permission": "spend:admin"},
+               {"and": [{"has_permission": "spend:approve_purchase_request"},
+                 {"or": [{"==": [{"var": "purchase_request.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "purchase_request.approver_user_id"}]}]},
+                 {"!=": [{"var": "purchase_request.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+             true]}]}]},
+       true]},
+     {"if": [{"and": [{"==": [{"var": "$mode"}, "update"]}, {"value_changed": "purchase_request_id"}]},
+       {"set_record": ["old_purchase_request", "purchase_requests", {"var": "$old.purchase_request_id"},
+         {"if": [{"==": [{"var": "old_purchase_request"}, null]},
+           {"has_permission": "spend:admin"},
+           {"if": [{"in": [{"var": "old_purchase_request.workflow_state"}, ["submitted", "approved", "ordered"]]},
+             {"or": [{"has_permission": "spend:admin"},
+               {"and": [{"has_permission": "spend:approve_purchase_request"},
+                 {"or": [{"==": [{"var": "old_purchase_request.approver_user_id"}, null]}, {"==": [{"var": "$user_id"}, {"var": "old_purchase_request.approver_user_id"}]}]},
+                 {"!=": [{"var": "old_purchase_request.requested_by_user_id"}, {"var": "$user_id"}]}]}]},
+             true]}]}]},
+       true]}]}}
+]
+```

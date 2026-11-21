@@ -1,0 +1,53 @@
+---
+title: 'Permissions and Roles'
+description: 'How Semantius decides who may read and write each entity: named permissions, roles that bundle them, a hierarchy in which one permission includes others, and the guards that keep an instance administrable.'
+order: 1
+---
+
+Access in Semantius is decided inside the database. Each entity names the permission needed to read its records and the one needed to write them, and row-level security on the entity's table checks the caller's permissions on every request, whichever client sends it.
+
+| Concept | What it is |
+|---|---|
+| Permission | A name such as `crm:read`. It belongs to a module. |
+| Role | A named set of permissions, assigned to users. |
+| Direct grant | A permission given to one user without a role. |
+| Hierarchy entry | "A includes B": holding A grants B as well. |
+
+A user's permissions are the permissions of all their roles, plus their direct grants, plus everything those include through the hierarchy, at any depth. A disabled user holds none. Roles are flat: a role cannot contain another role, so build broader access with the hierarchy instead. The users and agents who hold them are described under [Users and Agents](/docs/users-and-agents).
+
+These are Semantius roles, kept as data. The PostgreSQL roles a request runs as are a separate thing, described under [pg_semantius roles](/docs/pg-semantius/reference#roles).
+
+## Permissions
+
+A [permission](/docs/permissions-and-roles/permissions) is what an entity names for reading and for writing its records. The hierarchy lets one permission include others, and a `select_rule` makes reading conditional.
+
+## Roles
+
+A [role](/docs/permissions-and-roles/roles) bundles permissions for the users assigned to it. Every instance starts with the User and Administrator roles, and only holders of `admin` manage access.
+
+## When a change takes effect
+
+A user's permissions are worked out once per request, at its first check. A grant, a revoke, a role change or a disabled account applies from the user's next request. Sign-in tokens carry no roles or permissions, so nobody has to sign in again.
+
+## API
+
+| Call | What it does |
+|---|---|
+| `/permissions`, `/roles`, `/role_permissions`, `/user_roles`, `/permission_hierarchy` | The access model, through the `create_*`, `read_*`, `update_*` and `delete_*` tools of each, or `postgrestRequest`. |
+| `/user_permissions` | Direct grants, through `postgrestRequest`. |
+| `/rpc/get_userinfo` | The caller's profile, roles, effective permissions (the hierarchy applied) and visible modules. The MCP tool `getCurrentUser` calls it. |
+| `/rpc/has_permission` | Whether the caller holds `p_permission_name`. An unknown name answers false. |
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `42501` | A refused write, or one of the [guards](/docs/permissions-and-roles/roles#who-can-manage-access) (see its hint code). With hint code 90101, a call that requires a permission the caller lacks; the hint names the permission. |
+| `90203`, `90205` | A role's or hierarchy entry's `origin` cannot change. |
+| `90204` | A system role's slug cannot change. |
+| `90206` | `catalog_role_code` is write-once. |
+| `90210` | The hierarchy entry would close a cycle. |
+| `90211` | The hierarchy entry would make a chain longer than eleven entries. |
+| `23514` | A permission name or role slug breaks its pattern, or a hierarchy entry includes itself. |
+| `23505` | A role name, role slug, grant, assignment or hierarchy entry already exists. |
+| `23503`, `23001` | A permission or role is still in use by an entity, a module or a RACI event. |

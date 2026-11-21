@@ -1,0 +1,19 @@
+---
+title: 'API Keys'
+description: 'API keys in Semantius: how a key acts as its owner, how keys are created, listed and deleted, and what happens when the owner is disabled or deleted.'
+order: 3
+---
+
+An **API key** acts as its owner, with every permission the owner holds at the time of each request. It has no scope and no expiry. A disabled user's keys stop working until the user is enabled again, and deleting a user deletes their keys.
+
+| Call | What it does |
+|---|---|
+| `/rpc/generate_api_key` | Creates a key and returns it once. `p_user_id` `0` creates one for yourself (prefix `uk-`); any other user id takes `admin` (prefix `sk-`). `p_description` is optional. |
+| `/rpc/list_api_keys` | The keys of `p_user_id` (default `0`, yourself), without their secrets. Another user's keys take `admin`. |
+| `/rpc/delete_api_key` | Deletes the key `p_key_id`. |
+
+The MCP tools `generate_api_key`, `list_api_keys` and `delete_api_key` make the same calls.
+
+- **The secret is shown once.** Only a hash of it is stored, so a lost key cannot be read back: delete it and create a new one.
+- **A listed key** shows its `key_id`, its description, when it was created and when it was last used.
+- **Users delete their own keys.** An administrator can delete the keys of any user.

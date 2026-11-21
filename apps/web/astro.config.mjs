@@ -464,7 +464,6 @@ const docsLegacyRedirects = {
 
   // Scheme 3: grouped under /docs/reference/. /docs/reference itself stays live
   // as the tab's start page, so it is deliberately absent here.
-  '/docs/reference/overview': '/docs/overview',
   '/docs/reference/business-logic': '/docs/business-logic',
   '/docs/reference/business-logic/jsonlogic': '/docs/business-logic/jsonlogic',
   '/docs/reference/business-logic/extensions': '/docs/business-logic/extensions',
@@ -475,6 +474,12 @@ const docsLegacyRedirects = {
   '/docs/reference/cli': '/docs/cli',
   '/docs/reference/cli/command': '/docs/cli/command',
   '/docs/reference/cli/use-semantius': '/docs/cli/use-semantius',
+
+  // Renamed so each URL matches its section title (Entities and Fields,
+  // Permissions and Roles). Only each folder's index existed under the old
+  // name; the subpages were added with the new one.
+  '/docs/entities': '/docs/entities-and-fields',
+  '/docs/permissions': '/docs/permissions-and-roles',
 };
 
 // "Semantic models" were renamed to "semantic blueprints" and the whole

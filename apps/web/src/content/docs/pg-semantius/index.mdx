@@ -4,7 +4,7 @@ description: 'The PostgreSQL extension at the core of Semantius: permissions, ro
 order: 6
 ---
 
-`pg_semantius` is the core of Semantius, packaged as a PostgreSQL extension. You install it into a database you run yourself, and that database gains a permission system, a data dictionary that builds tables for you, an audit trail, and a message queue.
+`pg_semantius` is the core of Semantius, packaged as a PostgreSQL extension. You install it into a database you run yourself, and that database gains the [data catalog](/docs/data-catalog) (a permission system, a data dictionary that builds tables for you, and an audit trail) and a message queue.
 
 All of it is enforced inside PostgreSQL rather than in an application sitting in front of it. Nothing can go around the rules. An agent, a script, a SQL client, and a second API all pass through the same checks.
 

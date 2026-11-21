@@ -194,12 +194,18 @@ Returns `true` when the current user holds the named permission, `false` otherwi
 
 ### Enforce a permission: `require_permission`
 
-Returns `true` when the current user holds the named permission, and raises an authorization error (42501) otherwise. Use this in validation rules to forbid an action outright.
+Returns `true` when the current user holds the named permission, and raises an authorization error (42501) otherwise. Use it inside an `if`, so the check applies only to the action it guards: a validation rule that is only `require_permission` refuses every insert, update and delete by a user without the permission.
 
 **Form:** `{"require_permission": "<permission_name>"}`
 
+Only holders of `orders:delete` may delete an order:
+
 ```json
-{"require_permission": "orders:delete"}
+{"if": [
+  {"==": [{"var": "$mode"}, "delete"]},
+  {"require_permission": "orders:delete"},
+  true
+]}
 ```
 
 ---

@@ -1,0 +1,84 @@
+---
+title: 'Fields'
+description: 'The columns of a field record, required fields and defaults, what changing or deleting a field does to its column, and the derived column types.'
+order: 2
+---
+
+When a record is added to or deleted from `fields`, the database structure is updated to match: each field is mapped to a column of its entity's table. Adding a record adds the column, and deleting it drops the column with its values.
+
+## The field record
+
+| Column | Meaning |
+|---|---|
+| `id` | `<table_name>.<field_name>`, such as `tickets.status`. Generated, and it follows a rename. |
+| `table_name` | The entity. Cannot change (90221). |
+| `field_name` | The column's name: `a-z`, `0-9` and `_`, starting with a letter, unique in the entity. A leading `_` is reserved (90224), and the length is limited by the names generated from it (90276). |
+| `title` | The label in forms and grids. Required. |
+| `description` | What the field holds. It becomes the column's comment. |
+| `format` | What the field holds and how it is stored. Default `text`. See [Formats](/docs/entities-and-fields/formats). |
+| `input_type` | `default`, `required`, `readonly`, `disabled` or `hidden`. `required` is enforced by the database; see [Required fields](#required-fields). |
+| `default_value` | The value a new record gets. See [Defaults](#defaults). |
+| `field_order` | The field's position in forms and grids. Left at `0`, it is set to the highest position below 900000 plus 10. `created_at` and `updated_at` sit at 999998 and 999999. |
+| `width` | The field's width in forms: `default`, `s`, `m` or `w`. |
+| `searchable` | Adds the field to the entity's full-text search. |
+| `unique_value` | No two records may hold the same value. Empty values (null, and `''` for text) are not compared. Only single fields: there is no uniqueness across several fields. |
+| `enum_values` | For an `enum`, the allowed values: a list of strings, or of objects `{"value", "label", "description", "color", "icon"}`. |
+| `precision` | Decimal places of a `number`, 0 to 18. Default 2. |
+| `reference_table`, `reference_delete_mode` | The entity a `reference` or `parent` field points at, and what happens when that record is deleted. See [Relationships](/docs/entities-and-fields/relationships). |
+| `relationship_label` | The verb for the relationship in diagrams and navigation. Default `has`. |
+| `singular_label_parent`, `plural_label_parent` | How the parent's list of children names these records. |
+| `is_pk` | Whether the field is the key. Cannot change (90222). |
+| `ctype` | Set by the platform. See [Derived types](#derived-types). |
+| `cube_type` | The field's role in the entity's analytics cube: `dimension` or `measure`, `auto` to let the platform choose, or `disabled` to leave it out. |
+| `catalog_field_code` | The catalog field the field came from. Write-once (90202). |
+| `input_type_rule`, `rollup` | An [input mode rule](/docs/business-logic/extensions#input_type_rule) and a [rollup](/docs/business-logic/rollups) definition. |
+
+There is no `required` column: a field is required when its `input_type` is `required`.
+
+## Required fields
+
+The database refuses a record (90258) whose required field holds no value:
+
+- null, for the formats that allow it;
+- blank or whitespace-only text, and `''` for an `enum`;
+- `{}`, `[]`, `null` or `""` for JSON;
+- empty binary data, and `0` for a `rating`.
+
+Numbers, booleans and durations always hold a value. A `parent` field needs no check of its own: a record without its parent is refused by the reference. A field with any `input_type_rule` gets no database check, since the rule decides when it is required.
+
+## Defaults
+
+| `default_value` | A new record gets |
+|---|---|
+| A number, `true`, `false` or text | That value, converted to the column's type. |
+| `today`, `tomorrow`, `yesterday`, `now`, `$today`, `$now` | On a `date` or `date-time` field, the day or moment of each insert, in UTC. A `time` field takes `now` and `$now` only. Elsewhere they are refused (90284). |
+| `$user_id` or `CURRENT_USER` | On a `reference` or `parent` field to `users`, the signed-in user. `$user_id` is refused on any other field (90283), and so is `CURRENT_USER`, except on a text field, where it stores the database role name, the same for every user. |
+| `CURRENT_TIMESTAMP`, `CURRENT_DATE`, `now()`, `gen_random_uuid()` and a few other SQL functions | The function's result at each insert. |
+| Empty | The empty value of the format: see [Formats](/docs/entities-and-fields/formats). |
+
+A default holds at most 200 characters, and no `;`, `--`, `/*` or control characters. Changing a default affects new records only.
+
+## Changing a field
+
+- **Format.** A format can change only to one with the same column type: `text` to `email` or `enum`, `int32` to `rating`. Anything else, such as `int32` to `int64` or `text` to `date`, is refused (90223): drop the field and create it again. A `reference` takes the type of the key it points at, so `text` can become a `reference` to an entity with a `text` key, but not one to `users`, whose key is a number.
+- **Required.** Making a field required, or adding a required field to a table that has records, is refused while records would break the check (90259). Give a new required field a default that passes.
+- **Enum values.** Removing a value that records still hold is refused (23514).
+- **Precision.** Changing it rewrites the column, and lowering it rounds the stored values.
+- **Renaming** renames the column and keeps its values. It is refused while a rule names the field (90275), because rules are never rewritten: change the rule first. Rollup definitions are rewritten.
+- **Deleting** drops the column with its values. It is refused while a rollup depends on the field (90266). A rule that reads a deleted field is not refused and reads null.
+- **Core fields** (the key, the label and the timestamps) cannot be deleted (90217), renamed (90218, the label excepted), or given a new format (90219) or default (90220, the label excepted).
+
+## Derived types
+
+`ctype` tells what kind of column a field is. The platform sets it; a client cannot (90214).
+
+| `ctype` | The field is |
+|---|---|
+| `''` | An ordinary field. |
+| `id` | The key. |
+| `label` | The label column. |
+| `computed_label` | The label column, written by a computed field. |
+| `audit` | `created_at` or `updated_at`. |
+| `core` | A column of the platform's own tables. |
+| `computed` | Written by a [computed field](/docs/business-logic/extensions#computed_fields). Forms show it disabled. |
+| `rollup` | A [rollup field](/docs/business-logic/rollups). |

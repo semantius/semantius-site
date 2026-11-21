@@ -1,0 +1,12 @@
+---
+title: 'Agents'
+description: 'Agents in Semantius: service principals kept as users, the identity they are given, how they work through API keys, and the roles they hold.'
+order: 2
+---
+
+An agent is a user with `is_agent` set: a service principal rather than a person. An agent is a user like any other, with the User role.
+
+- **Identity.** An agent never signs in at an identity provider, so nothing supplies its `external_id`. An agent created without one, or with an empty one, gets a generated identity: `agent:` followed by a random UUID. It is set when the agent is created and kept after that: an update never regenerates it, and an empty `external_id` is refused (23514).
+- **Working through an API key.** An agent works through an [API key](/docs/users-and-agents/api-keys) that an administrator creates for it. The key acts as the agent, with every permission the agent holds.
+- **Roles and permissions.** An agent gets roles and direct grants as any user does. See [Roles](/docs/permissions-and-roles/roles).
+- **Audit.** What an agent changes is logged under its user id, like the changes of any user. See [Audit Logs](/docs/audit-logs).
