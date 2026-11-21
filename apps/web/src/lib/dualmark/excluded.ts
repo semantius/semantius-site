@@ -9,10 +9,8 @@
 
 /**
  * Pages with no twin:
- *  - /404, which is an error page, not content. The regexes below tolerate a
+ *  - /404, which is an error page, not content. The regex below tolerates a
  *    trailing slash because Astro has reported this route both ways.
- *  - /blueprints/page/N, 13 meta-refresh redirect stubs that hand-roll their
- *    own <html> and never pass through Layout.
  *
  * Only structural exclusions belong here. /pricing sat on this list while it
  * carried template claims (a trial, a refund guarantee) that a twin would have
@@ -20,7 +18,7 @@
  * add an entry, and it should say when it comes off. twinUrl() falls back to
  * the HTML URL for excluded pages, so /llms.txt links stay valid either way.
  */
-const EXCLUDED = [/^\/404\/?$/, /^\/blueprints\/page\/\d+\/?$/];
+const EXCLUDED = [/^\/404\/?$/];
 
 export function hasMarkdownTwin(pathname: string): boolean {
 	const p = pathname.startsWith('/') ? pathname : `/${pathname}`;

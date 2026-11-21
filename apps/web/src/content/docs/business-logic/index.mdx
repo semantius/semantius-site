@@ -42,7 +42,7 @@ The five extension points map onto distinct stages of the request lifecycle:
 
 ## Authoring rules
 
-Rules are stored in the model alongside the entities and fields they govern. In day-to-day work you let an agent with the [use-semantius skill](/docs/cli/use-semantius) write and edit them on your instance. When you do need to write one by hand, the workflow is:
+Rules are stored in the model alongside the entities and fields they govern. In day-to-day work you let an agent with the [use-semantius skill](/docs/agent-skills/use-semantius) write and edit them on your instance. When you do need to write one by hand, the workflow is:
 
 1. Decide which extension point the rule belongs to. If the rule **derives** a value from the record itself, it goes in `computed_fields`. If it **aggregates** child records, it is a [rollup field](/docs/business-logic/rollups). If it **rejects** a write, it goes in `validation_rules`. If it **filters access** to rows, it goes in `select_rule`. If it **changes how a field is edited**, it goes in `input_type_rule`.
 2. Write the expression using standard JsonLogic plus the [Semantius extensions](/docs/business-logic/extensions). Reach for `var` to read fields of the current row, `$old` to compare against the previous state on update, and `set_record` to pull in a related record by id.

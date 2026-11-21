@@ -490,8 +490,6 @@ const docsLegacyRedirects = {
   '/docs/agent-skills-installation': '/docs/agent-skills/installation',
   '/docs/cli-overview': '/docs/cli',
   '/docs/cli-command': '/docs/cli/command',
-  '/docs/cli-skill': '/docs/cli/use-semantius',
-  '/docs/cli/skill': '/docs/cli/use-semantius',
 
   // Scheme 3: grouped under /docs/reference/. /docs/reference itself stays live
   // as the tab's start page, so it is deliberately absent here.
@@ -504,37 +502,12 @@ const docsLegacyRedirects = {
   '/docs/reference/agent-skills/installation': '/docs/agent-skills/installation',
   '/docs/reference/cli': '/docs/cli',
   '/docs/reference/cli/command': '/docs/cli/command',
-  '/docs/reference/cli/use-semantius': '/docs/cli/use-semantius',
 
   // Renamed so each URL matches its section title (Entities and Fields,
   // Permissions and Roles). Only each folder's index existed under the old
   // name; the subpages were added with the new one.
   '/docs/entities': '/docs/entities-and-fields',
   '/docs/permissions': '/docs/permissions-and-roles',
-};
-
-// "Semantic models" were renamed to "semantic blueprints" and the whole
-// /models/* route tree moved to /blueprints/*, which left /models a live 404.
-// The catalog was rebuilt in the same change, so none of the old model slugs
-// survive as blueprint slugs: every old page URL points at the catalog rather
-// than at a per-slug destination that would only 301 into another 404. These
-// are the twelve slugs the route served before it was removed (the `models/`
-// directory as of commit 5728e3f^). A dynamic `[...slug]` catch-all is not an
-// option: Astro rejects a redirect whose destination drops the source's params.
-const legacyModelSlugs = [
-  'apm', 'ats', 'cdp', 'cmdb', 'equipment_lease_management', 'itam',
-  'itsm', 'nwind', 'product_roadmap', 'saas_expense_tracker',
-  'workforce_planning', 'zero_based_budgeting',
-];
-
-const blueprintLegacyRedirects = {
-  '/models': '/blueprints',
-  ...Object.fromEntries(
-    legacyModelSlugs.flatMap((slug) => [
-      [`/models/${slug}`, '/blueprints'],
-      [`/models/${slug}/model`, '/blueprints'],
-    ]),
-  ),
 };
 
 // Pages that came with the site template and were deleted rather than rewritten.
@@ -552,18 +525,17 @@ export default defineConfig({
   // only Astro.url.pathname changes, which is what the canonical, og:url and
   // the markdown twins are built from. Cloudflare's html_handling matches this
   // in workplace/wrangler.jsonc. Do NOT "simplify" this with
-  // build.format: 'file' — that sets ending='.html' unconditionally and makes
+  // build.format: 'file'. That sets ending='.html' unconditionally and makes
   // the canonical /docs/cli.html.
   trailingSlash: 'never',
   redirects: {
     ...docsLegacyRedirects,
-    ...blueprintLegacyRedirects,
     ...removedPageRedirects,
     // Markdown twins of every legacy path. Without these, an agent that was
     // given an old URL and appends ".md" gets a 404, because Astro's redirects
     // only cover the HTML form. Derived from the same maps so the two can
     // never disagree about where a legacy path now lives.
-    ...markdownRedirects({ ...docsLegacyRedirects, ...blueprintLegacyRedirects, ...removedPageRedirects }),
+    ...markdownRedirects({ ...docsLegacyRedirects, ...removedPageRedirects }),
   },
   fonts: [
     {

@@ -19,7 +19,7 @@ const canonicalURL = new URL(Astro.url.pathname, Astro.site).toString();
 // guessing. Canonical pathnames are slash-less ("/about"), so appending ".md"
 // is the whole convention; toMarkdownPath still strips a slash defensively.
 //
-// Skipped when the page has no twin (the 404, the /blueprints/page/N stubs) and
+// Skipped when the page has no twin (the 404) and
 // when it is noindex, so we never advertise a file that is not emitted.
 const twinURL =
     hasMarkdownTwin(Astro.url.pathname) && !noindex
