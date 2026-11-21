@@ -46,6 +46,8 @@ adding a page or a section that only one variant has (anything under `/idp` or
 also lists every heading twice, in the table of contents beside the article at `xl`
 and inline above it, so keep headings short. There is no admonition component.
 
+**A docs page's `description` never appears on the page.** `DocsLayout` passes it only to the meta tags, but it is the page's summary in site search, `llms.txt`, the markdown twin and, for a tab's `index.mdx`, the `/docs` hub card. When an edit changes what a page covers or how its opening describes it, update the description in the same edit.
+
 Operator changes go in `.env` or
 `docker-compose.override.yml`, never in generated variant files: `git pull` and
 `./build.sh` would conflict with or overwrite them.
