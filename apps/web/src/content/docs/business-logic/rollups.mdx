@@ -70,10 +70,10 @@ The filter is the one JsonLogic expression in Semantius that is **compiled to SQ
 | `==`, `!=` | `IS NOT DISTINCT FROM`, `IS DISTINCT FROM`, so `null` compares the way JsonLogic expects. |
 | `===`, `!==` | The same, after the JSON type of the literal is checked against the column: a string against a number column is refused. |
 | `<`, `<=`, `>`, `>=` | The SQL comparison. `<` and `<=` also take three operands (`a < b < c`). Text is ordered by code point. |
-| `in` with a list | `x IN (...)`. The list holds literals only and is never empty. |
+| `in` with a list | `x IN (...)`. The list holds literals only and is never empty. A string in the list against a number is refused. |
 | `var` | A column of the child, by plain name. No dotted paths, no default value. |
 | A bare `var` | A boolean column used as a condition. |
-| A string, number or boolean | A literal, cast to the type of the column it is compared with. |
+| A string, number or boolean | A literal, cast to the type of the column it is compared with. A number against text (a text column or `date_format`) is refused: write it as a string. |
 | `date_add`, `date_diff`, `date_part`, `date_trunc`, `to_date`, `date_format` | The same date functions the interpreter uses, so a filter and a validation rule cannot disagree about a date. |
 
 Anything else is refused when the definition is saved (90265), and the error names what was refused. That includes `if`, arithmetic, `cat`, `merge`, `missing`, `some`, the other [Semantius extensions](/docs/business-logic/extensions), and the request variables `$user_id`, `$now` and `$today`. A trigger can only keep a rollup correct if the rollup depends on the child row alone. A literal the column cannot be cast from is caught at save time too, not at the first child write.
@@ -90,6 +90,8 @@ The compiled filter compares values of the column's type, where the interpreter 
 - **Date-time literals compare as moments.** `2026-02-20T12:00:00Z` and `2026-02-20T12:00:00+00:00` are equal. A date literal has to be ISO 8601 and is read in UTC.
 - **UUID literals ignore case.**
 - **A fraction against an integer column is refused** when the definition is saved.
+
+Where a literal of another type than its value would count other rows here than in the interpreter (`===` or `!==` across types, a number against text, a string in an `in` list against a number), the filter is refused when the definition is saved instead.
 
 ## Hidden child rows
 

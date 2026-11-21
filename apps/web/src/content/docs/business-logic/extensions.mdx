@@ -26,7 +26,7 @@ An array of entries, each naming the field it writes:
 
 - Entries run in the order listed, and each result is written into the row before the next entry runs, so `total` above reads the `subtotal` just computed.
 - A dotted `name` such as `settings.theme` writes into a key of a JSON column.
-- The `jsonlogic` may be a literal: a constant is a legitimate value for a field.
+- The `jsonlogic` may be a literal scalar or list: a constant is a legitimate value for a field. An object with several keys is refused (90923), even as a constant.
 - A field that an entry names gets the `ctype` `computed` (`computed_label` on the label column). Forms show it disabled, and any value a client sends is overwritten.
 - `required` still applies to a computed field, unless the field also has an `input_type_rule`: such a field gets no database `required` check. The check runs after the rule, so it refuses a write whose rule produced no value.
 - A computed entry cannot write a [rollup field](/docs/business-logic/rollups) (90907), though it can read one.
@@ -91,10 +91,15 @@ A rule on a field that returns its input mode for the record being edited:
 Every rule is checked when its entity or field is saved, so a mistake is refused at save time instead of surfacing on an unrelated record later:
 
 - **Unknown operators.** A rule that names an operator the engine does not implement is refused (90909), wherever it stands, including a branch of an `if` that rarely runs and a field's `input_type_rule`. The error names the rule's place: `select_rule`, `validation_rules[0]`, `computed_fields[2]` or `<field>.input_type_rule`.
-- **One operation.** A `select_rule` or a validation rule must be an object with exactly one key (90919). The engine reads anything else (a literal such as `true`, a string, an object with two keys) as a plain value, which is truthy, so the rule would pass every record without ever being evaluated. Computed fields and `input_type_rule` may be literals.
+- **One operation.** A `select_rule` or a validation rule must be an object with exactly one key (90919). The engine reads anything else (a literal such as `true`, `false`, `0` or a string, an object with two keys) as a plain value, so the rule would never be evaluated: a value is not a rule. Computed fields and `input_type_rule` may be literals. An object with several keys is refused anywhere else in a rule as well (90923), since the engine reads it as a value too.
+- **Argument counts.** An operator given a number of arguments it does not take is refused (90921). The engine ignores an extra argument and reads a missing one as null, so `{">=": [{"var": "n"}, 1, 10]}` would drop the `10`.
+- **Literal arguments.** A literal argument of the wrong kind is refused (90922), for example a date unit, part, pattern or duration the date operators do not take, a RACI letter other than the four, a `throw_error` code outside class 99 or a parameter list `throw_error` would refuse, or a permission, field or entity name that is empty or not text. An argument that is itself an operation is evaluated when the rule runs, and is not checked.
+- **Variables with no value.** A `var` that reads a name with no value where it is read is refused (90924): a `$` name other than `$today`, `$now`, `$user_id`, `$old` and `$mode`, or, inside the logic of `map`, `filter`, `reduce`, `all`, `none` or `some`, any `$` name or a name that a `let` or `set_record` outside the operator binds.
 - **Renames.** A field that any rule names cannot be renamed (90275): change the rule first, then rename. A field read through a `set_record` alias in another entity's rule is not detected. Renaming an entity rewrites the entity argument of every `set_record` that names it in the `computed_fields`, `validation_rules` and `select_rule` of every entity, its own included. An `input_type_rule` is never rewritten.
 
-An entity that already stores a rule failing these checks (restored from a dump, for example) cannot be saved again until the rule is fixed. A stored `select_rule` that is not one operation hides every row.
+The error names the rule's place as 90909 does. For 90921 to 90924 its hint also carries `path`, the JSON pointer of the mistake inside the rule, such as `/if/0/>=`.
+
+Unknown operators and the one-operation check (90909, 90919) run on every write of the entity or field, so an entity that already stores a rule failing them (restored from a dump, for example) cannot be saved again until the rule is fixed. The other checks (90921 to 90924, and the checks that a computed field's `name` and a validation rule's `message` are text, 90900 and 90903) run only on a rule that is new or changed. A rule stored before them keeps working and does not block the writes that leave it alone. A stored `select_rule` that is not one operation hides every row.
 
 The rules of an entity with `managed` set to `false` are stored and checked like any other, but the database does not enforce them.
 
@@ -118,7 +123,7 @@ These variables are automatically available inside `computed_fields`, `validatio
 
 `computed_fields` and `validation_rules` run during a mutation and see all five variables. `select_rule` runs during a read and sees only `$today`, `$now`, and `$user_id`. `$old` and `$mode` are not bound in a select rule: a read has no previous image and is not a mutation, so they would be meaningless there. A select rule never sees a null `$user_id`: a read without a valid session is refused with a permission error (42501) before the rule runs.
 
-Inside `map`, `filter`, `reduce`, `all`, `none` and `some`, `var` reads the element instead of the record (`current` and `accumulator` in `reduce`), so a field of the record is out of reach there.
+Inside `map`, `filter`, `reduce`, `all`, `none` and `some`, `var` reads the element instead of the record (`current` and `accumulator` in `reduce`), so a field of the record is out of reach there. A rule that reads a `$` variable, or a name an outer `let` or `set_record` binds, inside the operator's logic is refused when it is saved (90924).
 
 ### Evaluation on delete
 
@@ -209,19 +214,23 @@ The RACI letter is one of `responsible`, `accountable`, `consulted`, or `informe
 
 ```json
 {"if": [
-  {"is_raci_actor": ["orders", "approved", "accountable"]},
-  "approved",
-  {"throw_error": "Only the accountable approver can approve this order"}
+  {"and": [
+    {"==": [{"var": "status"}, "approved"]},
+    {"!=": [{"var": "$old.status"}, "approved"]},
+    {"!": {"is_raci_actor": ["orders", "approved", "accountable"]}}
+  ]},
+  {"throw_error": "Only the accountable approver can approve this order"},
+  true
 ]}
 ```
 
-Use it in `validation_rules` to gate a transition on the caller's RACI role. It is the governance analog of `has_permission` for processes that are driven by a RACI matrix rather than a flat permission name.
+Use it in `validation_rules` to gate a transition on the caller's RACI role. The rule above refuses to move an order into `approved`, or to create one there, unless the caller holds the accountable role for that gate. It tests the move, not the state, so every other write passes, including edits of an order that is already approved and its deletion. It is the governance analog of `has_permission` for processes that are driven by a RACI matrix rather than a flat permission name.
 
 ---
 
 ### Require that a RACI consultation occurred: `has_consultation`
 
-The companion to `is_raci_actor`, this operator enforces the **C** (Consulted) letter of RACI. Where `is_raci_actor` checks *who* the caller is, `has_consultation` checks *whether the Consulted parties have actually been consulted* before a record is allowed to move forward.
+The companion to `is_raci_actor` for the **C** (Consulted) letter of RACI. Where `is_raci_actor` checks *who* the caller is, `has_consultation` reports *whether a consulted role has responded* for the record.
 
 Returns `true` when an acted *consulted* event already exists for the record in the process that governs an `(entity, to_state)` gate, that is, a `raci_events` row with `raci = 'consulted'` and `status = 'acted'`, and `false` otherwise. A caller who holds no role with a RACI assignment on that process always gets `false`. Without a valid session it raises a permission error (42501). The third argument is the id of the record being gated, usually read from the current row with `{"var": "id"}`.
 
@@ -231,13 +240,17 @@ The operator only reports, and it ignores `consult_mode`. Holding a record back 
 
 ```json
 {"if": [
-  {"has_consultation": ["orders", "approved", {"var": "id"}]},
-  true,
-  {"throw_error": "Required consultation has not been completed"}
+  {"and": [
+    {"==": [{"var": "$old.status"}, "approved"]},
+    {"==": [{"var": "status"}, "shipped"]},
+    {"!": {"has_consultation": ["orders", "approved", {"var": "id"}]}}
+  ]},
+  {"throw_error": "No consulted role has responded yet"},
+  true
 ]}
 ```
 
-Use it in `validation_rules` to block a transition until the consultation it depends on has been recorded.
+Use it in `validation_rules` to hold up the record's next move. With a gate on `orders` at `approved` that emits events, the rule above refuses to move an order from `approved` to `shipped` until a consulted role has acted on the consultation that entering `approved` raised. It tests the move, not the state, so every other write passes, the one that enters `approved` included. It covers what the platform's gate does not: the gate holds the move only while a `block` consultation is not acted, and it runs before the rule, which then sees no move. A caller outside the process gets `false`, so only a participant can ship the order.
 
 ---
 
@@ -416,6 +429,8 @@ The form in the Semantius app evaluates two kinds of rules in the browser, with 
 
 `validation_rules` and `select_rule` run only in the database.
 
+The form also runs the server's [save-time checks](#checks-when-a-rule-is-saved) on a field that holds a rule while it is edited: when the field loses focus, and on every keystroke after a first attempt to save. A mistake in a rule is then refused in the form before it reaches the server.
+
 What differs in the browser:
 
 - `$today`, `$now` and `$user_id` are bound. Computed fields also get `$old` and `$mode` (`"insert"` or `"update"`); an `input_type_rule` gets neither.
@@ -436,15 +451,15 @@ Errors raised while a rule is saved or evaluated. Codes in the 90xxx range belon
 
 | Code | Raised when |
 |---|---|
-| 42501 | A permission error: `require_permission` fails (hint code 90101), or `has_permission`, `is_raci_actor`, `has_consultation`, a `select_rule` or `set_record` is evaluated without a valid session (90001) or for a user with no enabled account (90006). |
+| 42501 | A permission error: `require_permission` fails (hint code 90101), or `has_permission`, `is_raci_actor`, `has_consultation`, a `select_rule` or `set_record` is evaluated without a valid session (90001, or 90002 to 90005 or 90009 for a token that is refused) or for a user with no enabled account (90006). |
 | 2201B | `is_match` is given a malformed pattern. |
 | 22008 | A date operator got a value shaped like a date that is no real date, such as `2026-02-30`. |
 | 22009 | A date operator got a date-time whose offset is out of range, such as `+99`. |
 | 90238 | A `set_record` id does not fit the target entity's key type. |
 | 90258 | A required field is missing, also when a computed rule produced no value for it. |
 | 90275 | A field that a rule names is renamed. |
-| 90900, 90901 | A `computed_fields` entry lacks its `name` or its `jsonlogic`. |
-| 90902, 90903, 90904 | A `validation_rules` entry lacks its `code`, `message` or `jsonlogic`. |
+| 90900, 90901 | A `computed_fields` entry lacks its `name` or its `jsonlogic`, or its `name` is not text (90900). |
+| 90902, 90903, 90904 | A `validation_rules` entry lacks its `code`, `message` or `jsonlogic`, or its `message` is not text (90903). |
 | 90905 | A validation rule's code is not between `99000` and `99999`. |
 | 90906 | A platform validation rule (`"source_module": "platform"`) carries a code outside class 90. |
 | 90907 | A `computed_fields` entry names a rollup field. |
@@ -458,4 +473,8 @@ Errors raised while a rule is saved or evaluated. Codes in the 90xxx range belon
 | 90918 | `date_add` got an amount that is neither a whole number nor an ISO 8601 duration. |
 | 90919 | A `select_rule` or validation rule is not a single operation. |
 | 90920 | Arithmetic has no finite result: division or `%` by zero, or an operand that is text carrying no number. |
+| 90921 | An operator is given a number of arguments it does not take (at save time). |
+| 90922 | A literal argument is of the wrong kind, such as an unknown date unit or RACI letter (at save time). |
+| 90923 | A rule holds an object with several keys (at save time). At the top of a `select_rule` or validation rule it is 90919. |
+| 90924 | A rule reads a variable that has no value where it is read (at save time). |
 | 99000 to 99999 | Your validation rules and `throw_error` calls. |
