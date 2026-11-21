@@ -6,7 +6,7 @@ import DocsLayout from '~/layouts/DocsLayout.astro';
 export async function getStaticPaths() {
 	const docs = await getCollection('docs');
 	// Routes mirror the on-disk folder structure under content/docs.
-	// A folder's `index.mdx` becomes the bare folder URL (e.g. models/index.mdx → /docs/models).
+	// A folder's `index.mdx` becomes the bare folder URL (e.g. cli/index.mdx → /docs/cli).
 	return docs.map((doc) => {
 		const fullSlug = doc.id.replace(/\.[^/.]+$/, "");
 		const routeSlug = fullSlug.replace(/(^|\/)index$/, '');

@@ -19,7 +19,6 @@
       "folder": "reference",
       "folders": [
         "overview",
-        "models",
         "mcp-connectors",
         "agent-skills",
         "cli",

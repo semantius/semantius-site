@@ -42,12 +42,12 @@ The five extension points map onto distinct stages of the request lifecycle:
 
 ## Authoring rules
 
-Rules are stored in the model alongside the entities and fields they govern. In day-to-day work you let an agent write and edit them through the [Business Analyst](/docs/models/create) skill, and the [Deploy](/docs/models/deploy) skill ships them byte-for-byte to the live instance. When you do need to write one by hand, the workflow is:
+Rules are stored in the model alongside the entities and fields they govern. In day-to-day work you let an agent write and edit them through the Business Analyst skill, and the Deploy skill ships them byte-for-byte to the live instance. When you do need to write one by hand, the workflow is:
 
 1. Decide which extension point the rule belongs to. If the rule **derives** a value from the record itself, it goes in `computed_fields`. If it **aggregates** child records, it is a [rollup field](/docs/business-logic/rollups). If it **rejects** a write, it goes in `validation_rules`. If it **filters access** to rows, it goes in `select_rule`. If it **changes how a field is edited**, it goes in `input_type_rule`.
 2. Write the expression using standard JsonLogic plus the [Semantius extensions](/docs/business-logic/extensions). Reach for `var` to read fields of the current row, `$old` to compare against the previous state on update, and `set_record` to pull in a related record by id.
 3. Save it. The platform checks every rule when the entity or field is saved, and refuses an unknown operator, a wrong number of arguments, a misspelled date unit, part or pattern, a `throw_error` code outside class 99 and a `$` name it does not bind, among others. A misspelled field or entity name still passes, and finds nothing when the rule runs. See [Checks when a rule is saved](/docs/business-logic/extensions#checks-when-a-rule-is-saved).
-4. Test it with a representative row. The [Optimize](/docs/models/optimize) skill can round-trip a model from a live instance, so you can verify that rules behave as expected in production before locking them in.
+4. Test it with a representative row. The Optimize skill can round-trip a model from a live instance, so you can verify that rules behave as expected in production before locking them in.
    To evaluate a rule against sample data, call `/rpc/evaluate_json_logic` with the rule as `rule` and a sample record as `data`: it returns the result, evaluated with the caller's rights. It binds no `$` variables, so put `$today`, `$now`, `$user_id`, `$old` or `$mode` into `data` when the rule reads them.
 
 ## Next

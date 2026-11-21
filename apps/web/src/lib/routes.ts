@@ -33,7 +33,7 @@ export const BLOG_INDEX_PATH = '/blog';
 
 /**
  * Routes mirror the on-disk folder structure under content/docs, and a
- * folder's index.mdx becomes the bare folder URL (models/index.mdx -> /models).
+ * folder's index.mdx becomes the bare folder URL (cli/index.mdx -> /cli).
  * That second step is the non-obvious one and is why this is shared.
  */
 export function docsSlug(doc: CollectionEntry<'docs'>): string {

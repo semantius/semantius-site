@@ -433,9 +433,9 @@ function getAdapter() {
 // exactly those URLs, so they are live pages again and must not be redirected.
 /**
  * Turn a map of HTML redirects into the same map for their markdown twins:
- *   "/docs/models-overview" -> "/docs/models"
+ *   "/docs/cli-overview" -> "/docs/cli"
  * becomes
- *   "/docs/models-overview.md" -> "/docs/models.md"
+ *   "/docs/cli-overview.md" -> "/docs/cli.md"
  *
  * Targets that are already a file (the blueprint source downloads) or external
  * are skipped, since they have no twin.
@@ -453,12 +453,6 @@ function markdownRedirects(map) {
 
 const docsLegacyRedirects = {
   // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
-  '/docs/models-overview': '/docs/models',
-  '/docs/models-structure': '/docs/models/structure',
-  '/docs/models-create': '/docs/models/create',
-  '/docs/models-templates': '/docs/models/templates',
-  '/docs/models-deploy': '/docs/models/deploy',
-  '/docs/models-optimize': '/docs/models/optimize',
   '/docs/mcp-connectors-overview': '/docs/mcp-connectors',
   '/docs/mcp-connectors-installation': '/docs/mcp-connectors/installation',
   '/docs/agent-skills-overview': '/docs/agent-skills',
@@ -471,12 +465,6 @@ const docsLegacyRedirects = {
   // Scheme 3: grouped under /docs/reference/. /docs/reference itself stays live
   // as the tab's start page, so it is deliberately absent here.
   '/docs/reference/overview': '/docs/overview',
-  '/docs/reference/models': '/docs/models',
-  '/docs/reference/models/structure': '/docs/models/structure',
-  '/docs/reference/models/create': '/docs/models/create',
-  '/docs/reference/models/templates': '/docs/models/templates',
-  '/docs/reference/models/deploy': '/docs/models/deploy',
-  '/docs/reference/models/optimize': '/docs/models/optimize',
   '/docs/reference/business-logic': '/docs/business-logic',
   '/docs/reference/business-logic/jsonlogic': '/docs/business-logic/jsonlogic',
   '/docs/reference/business-logic/extensions': '/docs/business-logic/extensions',

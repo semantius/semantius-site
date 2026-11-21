@@ -22,11 +22,7 @@ interface Props {
 // Map of slash-prefixed skill names to the docs page that documents the skill.
 // In chat mode, a leading /skill token is rendered as a link to the matching
 // docs page (or as plain styled text if the skill is not in this map).
-const SKILL_DOC_MAP: Record<string, string> = {
-  "/semantic-model-analyst": "/docs/models/create",
-  "/semantic-model-deployer": "/docs/models/deploy",
-  "/semantic-model-optimizer": "/docs/models/optimize",
-};
+const SKILL_DOC_MAP: Record<string, string> = {};
 
 const { command, mode = "shell", runnable = false, title } = Astro.props;
 const promptSuffix = title ? ` Build my ${title} with Semantius.` : undefined;
