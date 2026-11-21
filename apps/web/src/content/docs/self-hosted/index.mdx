@@ -1,17 +1,22 @@
 ---
 title: 'Self-Hosting'
 seoTitle: 'Self-Hosting Semantius (Open Source, Docker Compose)'
-description: 'Run the complete Semantius platform on your own machine or your own server, using Docker Compose. Free and MIT licensed.'
+description: 'Run the whole Semantius data platform (data catalog, API, web app and sign-in) on your own machine or server with Docker Compose. Free and MIT licensed.'
 order: 7
 ---
 
 import RepoCard from '~/components/common/RepoCard.astro';
 
-**Semantius Open Source** is the free, MIT-licensed, self-hosted edition of Semantius. It runs on hardware you control, as one Docker Compose setup that starts the whole platform in a single command: the database, the HTTP API, the browsable API docs, the web app, and sign-in.
+**Semantius Open Source** is the whole Semantius data platform, free and MIT licensed, running on hardware you control. One Docker Compose setup starts all of it in a single command:
 
-The same platform also runs as a managed service at [app.semantius.com](https://app.semantius.com).
+- **The [data catalog](/docs/data-catalog)**: modules, entities and fields, permissions and roles, business logic and audit logs, enforced inside PostgreSQL by the [pg_semantius](/docs/pg-semantius) extension.
+- **A REST API** generated from your model, with browsable API docs.
+- **The [web app](/docs/app)** people work in.
+- **Sign-in**, through the bundled [semantius-idp](/docs/self-hosted/semantius-idp) or your own identity provider.
 
-<RepoCard repo="semantius/semantius-self-hosted" license="MIT" description="The whole Semantius platform in one Docker Compose setup: database, API, web app and sign-in." />
+It is the same platform the managed service at [app.semantius.com](https://app.semantius.com) runs, without the hosted extras listed under [Self-Hosted and Managed Compared](#self-hosted-and-managed-compared).
+
+<RepoCard repo="semantius/semantius-self-hosted" license="MIT" description="The whole Semantius data platform in one Docker Compose setup: data catalog, API, web app and sign-in." />
 
 ## Which Setup Do You Need?
 
@@ -44,7 +49,7 @@ If you would rather not run it yourself, [app.semantius.com](https://app.semanti
 
 | | Self-hosted | Managed at app.semantius.com |
 | --- | --- | --- |
-| [Data catalog](/docs/data-catalog), API, web app | Included | Included |
+| [Data catalog](/docs/data-catalog), API, [web app](/docs/app) | Included | Included |
 | Sign-in | semantius-idp, or your own identity provider | Managed for you |
 | Operations, monitoring and updates | You | Semantius |
 | Backups and restores | You | Semantius |
@@ -108,18 +113,22 @@ The diagram shows the default variant, where semantius-idp handles both sign-in 
 
 ## Building Blocks
 
-The platform is assembled from separate open-source projects, each with its own repository and image. Three are Semantius projects; the others are well-known upstream projects, used unmodified.
+The platform is assembled from separate open-source projects, each with its own repository and image.
 
-| Building block | Role | Source | Image | Version setting |
-| --- | --- | --- | --- | --- |
-| PostgreSQL 18 with [pg_semantius](/docs/pg-semantius) | The database and the [data catalog](/docs/data-catalog) | [semantius/semantius](https://github.com/semantius/semantius) (MIT) | `ghcr.io/semantius/postgres` | `SEMANTIUS_DB_VERSION` |
-| Semantius web app | The app people work in | [semantius/semantius-app](https://github.com/semantius/semantius-app) (MIT) | `ghcr.io/semantius/semantius-app` | `SEMANTIUS_APP_VERSION` |
-| semantius-idp | Sign-in and accounts, plus a built-in API gateway for personal API keys. Used when you do not bring your own identity provider | [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT) | `ghcr.io/semantius/semantius-idp` | `SEMANTIUS_IDP_VERSION` |
-| PostgREST | The API server, generated from the database | [PostgREST/postgrest](https://github.com/PostgREST/postgrest) (MIT) | `postgrest/postgrest` | Not yet |
-| PgBouncer | The connection pooler | [pgbouncer/pgbouncer](https://github.com/pgbouncer/pgbouncer) (ISC) | `edoburu/pgbouncer` | Not yet |
-| Scalar | The API docs viewer | [scalar/scalar](https://github.com/scalar/scalar) (MIT) | `scalarapi/api-reference` | Not yet |
-| Caddy | The front door, and automatic HTTPS | [caddyserver/caddy](https://github.com/caddyserver/caddy) (Apache 2.0) | `caddy:2-alpine` | Not yet |
-| The stack itself | The templates, the generator and the ready-made variants | [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted) (MIT) | None | None |
+Three are Semantius projects:
+
+- **PostgreSQL 18 with [pg_semantius](/docs/pg-semantius)**: the database and the [data catalog](/docs/data-catalog). Source [semantius/semantius](https://github.com/semantius/semantius) (MIT), image `ghcr.io/semantius/postgres`.
+- **[Web app](/docs/app)**: the app people work in. Source [semantius/semantius-app](https://github.com/semantius/semantius-app) (MIT), image `ghcr.io/semantius/semantius-app`.
+- **[semantius-idp](/docs/self-hosted/semantius-idp)**: sign-in and accounts, plus a built-in API gateway for personal API keys, used when you do not bring your own identity provider. Source [semantius/semantius-idp](https://github.com/semantius/semantius-idp) (MIT), image `ghcr.io/semantius/semantius-idp`.
+
+The others are well-known upstream projects, used unmodified:
+
+- **PostgREST**: the API server, generated from the database. Source [PostgREST/postgrest](https://github.com/PostgREST/postgrest) (MIT), image `postgrest/postgrest`.
+- **PgBouncer**: the connection pooler. Source [pgbouncer/pgbouncer](https://github.com/pgbouncer/pgbouncer) (ISC), image `edoburu/pgbouncer`.
+- **Scalar**: the API docs viewer. Source [scalar/scalar](https://github.com/scalar/scalar) (MIT), image `scalarapi/api-reference`.
+- **Caddy**: the front door, and automatic HTTPS. Source [caddyserver/caddy](https://github.com/caddyserver/caddy) (Apache 2.0), image `caddy:2-alpine`.
+
+The stack itself (the templates, the generator and the ready-made variants) is [semantius/semantius-self-hosted](https://github.com/semantius/semantius-self-hosted) (MIT). The three Semantius images can be pinned to a release with the settings under [Versions](/docs/self-hosted/settings#versions). The upstream images have no version setting yet.
 
 The [`semantius` CLI](/docs/cli), which coding agents use, runs on your own machine rather than in the stack. Its source is [semantius/semantius-cli](https://github.com/semantius/semantius-cli) (MIT).
 

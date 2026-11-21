@@ -102,6 +102,24 @@
     margin: 0;
   }
 
+  /* Added around every markdown table by rehypeTableScroll in
+     astro.config.mjs, so a table wider than the column scrolls inside this
+     box instead of spilling out of the page. The vertical margin lives here
+     because a scroll box does not collapse margins with its children; the
+     table inside drops its own. position: relative keeps sr-only text in a
+     cell inside the box instead of widening the page. */
+  .prose .table-scroll {
+    position: relative;
+    overflow-x: auto;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .prose .table-scroll > table {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   .prose table {
     width: 100%;
     margin-top: 2rem;

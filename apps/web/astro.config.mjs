@@ -131,6 +131,37 @@ function remarkMermaid() {
 }
 
 /**
+ * Wraps every markdown table in `<div class="table-scroll">`, styled in
+ * `src/styles/typography.css` as a horizontal scroll box.
+ *
+ * A table cannot shrink below its content: long code spans such as image
+ * names or setting keys set its minimum width. Without a wrapper, a table
+ * wider than the prose column spills out of it, under the table of contents
+ * on desktop and off the side of the page on a phone, which makes the whole
+ * page scroll sideways. Inside the wrapper, only the table scrolls.
+ */
+function rehypeTableScroll() {
+    return function transformer(tree) {
+        function walk(node) {
+            if (!node.children) return;
+            for (let i = 0; i < node.children.length; i++) {
+                const child = node.children[i];
+                if (child.type === 'element' && child.tagName === 'table') {
+                    node.children[i] = {
+                        type: 'element',
+                        tagName: 'div',
+                        properties: { className: ['table-scroll'] },
+                        children: [child],
+                    };
+                }
+                walk(child);
+            }
+        }
+        walk(tree);
+    };
+}
+
+/**
  * Custom Astro integration that replaces astro-mermaid.
  * The mermaid -> <pre class="mermaid"> transform is handled by remarkMermaid
  * (registered in the top-level markdown processor). This integration adds the
@@ -570,6 +601,7 @@ export default defineConfig({
       rehypePlugins: [
         rehypeSlug,
         [rehypeAutolinkHeadings, autolinkHeadingsOptions],
+        rehypeTableScroll,
       ],
     }),
   },
