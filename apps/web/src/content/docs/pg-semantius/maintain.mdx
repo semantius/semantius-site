@@ -49,7 +49,7 @@ createdb -T template0 restored
 pg_restore -d restored semantius.dump
 ```
 
-This works because `semantius.migrate()` creates your tables as ordinary database objects rather than as parts of the extension. Plain text dumps piped through `psql` work too, as do parallel restores and single-transaction restores.
+This works because `semantius.migrate()` creates your tables as ordinary database objects rather than as parts of the extension. Plain text dumps piped through `psql` work too, as do parallel restores and single-transaction restores. Custom fields you add to core tables survive a backup and restore as well, because they are just columns on ordinary tables.
 
 Four things worth knowing before you need them:
 

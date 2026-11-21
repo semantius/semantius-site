@@ -1,7 +1,7 @@
 ---
 title: 'use-semantius Skill'
 navTitle: 'Skill'
-description: 'The use-semantius agent skill: a drop-in instruction set that teaches an agent to drive the Semantius CLI correctly.'
+description: 'The use-semantius agent skill: a drop-in instruction set that teaches an agent to drive the Semantius CLI correctly, and to build, review and change modules.'
 order: 3
 ---
 
@@ -9,7 +9,7 @@ import SkillInstall from '~/components/common/SkillInstall.astro';
 
 `use-semantius` is an **agent skill** that ships alongside the [Semantius CLI](/docs/cli). Where the CLI gives an agent the ability to call Semantius, this skill teaches the agent **how to use it well**: which layer to reach for, which tool to pick, and which mistakes to avoid.
 
-It is the foundational skill that every other workflow (schema editing, record CRUD, analytics) builds on. Install it whenever you want a coding agent to operate Semantius autonomously from a shell.
+It covers the whole of the work on a Semantius instance: building a module from a description, reviewing or changing an existing one, setting up roles and permissions, working with records, and answering analytical questions. Install it whenever you want a coding agent to operate Semantius autonomously from a shell.
 
 ## Installation
 
@@ -21,9 +21,22 @@ Supports [OpenCode, Claude Code, Codex, Cursor, and 51 more](https://github.com/
 
 ## When the Skill Triggers
 
-The skill description tells the host agent to engage it whenever a task involves the Semantius platform via the CLI: creating, reading, updating or deleting entities, fields, modules, permissions, roles, users or business records; building or querying a semantic data model; setting up RBAC; importing data; running analytical queries; or writing shell or Bun scripts that chain `semantius` calls together.
+The skill description tells the host agent to engage it whenever a task involves the Semantius platform: building something new that needs its own records, however it is phrased (a module, an app, a tracker, "a way to see and manage X"); reviewing or auditing an existing module; creating, reading, updating or deleting entities, fields, modules, permissions, roles, users or business records; modeling kinds of one thing, such as emails and calls as kinds of activities; setting up roles and permissions; importing data; running analytical queries; linking to a record, list or module in the app; sending a transactional email; or writing shell or Bun scripts that chain `semantius` calls together.
 
 In practice, any prompt that mentions Semantius data or schema work is enough to bring it in.
+
+## Building and Reviewing Modules
+
+Asked to build something that needs its own records, the agent models it on the leading products in the domain, and:
+
+1. compares each new entity with the entities already on the instance, and asks before creating one that may hold the same thing;
+2. shows you the list of entities and waits for your confirmation before the first write;
+3. creates the module with its read, manage and admin permissions and its viewer, manager and admin roles, then the entities, fields and relationships, following the [Conventions](/docs/conventions);
+4. adds the restricted steps and roles the work needs, such as an approval, as described in [Workflow States, Gates and Access](/docs/workflow-and-access);
+5. asks whether you want sample data, and adds it only when you say yes;
+6. ends with a link to the module and a summary of each role, what it can do and see, and each restricted step.
+
+Asked to review an existing module, it reads the whole module, checks it against the same conventions, suggests what the leading products have that the module lacks, and reports. Nothing is written until you pick what to apply.
 
 ## The Three-Layer Mental Model
 
@@ -82,7 +95,7 @@ The skill bakes in a small set of rules that prevent the most common mistakes:
 3. **Never recreate auto-generated fields.** `id`, `label`, `created_at`, `updated_at` and the entity's `label_column` field are created automatically by `create_entity`.
 4. **`reference_table` mandates relational format.** Any field that points at another table must use `format: "reference"` (independent lifecycle) or `format: "parent"` (ownership / cascade delete).
 5. **Warn before destructive changes.** Renaming `table_name` or `field_name`, deleting entities or fields: ask the user first.
-6. **Link after schema changes.** When schema changes, hand back the UI link in the form `https://tests.semantius.app/{module_name}/{table_name}` so the user can verify visually.
+6. **Link to the result.** After a schema change or a record operation, hand back a link to the app in the form `{ui_baseurl}/{module_slug}/{table_name}`, with `/{id}` added for one record, so the user can check it. `ui_baseurl` is the instance's own address, read from the signed-in user's profile, and `module_slug` is the module's lowercase slug, never its name.
 
 ## Reference Material
 
@@ -90,21 +103,34 @@ The skill ships with a small library of focused reference files that the agent l
 
 | Reference | Purpose |
 | --- | --- |
-| `cli-usage.md` | CLI commands, shell patterns, chaining, installation. |
-| `data-modeling.md` | Layer 1: entities, fields, modules, relationships, safe evolution. |
-| `rbac.md` | Layer 1: permissions, roles, user assignments, hierarchy. |
-| `crud-tools.md` | Layer 1 typed tools and Layer 2 `postgrestRequest` / `sqlToRest`. |
+| `preflight.md` | The checks before any work: the CLI is installed and signed in, and Bun and jq are available. |
+| `cli-usage.md` | CLI commands, credentials and hosts, shell patterns, chaining, installation, moving entities and modules between hosts. |
+| `build-module.md` | Building something new: what it delivers, the sample-data question, verification and the final response. |
+| `review-module.md` | Reviewing an existing module: what to read and check, the report, and applying what you pick. |
+| `data-modeling.md` | Layer 1: modules, entities, fields, relationships, enum values and labels, safe evolution. |
+| `entity-families.md` | Layer 1: subtypes and extensions (`is_a` and `has_a`). |
+| `jsonlogic.md` | Layer 1: computed fields, validation rules, the extension operators, lookups across entities, `input_type_rule`. |
+| `rollup-fields.md` | Layer 1: rollup fields over child records. |
+| `select-rule.md` | Layer 1: which rows a user may read, with `select_rule`. |
+| `rbac.md` | Layer 1: permissions, roles, user assignments, the hierarchy and restricted steps. |
+| `crud-tools.md` | Layer 1 typed tools and Layer 2 `postgrestRequest` / `sqlToRest`, bulk operations, reading the audit logs. |
+| `seed-data.md` | Sample records for a new module. |
 | `cube-queries.md` | Layer 3: query DSL, date filtering, analysis modes. |
 | `cube-tools.md` | Layer 3: `discover`, `validate`, `load`, `chart` signatures. |
-| `webhook-import.md` | Bulk import of records into Layer 2 via signed webhook. |
+| `webhooks.md` | Receiving records from external systems through signed webhook receivers. |
+| `muse-questions.md`, `dot-questions.md` | How to ask questions in agents that have no question tool. |
 
-The agent does not read all of them upfront. It picks the right reference based on the task: data modeling work loads `data-modeling.md`, an analytical question loads `cube-queries.md`, and so on.
+Beside them, the skill ships scripts that the agent runs rather than reads, such as the checks every schema write goes through. The agent does not read all of the references upfront. It picks the right reference based on the task: data modeling work loads `data-modeling.md`, an analytical question loads `cube-queries.md`, and so on.
 
 ## What You Get in Practice
 
 With `use-semantius` installed, you can hand a coding agent prompts like:
 
-> "Add a `status` field to the orders entity, allowed values active, archived, and refunded, default active. Create a permission so only managers can change it."
+> "Build a module to track our software licenses and when they renew."
+
+> "Orders should move through draft, confirmed, shipped and canceled, starting as draft, and only shift leads may cancel one."
+
+> "Review the Service Desk module and tell me what it is missing."
 
 > "List the top ten customers by total order value last quarter."
 
@@ -116,4 +142,4 @@ The agent picks the correct layer, follows the read-before-write and schema-firs
 
 - **[CLI Overview](/docs/cli)**: why the CLI exists and where it fits.
 - **[The semantius command](/docs/cli/command)**: the underlying surface this skill drives.
-- **[Agent Skills Overview](/docs/agent-skills)**: the broader set of skills (Business Analyst, Schema Editor, RBAC Configurator, Deployer, Optimizer) that build on `use-semantius`.
+- **[Agent Skills Overview](/docs/agent-skills)**: the other skills, `semantius-importer` for CSV files and `semantius-transfer` for moving modules between hosts.

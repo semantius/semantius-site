@@ -4,19 +4,17 @@ description: 'Agent Skills for working with Semantius models from coding agents.
 order: 4
 ---
 
-**Agent Skills** let coding agents do real work on your Semantius platform: generate models, evolve schemas, configure RBAC, and deploy changes. They install into any agent that supports the Agent Skills format.
+**Agent Skills** let coding agents do real work on your Semantius platform: build modules, evolve schemas, set up roles and permissions, import data, and move modules between hosts. They install into any agent that supports the Agent Skills format.
 
 ## What Skills Do
 
 Each skill is a structured, repeatable procedure an agent can invoke:
 
-- **Business Analyst**: build a custom model from scratch by interviewing the domain.
-- **Schema Editor**: add, rename, or refactor entities and fields without breaking existing data (Customize or Extend flow).
-- **RBAC Configurator**: define roles, permissions, and access policies.
-- **Deployer**: roll changes forward to a live environment when you're ready.
-- **Optimizer**: reverse-engineer a live module back into a markdown spec to audit and refine.
+- **[use-semantius](/docs/cli/use-semantius)**: build a module from a description, review or change an existing one, set up roles and permissions, work with records, and answer analytical questions.
+- **semantius-importer**: import a CSV file. It maps the columns to field formats, creates the entity or adds to an existing one, and loads the rows.
+- **semantius-transfer**: copy modules and tables, with or without their records, to another host or into a file you can restore.
 
-Skills give agents a vocabulary and a workflow, instead of leaving them to improvise. The artifact they produce is a semantic model file.
+Skills give agents a vocabulary and a workflow, instead of leaving them to improvise. They work on your instance directly, and follow the [Conventions](/docs/conventions).
 
 ## Installation
 
