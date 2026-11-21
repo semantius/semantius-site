@@ -1,0 +1,260 @@
+---
+title: 'Entities and Fields'
+description: 'How an entity becomes a database table with an API, the columns that describe entities and fields, the field formats and relationships, and what each change does to the data.'
+order: 1
+---
+
+An entity is a kind of record, such as a ticket or an order. Saving one in `entities` creates a real PostgreSQL table, its API endpoint at `/<table_name>`, its access policies and its schema. Each row in `fields` is a column of that table. A change to either is applied to the table in the same transaction, so the model and the database cannot drift apart.
+
+Creating, changing and deleting entities and fields takes the `admin` permission.
+
+## Creating an entity
+
+```bash
+semantius call crud create_entity '{"data":{"module_id":1001,"table_name":"tickets","singular_label":"Ticket","plural_label":"Tickets","description":"Customer support requests","icon_name":"ticket"}}'
+```
+
+The new table starts with four columns, each with its row in `fields`:
+
+| Column | What it holds |
+|---|---|
+| `id` | The record's key. Its type depends on the entity's `id_type`; see [Keys](#keys). |
+| `label` | The record's name, shown wherever the record is listed or linked. Required. |
+| `created_at`, `updated_at` | Set by the database. `updated_at` moves on every change. |
+
+The table also gets a full-text `search_vector` over its searchable fields (the label is searchable from the start), row-level security built from the entity's [permissions](/docs/permissions), and its endpoint, `/tickets`. The API picks up the change at once.
+
+- **Every record needs a label.** The label field is required, so an insert without one is refused (90258), unless a [computed field](/docs/business-logic/extensions#computed_fields) writes it. Junction records need one too.
+- **There is no `created_by`.** Add a `reference` field to `users` with the default `$user_id` to record who created a record.
+
+## The entity record
+
+| Column | Meaning |
+|---|---|
+| `table_name` | The table's name and the API path. `a-z`, `0-9` and `_`, starting with a letter, at most 41 bytes (90273), and not ending in `_ext`. A leading `_` is reserved (90271). |
+| `singular`, `singular_label` | Derived from `table_name` when left empty: `tickets` gives `ticket` and `Ticket`. |
+| `plural_label` | The plural name the app shows, such as `Tickets`. Not derived. |
+| `plural` | Always equal to `table_name`, whatever you send. |
+| `description` | What the entity is. It becomes the table's comment, which the API shows. |
+| `module_id` | The [module](/docs/modules) the entity belongs to. Required. |
+| `view_permission`, `edit_permission` | The permissions to read and to write its records. Defaults `public:read` and `admin`. See [How entities use permissions](/docs/permissions#how-entities-use-permissions). |
+| `icon_name`, `name_sort` | The entity's icon, and its sort key in the app's sidebar. |
+| `id_type`, `id_column`, `id_prefix`, `id_refentity` | The key. See [Keys](#keys). |
+| `label_column`, `label_column_label` | The field that is the record's label (default `label`), and that field's title. |
+| `label_parent` | A `reference` or `parent` field whose record's label prefixes this one: `Acme › Q3 renewal`. |
+| `order_column` | The name of an integer column for manual ordering. The table gets it, and each new record takes the last value plus 10. Changing or clearing it drops the old column and its values. |
+| `edit_mode` | Where the app opens a record to edit it: `auto` (the default), `sidebar`, `modal` or `page`. |
+| `entity_type` | `operational_workflow`, `operational_record`, `catalog`, `junction`, `computed` or `unclassified` (the default). Only `junction` changes behavior: see [Relationships](#relationships). |
+| `managed` | Whether Semantius owns the table. Default `true`. See [Managed entities](#managed-entities). |
+| `audit_log` | Whether changes to its records are logged. Default `false`. See [Audit Logs](/docs/audit-logs). |
+| `cube_mode` | `auto` (the default) or `disabled`: whether an analytics cube is generated for the entity. |
+| `computed_fields`, `validation_rules`, `select_rule` | The entity's [business logic](/docs/business-logic). |
+| `catalog_entity_code`, `catalog_owner_module`, `catalog_entity_aliases` | The catalog blueprint the entity came from. The code is write-once (90201), and aliases can only be added (90213). |
+
+The platform sets `searchable` (true when any field is searchable), `is_child` (true when the entity has a `parent` field), `created_at` and `updated_at`. A value sent for them is ignored.
+
+### Keys
+
+The key is chosen when the entity is created: `id_type` (90233) and `id_column` (90253) cannot change afterwards.
+
+| `id_type` | Key column | Filled by |
+|---|---|---|
+| `auto_increment` (default) | `BIGINT` | The database, counting up. |
+| `bigint` | `BIGINT` | The client. |
+| `text` | `TEXT` | The client. |
+| `uuid` | `UUID` | The database, as a UUIDv7. |
+| `typeid` | A TypeID, such as `acct_01h455vb4pex5vsknk084sn02q` | The database, with the entity's `id_prefix`. |
+| `is_a`, `has_a` | The TypeID of the base record | See [Subtypes and extensions](#subtypes-and-extensions). |
+
+- **A record's key never changes** (90236). Sending the unchanged key back is allowed.
+- **`id_prefix`** is lowercase letters and `_`, starting and ending with a letter, and unique among entities. A `typeid` entity may change its prefix later; existing ids keep the old one. An id a client supplies must carry the current prefix (90237).
+- **Explicit ids in an `auto_increment` entity** are accepted. Call `/rpc/fix_id_sequence` with `p_table` afterwards, so the counter continues above them.
+
+## Fields
+
+```bash
+semantius call crud create_field '{"data":{"table_name":"tickets","field_name":"status","title":"Status","format":"enum","enum_values":["open","pending","closed"],"default_value":"open","input_type":"required"}}'
+```
+
+| Column | Meaning |
+|---|---|
+| `id` | `<table_name>.<field_name>`, such as `tickets.status`. Generated, and it follows a rename. |
+| `table_name` | The entity. Cannot change (90221). |
+| `field_name` | The column's name: `a-z`, `0-9` and `_`, starting with a letter, unique in the entity. A leading `_` is reserved (90224), and the length is limited by the names generated from it (90276). |
+| `title` | The label in forms and grids. Required. |
+| `description` | What the field holds. It becomes the column's comment. |
+| `format` | What the field holds and how it is stored. Default `text`. See [Formats](#formats). |
+| `input_type` | `default`, `required`, `readonly`, `disabled` or `hidden`. `required` is enforced by the database; see [Required fields](#required-fields). |
+| `default_value` | The value a new record gets. See [Defaults](#defaults). |
+| `field_order` | The field's position in forms and grids. Left at `0`, it is set to the last position plus 10. |
+| `width` | The field's width in forms: `default`, `s`, `m` or `w`. |
+| `searchable` | Adds the field to the entity's full-text search. |
+| `unique_value` | No two records may hold the same value. Empty values (null, and `''` for text) are not compared. Only single fields: there is no uniqueness across several fields. |
+| `enum_values` | For an `enum`, the allowed values: a list of strings, or of objects `{"value", "label", "description", "color", "icon"}`. |
+| `precision` | Decimal places of a `number`, 0 to 18. Default 2. |
+| `reference_table`, `reference_delete_mode` | The entity a `reference` or `parent` field points at, and what happens when that record is deleted. See [Relationships](#relationships). |
+| `relationship_label` | The verb for the relationship in diagrams and navigation. Default `has`. |
+| `singular_label_parent`, `plural_label_parent` | How the parent's list of children names these records. |
+| `is_pk` | Whether the field is the key. Cannot change (90222). |
+| `ctype` | Set by the platform. See [Derived types](#derived-types). |
+| `cube_type` | The field's role in the entity's analytics cube: `dimension` or `measure`, `auto` to let the platform choose, or `disabled` to leave it out. |
+| `catalog_field_code` | The catalog field the field came from. Write-once (90202). |
+| `input_type_rule`, `rollup` | An [input mode rule](/docs/business-logic/extensions#input_type_rule) and a [rollup](/docs/business-logic/rollups) definition. |
+
+There is no `required` column: a field is required when its `input_type` is `required`.
+
+### Required fields
+
+The database refuses a record (90258) whose required field holds no value:
+
+- null, for the formats that allow it;
+- blank or whitespace-only text, and `''` for an `enum`;
+- `{}`, `[]`, `null` or `""` for JSON;
+- empty binary data, and `0` for a `rating`.
+
+Numbers, booleans and durations always hold a value. A `parent` field needs no check of its own: a record without its parent is refused by the reference. A field with any `input_type_rule` gets no database check, since the rule decides when it is required.
+
+### Defaults
+
+| `default_value` | A new record gets |
+|---|---|
+| A number, `true`, `false` or text | That value, converted to the column's type. |
+| `today`, `tomorrow`, `yesterday`, `now`, `$today`, `$now` | On a `date` or `date-time` field, the day or moment of each insert, in UTC. A `time` field takes `now` and `$now` only. Elsewhere they are refused (90284). |
+| `$user_id` | On a `reference` or `parent` field to `users`, the signed-in user. Elsewhere it is refused (90283). |
+| `CURRENT_TIMESTAMP`, `CURRENT_DATE`, `now()`, `gen_random_uuid()` and a few other SQL functions | The function's result at each insert. |
+| Empty | The empty value of the format: see [Formats](#formats). |
+
+A default holds at most 200 characters, and no `;`, `--`, `/*` or control characters. Changing a default affects new records only.
+
+## Formats
+
+The format decides the column's type, and with it what the database accepts. Every column is `NOT NULL` except dates, times, UUIDs and references: an empty field holds its format's empty value.
+
+| Formats | Column type | Empty value |
+|---|---|---|
+| `text`, `multiline`, `code`, `html`, `jsonata`, `password`, `color`, `icon`, `enum`, `email`, `idn-email`, `url`, `uri`, `uri-reference`, `iri`, `iri-reference`, `uri-template`, `hostname`, `idn-hostname`, `ipv4`, `ipv6`, `regex`, `json-pointer`, `json-pointer-uri-fragment`, `relative-json-pointer`, `byte`, `string` | `TEXT` | `''` |
+| `int32`, `integer`, `rating` | `INTEGER` | `0` |
+| `int64` | `BIGINT` | `0` |
+| `float`, `double` | `REAL`, `DOUBLE PRECISION` | `0` |
+| `number` | `NUMERIC(18, precision)` | `0` |
+| `boolean` | `BOOLEAN` | `false` |
+| `json`, `jsonlogic`, `object`, `array` | `JSONB` | `{}`, or `[]` for `array` |
+| `date`, `time`, `date-time` | `DATE`, `TIME`, `TIMESTAMPTZ` | null |
+| `duration` | `INTERVAL` | `0` |
+| `uuid` | `UUID` | null |
+| `binary` | `BYTEA` | Empty |
+| `reference`, `parent` | The type of the target entity's key | null for a `reference`; a `parent` always holds one |
+
+- **The database checks types, not syntax.** It refuses a value that is not a date, a number, a UUID or JSON, and an `enum` value outside `enum_values` (23514). It does not check that an `email`, `url` or `html` value is well formed, that a `rating` is between 0 and 5, or that a `jsonlogic` value is a valid rule. The app checks those in its forms.
+- **`password` is stored as plain text**, like any text field.
+- **`time` has no time zone.** A `date-time` is stored as a point in time.
+
+## Relationships
+
+A `reference` field links a record to one record of `reference_table`, and may be empty. A `parent` field makes the record belong to its parent: it is required, the parent lists the record among its children, and the entity becomes a child entity, which the app leaves out of the sidebar. Both create a foreign key with an index, and both follow a change of the target's key.
+
+`reference_delete_mode` decides what deleting the target record does:
+
+| Mode | Deleting the target | Allowed on |
+|---|---|---|
+| `restrict` (default) | Is refused while records point at it. | Both. |
+| `clear` | Empties the field. | `reference` fields that are not required (90257). Not on `parent` (90282). |
+| `cascade` | Deletes the records that point at it too. | Both, except the fields of an `is_a` entity (90249). |
+
+- **A cascade does not check the user's permissions on the children.** A child with permissions of its own, such as a signed document, is better a `parent` with `restrict`, so each child is deleted under its own permission.
+- **Many to many** goes through a junction entity with two `parent` fields, one to each side. Set its `entity_type` to `junction`. Its records need a label too, typed or computed.
+- **A field may point at its own entity**, for a tree such as tasks and subtasks.
+- **A reference to an `is_a` entity** accepts only records of that type. A reference to the root of the family accepts any of them.
+
+Every `reference` and `parent` field also has a read-only `<field_name>_label` column with the target's label, and every entity a `_label` column with the record's full label (`label_parent` included). Name them in `select`, since `*` leaves them out:
+
+```bash
+semantius call crud postgrestRequest '{"method":"GET","path":"/tickets?select=id,label,customer_id,customer_id_label"}'
+```
+
+A label the caller may not read falls back to what they may: a hidden parent leaves only the record's own label.
+
+## Subtypes and extensions
+
+Entities with `id_type` `is_a` or `has_a` share their records with a base entity, named by `id_refentity`. The chain ends at a root with `id_type` `typeid`.
+
+- **`is_a`** makes a subtype. Each record is of exactly one type, told by its id's prefix: a `parties` root can have `people` and `organizations` as subtypes. Writing through the subtype writes every level, and an update or delete through the root reaches the record's own type, so every level's rules and permissions apply. Reading the root lists every record, with the root's fields only.
+- **`has_a`** makes an optional extension: a base record has one or none. An insert without an id creates the base record too; an insert with the id of an existing base record attaches to it. Deleting an extension detaches it and keeps the base record, and a base record with an extension cannot be deleted until the extension is (90251).
+
+The subtype's own fields live in a table named `<table_name>_ext`, and `/<table_name>` is a view over every level. Write through the entity, never to the `_ext` table (90244).
+
+- The label comes from the root (90242), and field names must be unique along the chain (90243).
+- The base is fixed once set (90241), and so is the prefix of an `is_a` entity (90245).
+- These entities cannot have an `order_column` or a rollup, and the fields of an `is_a` entity cannot `cascade` (90249).
+- A subtype or extension that still has records cannot be deleted (90247), nor can an entity that others are based on (90248).
+
+## Changing an entity
+
+- **Renaming** (`table_name` in an update) renames the table and keeps its records. The API path changes with it. Fields that point at the entity follow, and so do the entity names in `set_record` rules and rollup definitions. `users`, `roles` and `permissions` cannot be renamed (90286).
+- **`view_permission`, `edit_permission` and `select_rule`** rebuild the access policies at once.
+- **`label_column`** moves the label to another field. A key, a timestamp or a rollup field cannot be the label (90270).
+- **Deleting** an entity drops its table with every record in it. It is refused while a field of another entity points at it, whatever that field's delete mode (90260), and in the cases listed under [Subtypes and extensions](#subtypes-and-extensions).
+
+## Changing a field
+
+- **Format.** A format can change only to one with the same column type: `text` to `email` or `enum`, `int32` to `rating`. Anything else, `int32` to `int64` or `text` to `reference`, is refused (90223): drop the field and create it again.
+- **Required.** Making a field required, or adding a required field to a table that has records, is refused while records would break the check (90259). Give a new required field a default that passes.
+- **Enum values.** Removing a value that records still hold is refused (23514).
+- **Precision.** Changing it rewrites the column, and lowering it rounds the stored values.
+- **Renaming** renames the column and keeps its values. It is refused while a rule names the field (90275), because rules are never rewritten: change the rule first. Rollup definitions are rewritten.
+- **Deleting** drops the column with its values. It is refused while a rollup depends on the field (90266). A rule that reads a deleted field is not refused and reads null.
+- **Core fields** (the key, the label and the timestamps) cannot be deleted (90217), renamed (90218, the label excepted), or given a new format (90219) or default (90220, the label excepted).
+
+### Derived types
+
+`ctype` tells what kind of column a field is. The platform sets it; a client cannot (90214).
+
+| `ctype` | The field is |
+|---|---|
+| `''` | An ordinary field. |
+| `id` | The key. |
+| `label` | The label column. |
+| `computed_label` | The label column, written by a computed field. |
+| `audit` | `created_at` or `updated_at`. |
+| `core` | A column of the platform's own tables. |
+| `computed` | Written by a [computed field](/docs/business-logic/extensions#computed_fields). Forms show it disabled. |
+| `rollup` | A [rollup field](/docs/business-logic/rollups). |
+
+## Managed entities
+
+A managed entity (`managed` is `true`, the default) has a table that Semantius owns: it creates it, applies every change, and enforces the permissions and rules. An unmanaged entity is metadata only: no table is created, rules are stored but not enforced, and deleting the entity leaves the table alone.
+
+Setting `managed` to `true` creates the table, or adopts a table of that name that already exists, if its key matches the `id_type` (90235). Adopting adds row-level security, the access policies and any missing columns. A required check goes only onto fields whose records already comply; the others are reported as warnings. The [audit logs](/docs/audit-logs) cannot become managed.
+
+## API
+
+| Call | What it does |
+|---|---|
+| `/entities` | The entities, keyed by `table_name`, through `create_entity`, `read_entity`, `update_entity` and `delete_entity`. |
+| `/fields` | The fields, keyed by `id` (`tickets.status`), through `create_field`, `read_field`, `update_field` and `delete_field`. |
+| `/<table_name>` | The entity's records, through `postgrestRequest`. |
+| `/rpc/get_schema` | The schema of `p_table_name`: its entity row, its fields as `properties` with their `inputMode`, `width`, `ctype` and references, and its children. Unknown entities and hidden ones both answer `404`. |
+| `/rpc/get_schemas` | The schemas of `p_table_names`, a comma-separated list. |
+| `/rpc/get_schema_children` | The child entities of `p_table_name`: the entities with a `parent` field to it. |
+| `/rpc/get_record_by_id` | One record of `p_entity_name` by `p_id`, whatever its key type. |
+| `/rpc/fix_id_sequence` | Moves the key counter of `p_table` above its highest id. |
+
+The schema's `required` list is not the database's: read each property's `inputMode` to know whether a field is required.
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `90223` | A format change that would change the column type. |
+| `90236` | A record's key cannot change. |
+| `90257`, `90282` | `clear` on a required reference, or on a `parent`. |
+| `90258` | A required field holds no value. |
+| `90259` | A field cannot become required while records lack a value. |
+| `90260` | The entity is still referenced by a field of another entity. |
+| `90275` | The field is named by a rule. |
+| `90283`, `90284` | A `$user_id` or relative-date default on a field that cannot take it. |
+| `23505` | A duplicate: a `unique_value` field, a field name, a table name or an `id_prefix`. |
+| `23514` | A value outside `enum_values`, or a name that breaks its pattern. |
+| `23503` | A reference to a record that does not exist. |
+
+The codes that business logic raises are listed under [JsonLogic extensions](/docs/business-logic/extensions#errors).

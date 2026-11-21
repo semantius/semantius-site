@@ -1,0 +1,117 @@
+---
+title: 'Audit Logs'
+description: 'How Semantius records changes to the records of audited entities and every schema change in two append-only logs that only administrators can read.'
+order: 1
+---
+
+Semantius keeps two audit logs inside the database:
+
+| Log | What it records | When |
+|---|---|---|
+| `audit_record_logs` | Every insert, update and delete of a record, with the whole row before and after. | For entities whose `audit_log` is on. |
+| `audit_ddl_logs` | Every schema change: tables, columns, functions, triggers, policies and grants. | Always. |
+
+Both are written by database triggers, in the same transaction as the change they record. A write that is refused or rolled back leaves no row, and a change cannot commit without its row: if the log write fails, the change fails with it. No client can add or edit a log row, so the logs are evidence, not a record a client keeps.
+
+## What is logged
+
+Logging records is **opt-in per entity**. An entity's `audit_log` defaults to `false`. Turn it on with an update of the entity:
+
+```bash
+semantius call crud update_entity '{"table_name":"orders","data":{"audit_log":true}}'
+```
+
+Changing `audit_log` takes the `admin` permission, the edit permission of `entities`. Turning it off stops the logging and keeps every row already written; the update of the `entities` row that turned it off is itself logged.
+
+The platform's own entities, which hold the model and the access rules, are logged from the start: `modules`, `entities`, `fields`, `users`, `roles`, `permissions`, `user_roles`, `role_permissions`, `user_permissions` and `permission_hierarchy`. Every change to the schema and to who may do what is on record, whatever you set on your own entities.
+
+- **One row per record.** Inserts, updates and deletes each log every record they touch, including when one request writes many. An upsert logs an insert or an update, depending on what it did.
+- **Cascades are logged.** A delete that cascades to child records, or a `clear` that empties their reference, logs a row on each audited child table, under the user who deleted the parent.
+- **Reads are never logged.**
+- **An update that changes nothing is not logged.** The comparison leaves out `updated_at`, every [rollup field](/docs/business-logic/rollups) and `users.last_seen`, so a write that only moves those logs nothing. When an update is logged, its row images still carry them.
+- **Recalculations are not logged.** A parent whose rollup total moves because a child changed writes no row of its own; the child's write is logged on the child's table if that entity is audited. Nor is the pass that brings existing records in line after a [computed field](/docs/business-logic/extensions#computed_fields) rule or a rollup definition is saved. The save itself is logged, as an update of the `entities` or `fields` row.
+
+## The record log
+
+Each row of `audit_record_logs` describes one record change:
+
+| Column | Meaning |
+|---|---|
+| `id` | A number that grows with every row. Order by it: it is the order the changes were written. |
+| `op` | `INSERT`, `UPDATE`, `DELETE` or `TRUNCATE`. |
+| `ts` | The start of the transaction, so every row written by one request carries the same time. |
+| `user_id` | The `users.id` of the user who made the change. `0` when there was none, for example during a migration. |
+| `table_name`, `table_schema` | The table the record was written to, as it was named at the time. |
+| `table_oid` | The table's database id. It stays the same when the entity is renamed. |
+| `record_pk` | The record's primary key as text. For an update, the key after the change. |
+| `record_id`, `old_record_id` | Stable ids of the record after and before the change, derived from its table and primary key. |
+| `record` | The whole row after an insert or update. |
+| `old_record` | The whole row before an update or delete. |
+| `db_role`, `is_superuser` | The database role of the connection, and whether it was a superuser. |
+| `client_addr` | The address of the database client. For a request through the API this is the API server, not the user's browser. |
+
+Rows hold whole records, not differences: compare `old_record` with `record` to see what changed. The images include system columns such as `created_at` and `updated_at`. A `TRUNCATE` row carries no ids and no images; only the database owner can truncate a table, never a request.
+
+## The schema log
+
+`audit_ddl_logs` records every schema change in the platform's schemas, whatever the entities' `audit_log`: creating, altering and dropping tables, columns, functions, triggers and policies, and every grant and revoke. Saving an entity or a field changes the schema (a new field adds a column), so a model change usually leaves rows in both logs: the `entities` or `fields` row in the record log, and the statements it caused here.
+
+| Column | Meaning |
+|---|---|
+| `id` | A number that grows with every row. |
+| `event_time` | The start of the transaction. |
+| `user_id` | The `users.id` of the user who made the change, or `0`. |
+| `command_tag` | The kind of statement, for example `CREATE TABLE` or `ALTER TABLE`. |
+| `object_type`, `object_identity` | What changed, for example `table` and `public.orders`. |
+| `query_text` | The statement, cut at 8,192 characters. |
+
+Temporary objects and the scripts of database extensions are not logged.
+
+## Reading the logs
+
+Only users with the `admin` permission can read either log. Anyone else gets an empty result, not an error, so nobody else sees history, not even of the records they created. An administrator sees every row of every table, whatever the entity's `view_permission` or [`select_rule`](/docs/business-logic/extensions#select_rule): the log sits outside the row rules of the records it describes.
+
+Both logs are ordinary endpoints, `/audit_record_logs` and `/audit_ddl_logs`, and the app lists them in the administration module as Audit Logs and Audit Logs Database. There is no tool of their own: read them with `postgrestRequest`. The history of one record, oldest first:
+
+```bash
+semantius call crud postgrestRequest '{"method":"GET","path":"/audit_record_logs?table_name=eq.orders&record_pk=eq.42&order=id.asc&select=id,op,ts,user_id,old_record,record"}'
+```
+
+The schema changes to one table, newest first:
+
+```bash
+semantius call crud postgrestRequest '{"method":"GET","path":"/audit_ddl_logs?object_identity=eq.public.orders&order=id.desc"}'
+```
+
+- **Users.** `user_id` is not a reference, so it cannot be embedded in the query. Look the users up in a second request, `/users?id=in.(7,12)`.
+- **Order.** Sort by `id`, not by `ts`: the rows of one transaction share their time.
+- **Filter on the record.** `record_pk`, `record_id` and `old_record_id` are indexed; `table_name` on its own is not, so a filter on the table alone reads the whole log.
+
+## Following a record
+
+- **A changed primary key.** An update row carries the id before the change in `old_record_id` and the id after it in `record_id`, so the history continues through `or=(record_id.eq.<id>,old_record_id.eq.<id>)`.
+- **A renamed entity** keeps its log and its `table_oid`, but the rows written before the rename keep the old `table_name`. Filter on `table_oid` to read across the rename.
+- **A renamed field** keeps its old name as the key in the rows written before the rename.
+- **An `is_a` or `has_a` entity** stores its own fields in the `<entity>_ext` table, and that is the table its `audit_log` logs. The fields it shares with its base are stored in the base entity's table and logged only when the base entity has `audit_log` on. Read both tables, for example `table_name=in.(parties,organizations_ext)`.
+
+## When an entity is deleted
+
+Deleting an entity drops its table with its records. No delete row is written for each record. The drop is in the schema log, and the `entities` and `fields` rows that went with it are in the record log. The history of the records stays. An entity created later under the same name gets a new table: tell the two histories apart by `table_oid`.
+
+## Pruning
+
+There is no retention period and no automatic purge. An administrator prunes the log by deleting rows, for example everything before 2025:
+
+```bash
+semantius call crud postgrestRequest '{"method":"DELETE","path":"/audit_record_logs?ts=lt.2025-01-01"}'
+```
+
+A delete by anyone else removes nothing, without an error. Pruning is not itself logged.
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `42501` | An insert or update of a log row. No one may make either through the API. |
+| `90601` | A table without a primary key cannot be audited. Every table Semantius creates has one. |
+| `90602` | `audit_record_logs` and `audit_ddl_logs` cannot be made managed entities: that would let holders of their edit permission write to the log. |

@@ -1,0 +1,124 @@
+---
+title: 'Modules'
+description: 'How a module groups the entities, permissions and roles of one application, who can see it, how its version counts model changes, and what deleting it removes.'
+order: 1
+---
+
+A module groups the entities, permissions and roles of one application, such as a CRM or a helpdesk. In the app, each module is a tile on the home page and a section of its own, with the module's entities in the sidebar. A [semantic model](/docs/models) usually becomes one module.
+
+## The module record
+
+| Column | Meaning |
+|---|---|
+| `module_name` | The module's name, unique. Declarative imports find the module again by it. |
+| `module_slug` | The module's identifier in URLs: the app opens an entity at `/<module_slug>/<table_name>`. Unique, lowercase, `a-z`, `0-9`, `-` and `_`, starting with a letter or digit (90702). Left empty, it is derived from the name: `Sales & Marketing (EU)` becomes `sales-marketing-eu`. |
+| `description` | What the module covers. |
+| `view_permission` | The permission needed to see the module. Default `user:read`. |
+| `icon_name`, `logo_color` | The icon (a [Lucide](https://lucide.dev/icons) name in kebab-case, or a URL) and the color of the module's tile. |
+| `home_page` | Where the module's tile leads. The default, `/`, opens the module's own page. |
+| `dashboard_config` | The layout of the module's dashboard, saved by the app. |
+| `settings` | JSON settings of the module. |
+| `domain_code` | A short uppercase code for the business domain, such as `CRM` or `ATS`. |
+| `catalog_module_code` | The catalog blueprint the module was built from. Write-once: it can be set on create, or filled once while empty, and never changed after that (90701). |
+| `module_type` | `domain` (the default) or `master`, a module promoted for sharing. |
+| `access_scope` | How the module's permissions are structured: `custom` (the default); `basic` (view and edit); `advanced` (view, edit and admin); `gated` (as `advanced`, plus a permission per process gate, held by admins); `raci` (as `advanced`, plus a permission per process gate, held by RACI roles). |
+| `manage_permission`, `admin_permission` | The module's manage and admin permissions. |
+| `default_viewer_role_id`, `default_manager_role_id`, `default_admin_role_id` | The module's standard roles. A role named here cannot be deleted while the module names it. |
+
+The platform sets `id`, `version`, `version_date`, `created_at` and `updated_at`. The id cannot be changed.
+
+The last five rows describe the module for the tools that build and read models. The platform checks their values and references and nothing more: `manage_permission` does not let anyone edit anything, and nobody is given a default role automatically.
+
+## What belongs to a module
+
+| Item | How it belongs | When the module is deleted |
+|---|---|---|
+| Entities | `entities.module_id`, required | Deleted, with their tables and records. |
+| Fields | Through their entity | Deleted with it. |
+| Permissions | `permissions.module_id`, required | Deleted, with their grants to roles and their hierarchy entries. |
+| Roles | `roles.module_id`, optional | Deleted, with their user assignments. |
+| Dashboards | `dashboards.module_id` | Deleted. |
+| RACI processes | `processes.module_id` | Kept, without a module. |
+
+Users belong to no module.
+
+- **Seeing a module is not reading its data.** The module's `view_permission` decides who sees the module, its tile and its section of the app. Each entity has a `view_permission` and an `edit_permission` of its own, which decide who reads and writes its records. A module's permissions are not passed down to its entities. See [Permissions and Roles](/docs/permissions).
+- **Permission names are free.** A permission belongs to its module through `module_id`, not through its name. Names such as `crm:read` and `crm:manage` are a convention of the modeling tools; the platform does not derive them from the slug.
+
+## Creating a module
+
+```bash
+semantius call crud create_module '{"data":{"module_name":"Helpdesk","description":"Tickets and service requests","icon_name":"life-buoy"}}'
+```
+
+The module gets the slug `helpdesk` and the `view_permission` `user:read`. Every user holds `user:read`, so **a new module is visible to everyone**.
+
+To restrict it, give the module a permission of its own. The `view_permission` must name a permission that exists when the request commits (23503), and a permission needs its module first, so it takes three requests:
+
+1. Create the module, leaving `view_permission` at `user:read`.
+2. Create the permission with the module's id, for example `helpdesk:read`.
+3. Set the module's `view_permission` to `helpdesk:read`.
+
+## Name and slug
+
+The two identifiers do different jobs. `module_name` is what an import of a model looks the module up by; `module_slug` is what URLs use.
+
+- **Renaming a module keeps its slug**, so its URLs and the clients that find it by slug keep working. Clearing the slug derives a new one from the current name.
+- **Changing the slug changes nothing else.** The app's URLs move with it, but permission names that follow the `<slug>:<verb>` convention keep their old names.
+
+## Version
+
+A module's `version` counts the changes to its model. It is `1` when the module is created and grows each time:
+
+- the module row changes, in any column, including the dashboard layout and the settings;
+- an entity, role, permission or RACI process of the module is created, changed or deleted;
+- a field of one of the module's entities is created, changed or deleted.
+
+Moving an entity, role, permission or process to another module counts for both modules. `version_date` is when the version last grew.
+
+Writes to records do not count, and neither do grants of permissions to roles, role assignments, permission hierarchy entries or dashboards.
+
+Use the version to tell that a module's schema changed since you last read it, for example to refresh a cached schema. One change can raise it by more than one (creating an entity also creates its fields), so compare it for "greater than", never for "plus one".
+
+## Deleting a module
+
+Deleting a module deletes everything the table above lists as deleted, in one request: its entities, their tables and every record in them, its permissions and its roles. It cannot be undone. Delete the module itself rather than its entities one by one, and back it up first. The app asks you to type the module's slug before it deletes.
+
+Records of the module's entities are removed whatever the deleting user's rights on them. References between the module's own entities do not stand in the way. What does:
+
+| Code | Refused while |
+|---|---|
+| `90260` | A field of another module's entity references one of the module's entities. Two modules that reference each other need one such field removed first. |
+| `90266` | A [rollup field](/docs/business-logic/rollups) of another module aggregates over one of the module's entities. |
+| `90248` | An entity of another module is based on one of the module's entities (`is_a` or `has_a`). |
+| `90247` | An `is_a` or `has_a` entity of the module still has records. |
+| `90256` | An object of another author is built on the views of an `is_a` or `has_a` entity of the module. |
+| `23001` or `23503` | Another module's entity uses one of the module's permissions, another module names one of its roles as a default role, or RACI events name one of its entities or roles. PostgreSQL 18 reports `23001`, earlier versions `23503`. |
+
+## The administration module
+
+The platform's own module is `_core`, with the slug `admin`; the app shows it as Administration. It holds the platform's entities (modules, entities, fields, users, roles, permissions, the [audit logs](/docs/audit-logs) and the rest), the permissions `public:read`, `user:read`, `user:manage` and `admin`, and the roles User and Administrator. Only holders of `admin` see it. Your own entities belong in modules of their own.
+
+## Who can manage modules
+
+- **Read.** A user sees a module when they hold `admin` or the module's `view_permission`.
+- **Create, change and delete.** Only `admin`.
+
+## API
+
+| Call | What it does |
+|---|---|
+| `/modules` | The modules, through `create_module`, `read_module`, `update_module` and `delete_module`, or `postgrestRequest`. Update and delete take the module's `id`, or an array of ids. |
+| `/rpc/get_user_modules` | The modules the caller can see, ordered by name. |
+| `/rpc/get_userinfo` | The caller's profile; its `modules` key holds the same list. |
+
+## Errors
+
+| Code | Meaning |
+|---|---|
+| `90701` | `catalog_module_code` is write-once. |
+| `90702` | `module_slug` is not lowercase `a-z`, `0-9`, `-` and `_`, starting with a letter or digit. |
+| `23505` | Another module has the same name or slug, including a slug derived from the name. |
+| `23503` | `view_permission`, `manage_permission` or `admin_permission` names a permission that does not exist. |
+
+For the codes that refuse a delete, see [Deleting a module](#deleting-a-module).
