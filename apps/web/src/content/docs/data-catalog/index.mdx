@@ -1,4 +1,64 @@
 ---
 title: "Data Catalog"
-description: ""
+description: "The core of Semantius: modules, entities and fields, permissions and roles, business logic and audit logs, kept as data and enforced inside the database."
 ---
+
+The data catalog is the core of Semantius. It describes your business as
+data: the [modules](/docs/modules) that group the parts of one application,
+the [entities and fields](/docs/entities) that become PostgreSQL tables with
+an API, the [permissions and roles](/docs/permissions) that decide who reads
+and writes each record, the [business logic](/docs/business-logic) that
+derives and checks values, and the [audit logs](/docs/audit-logs) that record
+every change. A change to an entity or a field is applied to its table in the
+same transaction, so the model and the database cannot drift apart.
+
+The data catalog is part of every edition of Semantius.
+[Semantius Cloud](https://app.semantius.com) runs it for you,
+[Semantius Open Source](/docs/self-hosted) runs it on your own machine or
+server, and the [pg_semantius](/docs/pg-semantius) extension adds it to a
+PostgreSQL database you already run. In all three it is enforced inside the
+database, so an agent, a script and the web app all pass through the same
+checks.
+
+## Modules
+
+A [module](/docs/modules) groups the entities, permissions and roles of one
+application, such as a CRM or a helpdesk. Its
+[version](/docs/modules#version) counts the changes to its model, and
+[deleting it](/docs/modules#deleting-a-module) removes its entities with
+their records, its permissions and its roles.
+
+## Entities and Fields
+
+An [entity](/docs/entities) is a kind of record, such as a ticket or an
+order. Saving one creates its table, its API endpoint and its access
+policies. Each [field](/docs/entities#fields) is a column of that table, and
+its [format](/docs/entities#formats) decides what the database accepts.
+[Relationships](/docs/entities#relationships) link records to each other, and
+[subtypes and extensions](/docs/entities#subtypes-and-extensions) share
+records with a base entity.
+
+## Permissions and Roles
+
+[Permissions and roles](/docs/permissions) decide who may read and write each
+entity. Each entity names a view permission and an edit permission,
+[roles](/docs/permissions#roles) bundle permissions for users, and the
+[hierarchy](/docs/permissions#the-hierarchy) lets one permission include
+others. Row-level security checks them on every request.
+
+## Business Logic
+
+[Business logic](/docs/business-logic) is stored on entities and fields as
+[JsonLogic](/docs/business-logic/jsonlogic) rules: computed fields,
+validation rules and row-level select rules, which the database enforces on
+every write and read, and field input modes, which forms apply as you edit.
+The [JsonLogic extensions](/docs/business-logic/extensions) add the variables
+and operators Semantius provides, and
+[rollup fields](/docs/business-logic/rollups) aggregate the records of a
+child entity.
+
+## Audit Logs
+
+The [audit logs](/docs/audit-logs) record every change to the records of
+audited entities, and every schema change, in two append-only logs that only
+administrators can read.
