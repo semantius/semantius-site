@@ -46,7 +46,7 @@ A field's [format](/docs/entities-and-fields/formats) decides the column's type,
 | `/entities` | The entities, keyed by `table_name`, through `create_entity`, `read_entity`, `update_entity` and `delete_entity`. |
 | `/fields` | The fields, keyed by `id` (`tickets.status`), through `create_field`, `read_field`, `update_field` and `delete_field`. |
 | `/<table_name>` | The entity's records, through `postgrestRequest`. |
-| `/rpc/get_schema` | The schema of `p_table_name`: its entity row, its fields as `properties` with their `inputMode`, `width`, `ctype` and references, and its children. Unknown entities and hidden ones both answer `404`, with code `42P01`. |
+| `/rpc/get_schema` | The schema of `p_table_name`: its entity row, its fields as `properties` with their `inputMode`, `width`, `ctype` and references, and its children. An unknown entity, and one whose schema the caller may not see (see [The schema follows the permissions](/docs/permissions-and-roles/permissions#how-entities-use-permissions)), both answer `404` with code `42P01`. |
 | `/rpc/get_schemas` | The schemas of `p_table_names`, a comma-separated list. |
 | `/rpc/get_schema_children` | The child entities of `p_table_name`: the entities with a `parent` field to it. |
 | `/rpc/get_record_by_id` | One record of `p_entity_name` by `p_id`, whatever its key type. |

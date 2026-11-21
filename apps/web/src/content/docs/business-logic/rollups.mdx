@@ -110,7 +110,7 @@ A moved total is not an edit of the parent record. When a child write changes no
 - **Creating or changing a definition** recalculates every parent whose stored value differs. Like a computed-field backfill, this is a recalculation, not an edit: it moves no `updated_at` and writes no audit row, queue message or RACI event.
 - **Renames are followed.** Renaming the child or parent entity, the link field, the value field, a filtered column or the rollup field rewrites the definitions that name it.
 - **Deleting** the link field, the value field or the child entity is refused while a rollup on another entity depends on it (90266), unless the same module delete removes both sides.
-- **Order of definition.** A declarative import (a `.jsonc` migration, or the CLI's import of an exported model) applies rollup fields after every other field of every entity, so there a rollup may be listed before the child entity it aggregates over. That is also why a rollup's column comes after its entity's other columns. A single insert into `fields`, such as one `create_field` call, follows its own order instead: the link field, the value field and every field the filter reads must exist or come earlier in it (90262, 90264, 90265).
+- **Order of definition.** An import that creates a whole model at once applies rollup fields after every other field of every entity. So there a rollup may be listed before the child entity it aggregates over, and its column ends up after the entity's other columns in the table. A single insert into `fields`, such as one `create_field` call, applies its fields in the order listed: the link field, the value field and every field the filter reads must already exist or be listed earlier (90262, 90264, 90265).
 
 ## Cost and concurrency
 
@@ -133,7 +133,7 @@ PostgreSQL then aborts one transaction with `40P01`. The totals stay right, and 
 | 90262 | `link_field` does not name a `reference` or `parent` field that points at this entity. |
 | 90263 | `function` is not `sum`, `min`, `max`, `avg` or `count`. |
 | 90264 | `value_field` is missing, names no field of the child, cannot be aggregated by the function, or is given with `count`. |
-| 90265 | The filter uses something outside the compiled subset. |
+| 90265 | The filter uses something outside the compiled subset, or names a column the child does not have. |
 | 90266 | A field or entity a rollup depends on is being deleted. |
 | 90267 | The rollup depends on itself through a chain of rollups. |
 | 90268 | The field's format does not fit the function. |

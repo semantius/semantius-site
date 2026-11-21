@@ -21,7 +21,7 @@ A module groups the entities, permissions and roles of one application, such as 
 | `domain_code` | A short uppercase code for the business domain, such as `CRM` or `ATS`. |
 | `catalog_module_code` | The catalog blueprint the module was built from. Write-once: it can be set on create, or filled once while empty, and never changed after that (90701). |
 | `module_type` | `domain` (the default) or `master`, a module promoted for sharing. |
-| `access_scope` | How the module's permissions are structured: `custom` (the default); `basic` (view and edit); `advanced` (view, edit and admin); `gated` (as `advanced`, plus a permission for each restricted step of a `workflow_state`, held by admins and by the role that takes the step); `raci` (as `advanced`, with the restricted steps enforced through [RACI](/docs/raci) process gates). See [Workflow States, Gates and Access](/docs/workflow-and-access). |
+| `access_scope` | How the module's permissions are structured: `custom` (the default); `basic` (view and edit); `advanced` (view, edit and admin); `gated` (as `advanced`, plus a permission for each restricted step); `raci` (as `gated`, with the module's [RACI](/docs/raci) matrix deciding who takes each step). See [Access scope](/docs/workflow-and-access#access-scope). |
 | `manage_permission`, `admin_permission` | The module's manage and admin permissions. |
 | `default_viewer_role_id`, `default_manager_role_id`, `default_admin_role_id` | The module's standard roles. A role named here cannot be deleted while the module names it. |
 
@@ -87,7 +87,7 @@ Records of the module's entities are removed whatever the deleting user's rights
 | `90260` | A field of another module's entity references one of the module's entities. Two modules that reference each other need one such field removed first. |
 | `90266` | A [rollup field](/docs/business-logic/rollups) of another module aggregates over one of the module's entities. |
 | `90248` | An entity of another module is based on one of the module's entities (`is_a` or `has_a`). |
-| `90247` | An `is_a` or `has_a` entity of the module still has records. |
+| `90247` | An `is_a` or `has_a` entity of the module, or the base of one, still has records. |
 | `90256` | An object of another author is built on the views of an `is_a` or `has_a` entity of the module. |
 | `23001` or `23503` | Another module's entity uses one of the module's permissions, another module names one of its roles as a default role, or RACI events name one of its entities or roles. PostgreSQL 18 reports `23001`, earlier versions `23503`. |
 

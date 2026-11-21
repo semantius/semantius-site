@@ -40,7 +40,7 @@ Installing takes two statements rather than one, and that is deliberate:
 
 ```sql
 CREATE EXTENSION pg_semantius;
-SELECT semantius.migrate();
+CALL semantius.migrate();
 ```
 
 `CREATE EXTENSION` does very little. It creates four roles, a schema called `semantius`, and four functions. `semantius.migrate()` then does the real work, and it creates everything it builds as **ordinary database objects** rather than as parts of the extension.

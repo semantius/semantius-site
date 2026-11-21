@@ -6,7 +6,9 @@ description: 'How to give an entity a lifecycle, restrict steps of it to a role,
 
 This guide follows one example from start to finish: purchase requests in a module named Spend, with the slug `spend`. Employees prepare a request and submit it, an approver approves or rejects it, and a buyer orders it from the supplier. The guide builds everything that makes this work: the field that holds a request's state, the rules that decide who may move a request from one state to the next, and the roles people are given.
 
-Semantius has no separate workflow engine. Everything here is made from parts documented elsewhere: an `enum` field, [permissions and roles](/docs/permissions-and-roles), and [validation rules and computed fields](/docs/business-logic/extensions). An agent with the [use-semantius skill](/docs/cli/use-semantius) builds this pattern for you when it builds a module, so you rarely write these rules yourself. The guide shows what it builds, so that you can read it, review it and change it.
+Semantius has no separate workflow engine. Everything here is made from parts documented elsewhere: an `enum` field, [permissions and roles](/docs/permissions-and-roles), and [validation rules and computed fields](/docs/business-logic/extensions). An agent with the [use-semantius skill](/docs/cli/use-semantius) builds this pattern for you when it builds a module, so you rarely write these rules yourself. It works out who does what from how the leading products in the domain divide the work, and ends with a summary of each role and each restricted step. The guide shows what it builds, so that you can read it, review it and change it.
+
+In names below, `<slug>` stands for the module's slug.
 
 ## The example
 
@@ -42,7 +44,6 @@ A request's state is one required `enum` field named `workflow_state`. Its value
 
 - **Give it a default.** Without a `default_value`, every new request must send a state or it is refused (90258), and the field cannot be added to an entity that already has records (90259).
 - **Keep one state field.** Every rule below reads `workflow_state`. A second field such as `status` would let a request be in two states at once.
-- **RACI uses the same field.** A [RACI](/docs/raci) process gate names the field that holds the state in `state_column`. Its default is `status`, so set it to `workflow_state`.
 
 ## Fields needed in some states
 
@@ -78,9 +79,11 @@ What the `input_type_rule` returns in the states where the field applies depends
 
 A gate is a step that only some users may take: moving a record into a state that the people who do the module's daily work may not move it into. The example has two gates, approving and ordering. Rejecting belongs to the approval gate (see [Approval controls](#approval-controls)). Submitting is not a gate, because every employee may submit.
 
+A gate here is a restricted step. It is not a RACI process gate, a record of `process_gates`; how the two meet is under [Access scope](#access-scope).
+
 A gate has two parts:
 
-- **A permission for the step**, named `<module slug>:<verb>_<noun>`: `spend:approve_purchase_request` and `spend:order_purchase_request`.
+- **A permission for the step**, named `<slug>:<verb>_<noun>`: `spend:approve_purchase_request` and `spend:order_purchase_request`.
 - **A validation rule** that refuses the move into the state to anyone without that permission.
 
 The rule for ordering:
@@ -112,7 +115,7 @@ A buyer must not order a request that was never approved. So each state that com
  "jsonlogic": {"if": [
    {"and": [{"value_changed": "workflow_state"}, {"==": [{"var": "workflow_state"}, "ordered"]}]},
    {"or": [
-     {"in": [{"var": "$old.workflow_state"}, ["approved", "ordered"]]},
+     {"==": [{"var": "$old.workflow_state"}, "approved"]},
      {"has_permission": "spend:approve_purchase_request"}]},
    true]}}
 ```
@@ -121,24 +124,26 @@ With the approval controls below, the last check is replaced by the full approva
 
 ## Approval controls
 
-Approving is a gate of a special kind: one person authorizes what another person prepared. Purchasing, finance and HR products guard such a step with more than a permission, and so does this pattern, for every move into `approved`, `signed`, `posted`, `released` or `verified`. For the purchase request:
+Approving is a gate of a special kind: one person authorizes what another person prepared. Purchasing, finance and HR products guard such a step with more than a permission. The pattern treats a move into a state such as `approved`, `signed`, `posted`, `released` or `verified` as an approval, and guards it with the controls below.
+
+In this section, an **administrator** is anyone who holds `spend:admin`: the Spend Admin role, and the platform's Administrators, who are granted every new permission.
 
 | Control | What it does |
 |---|---|
-| The requester cannot approve | Whoever created the request may not approve or reject it, administrators included. The request records its creator in `requested_by_user_id` when it is created. |
+| The requester cannot approve | Whoever created the request may not approve or reject it, administrators included. |
 | Only a submitted request is approved | A request moves into `approved` from `submitted`, or back from `ordered`. |
-| Rejecting takes the same check | Only someone who may approve a submitted request may reject it. Rejecting has no permission of its own. |
-| Only the requester can recall | A submitted or rejected request goes back to `draft` only through its requester or an administrator. That ends the lock below, so the request can be changed and submitted again. |
-| Locked once submitted | From `submitted` on, only an administrator, or someone who may approve the request, can change or delete it or its lines. Fields that a later step fills in, such as `po_number`, stay open. |
+| Rejecting a submitted request takes the same check | Only someone who may approve a submitted request may reject it. Rejecting has no permission of its own. |
+| Only the requester can recall | A submitted or rejected request goes back to `draft` only through its requester or an administrator, so that it can be changed and submitted again. |
+| Locked under review | While a request is `submitted`, `approved` or `ordered`, only an administrator, or someone who may approve it, can delete it, change its lines, or change the fields the approval covers: its supplier, its needed-by date and its approver. Fields that a later step fills in, such as `po_number`, stay open. |
 | Approved stays approved | Moving an approved or ordered request back to an earlier state takes the same check as approving it. |
 | Who approved, and when | `approved_by_user_id` and `approved_at` are filled in when the request is approved. |
 | A named approver | When a request names an approver in `approver_user_id`, only that person or an administrator may approve it. |
 
 These rules share one check, the **approval check**: the user is an administrator, or holds `spend:approve_purchase_request` and is the named approver when one is named; and the user is not the requester. Because every control uses it, skipping the approval, undoing it or changing what it covered is never easier than approving. A request created directly in `approved` or `ordered`, as an import does, passes only for an administrator.
 
-A step that pays money out, a move into `paid`, `reimbursed` or `disbursed`, gets the first control only: the requester cannot pay themselves.
+In a module that pays money out, such as expenses, a move into a state such as `paid` gets only the first control: the requester cannot pay themselves.
 
-The requester is recorded by a computed field that writes the current user on insert and keeps the stored value on every later write:
+The requester is `requested_by_user_id`, a `reference` to `users`. A computed field fills it rather than a default, so that no client can set or change it: the field writes the current user on insert and keeps the stored value on every later write. Unlike the approval stamps, it ignores what an import sends.
 
 ```json
 {"name": "requested_by_user_id",
@@ -156,15 +161,15 @@ Every module has three standard roles, one for each level of access, and one mor
 |---|---|---|
 | Spend Viewer | `spend:read` | Read requests. |
 | Spend Manager | `spend:manage` | Read, prepare and submit requests: the module's daily work. |
-| Spend Admin | `spend:admin` | Everything, including every gate and the module's setup data. |
+| Spend Admin | `spend:admin` | Everything, including every gate except approving their own requests, and the module's setup data. |
 | Spend Approver | `spend:approver` | What a Spend Manager can, and approve or reject requests. |
 | Spend Buyer | `spend:buyer` | What a Spend Manager can, and order requests. |
 
-`spend:approver` and `spend:buyer` are **bundles**: permissions that exist only to include other permissions through the [permission hierarchy](/docs/permissions-and-roles/permissions#the-hierarchy), so that a role holds one permission instead of several. `spend:approver` includes `spend:manage` and `spend:approve_purchase_request`, and `spend:buyer` includes `spend:manage` and `spend:order_purchase_request`. `spend:admin` includes every gate permission. A role holds a bundle, never a gate permission directly, so to see who may take a step, follow the hierarchy.
+`spend:approver` and `spend:buyer` are **bundles**: permissions that exist only to include other permissions through the [permission hierarchy](/docs/permissions-and-roles/permissions#the-hierarchy), so that a role holds one permission instead of several. `spend:approver` includes `spend:manage` and `spend:approve_purchase_request`, and `spend:buyer` includes `spend:manage` and `spend:order_purchase_request`. `spend:admin` includes every gate permission. Apart from the platform's Administrator role, which is granted every new permission directly, a role holds a bundle, never a gate permission, so to see who may take a step, follow the hierarchy.
 
 To let someone approve requests, give them the Spend Approver role.
 
-### Roles that see only their own records
+### Requester roles
 
 So far every employee sees every request. Suppose instead that a purchasing team does the module's daily work, and other employees should only file requests and follow their own. They get a role of their own, Spend Requester, which does part of the work. It is built in five parts:
 
@@ -180,8 +185,30 @@ So far every employee sees every request. Suppose instead that a purchasing team
               {"==": [{"var": "requested_by_user_id"}, {"var": "$user_id"}]}]}]}]}
    ```
 
-   A `select_rule` takes the place of the `view_permission` when reading, which is why the rule first checks `spend:read`. It then lets through everyone who does not hold `spend:requester`, everyone who also holds `spend:manage`, and otherwise only the request's own requester. `purchase_request_lines` gets a `select_rule` that reads each line's request with `set_record` and shows the line when its request is visible.
-4. **Which requests they change.** A `select_rule` limits which records a user can change, but not which records they can create. So a validation rule refuses a write by anyone without `spend:manage` unless the request names them as its requester:
+   A `select_rule` takes the place of the `view_permission` when reading, which is why the rule first checks `spend:read`. It then lets through everyone who does not hold `spend:requester`, everyone who also holds `spend:manage`, and otherwise only the request's own requester.
+
+   The lines get a `select_rule` that shows a line when its request is visible. `set_record` reads the line's request and binds `null` when the user cannot read it:
+
+   ```json
+   {"and": [{"has_permission": "spend:read"}, {"or": [
+     {"!": [{"has_permission": "spend:requester"}]},
+     {"has_permission": "spend:manage"},
+     {"set_record": ["purchase_request", "purchase_requests", {"var": "purchase_request_id"},
+       {"!=": [{"var": "purchase_request"}, null]}]}]}]}
+   ```
+4. **Which records they change.** A `select_rule` limits which records a user can change, but not which records they can create, so a requester could add a line to someone else's request. A validation rule on the lines refuses that, for anyone without `spend:manage`:
+
+   ```json
+   {"code": "99012", "name": "requester_own_purchase_request_lines",
+    "message": "A requester can only change the lines of their own purchase requests.",
+    "jsonlogic": {"if": [{"has_permission": "spend:manage"}, true,
+      {"set_record": ["purchase_request", "purchase_requests", {"var": "purchase_request_id"},
+        {"and": [{"!=": [{"var": "purchase_request"}, null]},
+                 {"!=": [{"var": "purchase_request.requested_by_user_id"}, null]},
+                 {"==": [{"var": "purchase_request.requested_by_user_id"}, {"var": "$user_id"}]}]}]}]}}
+   ```
+
+   The request gets the same kind of rule. A new request names its creator anyway, so on the request the rule matters for updates and deletes:
 
    ```json
    {"code": "99010", "name": "requester_own_purchase_requests",
@@ -190,8 +217,6 @@ So far every employee sees every request. Suppose instead that a purchasing team
       {"and": [{"!=": [{"var": "requested_by_user_id"}, null]},
                {"==": [{"var": "requested_by_user_id"}, {"var": "$user_id"}]}]}]}}
    ```
-
-   The lines get the same kind of rule, which reads each line's request with `set_record`.
 5. **Fields they leave to others.** A field the purchasing team fills in, such as `po_number`, gets a validation rule that, for anyone without `spend:manage`, refuses any value other than the default on a new request, and any change later:
 
    ```json
@@ -203,34 +228,31 @@ So far every employee sees every request. Suppose instead that a purchasing team
         {"!": [{"value_changed": "po_number"}]}]}]}}
    ```
 
-Once the lines have a `select_rule`, the request's `total_amount` rollup sums lines that some readers cannot see. Saving that `select_rule` is refused (90269) until the rollup sets `include_hidden_rows`. See [Hidden child rows](/docs/business-logic/rollups#hidden-child-rows).
+Once the lines have a `select_rule`, the request's `total_amount` rollup sums lines that some readers cannot open, so saving that `select_rule` is refused (90269) until the rollup sets `include_hidden_rows` (see [Hidden child rows](/docs/business-logic/rollups#hidden-child-rows)). Here each line is visible exactly when its request is, so the total shows no reader anything they could not open, and setting the flag is safe.
 
-## The access level
+## Access scope
 
 A module's `access_scope` records which of these structures it uses. The platform stores the value and does not act on it; it tells people and agents what to expect. The values that matter here (see [Modules](/docs/modules#the-module-record) for all of them):
 
 | `access_scope` | The module has |
 |---|---|
-| `advanced` | Read, manage and admin permissions, and no gate. |
+| `advanced` | Three permissions, `<slug>:read`, `<slug>:manage` and `<slug>:admin`, and no gate. |
 | `gated` | One or more gates, as in this guide. |
-| `raci` | Gates decided by the module's [RACI](/docs/raci) matrix. |
+| `raci` | Gates whose steps the module's [RACI](/docs/raci) matrix decides. |
 
-In a `raci` module, the RACI matrix names the role that is Accountable for each step, and a process gate ties the step to a process. The step's rule then also lets the Accountable role through, beside holders of the gate permission:
+In a `raci` module, the RACI matrix names the role that is Accountable for each step, and a process gate, a record of `process_gates`, ties the step's target state to a process. The step's rule then also lets the Accountable role through, beside holders of the gate permission:
 
 ```json
 {"or": [{"is_raci_actor": ["purchase_requests", "approved", "accountable"]},
         {"has_permission": "spend:approve_purchase_request"}]}
 ```
 
-The Accountable role still needs `spend:manage` to change the request at all.
-
-## Letting an agent build it
-
-You rarely write these rules by hand. Ask an agent with the use-semantius skill to build a module, and it works out, from how the leading products in the domain divide the work, who prepares the records, who else uses the module, and who moves a record into each state. From that it creates the permissions, roles, grants and rules on this page, checks the module against them, and ends with a summary of each role, what it can do and see, and each gate. To change who takes a step, tell the agent, and it changes the rules and the roles together.
+- **The Accountable role still needs `spend:manage`** to change the request at all.
+- **A process gate names the field that holds the state** in `state_column`. Its default is `status`, so set it to `workflow_state`.
 
 ## The complete rules
 
-All the rules for the purchase request and its lines, with every approval control, as the pattern writes them. Rule codes continue from the highest code the module already uses.
+All the rules of the basic example, without the Spend Requester variant, with every approval control, as the pattern writes them. Rule codes continue from the highest code the module already uses.
 
 The `computed_fields` of `purchase_requests`. The two approval stamps first keep what an insert sends, so that an imported request keeps its approver and date:
 

@@ -142,7 +142,7 @@ To update the web app or the sign-in service, change its version in the **Enviro
 ```bash
 docker exec your-deployment-postgres-1 psql -U postgres -d semantius \
   -c "ALTER EXTENSION pg_semantius UPDATE;" \
-  -c "SELECT semantius.migrate();"
+  -c "CALL semantius.migrate();"
 ```
 
 Both statements are safe to run again. [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain) explains them in more detail.

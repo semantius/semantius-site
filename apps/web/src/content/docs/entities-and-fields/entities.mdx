@@ -21,7 +21,7 @@ When a record is added to or deleted from `entities`, the database structure is 
 | `id_type`, `id_column`, `id_prefix`, `id_refentity` | The key. See [Keys](#keys). |
 | `label_column`, `label_column_label` | The field that is the record's label (default `label`), and that field's title. |
 | `label_parent` | A `reference` or `parent` field whose record's label prefixes this one: `Acme › Q3 renewal`. |
-| `order_column` | The name of an integer column for manual ordering. The table gets it, and a new record that sends no value takes the highest value below 900000 plus 10, or 10 for the first record. Changing or clearing it drops the old column and its values. |
+| `order_column` | The name of an integer column for manual ordering. Setting it adds the column to the table. A new record that sends no value gets 10 more than the highest value below 900000, or 10 if it is the first. Changing or clearing it drops the old column and its values. |
 | `edit_mode` | Where the app opens a record to edit it: `auto` (the default), `sidebar`, `modal` or `page`. |
 | `entity_type` | `operational_workflow`, `operational_record`, `catalog`, `junction`, `computed` or `unclassified` (the default). Only `junction` changes behavior: see [Many to many](/docs/entities-and-fields/relationships#many-to-many). |
 | `managed` | Whether Semantius owns the table. Default `true`. See [Managed entities](#managed-entities). |
@@ -51,7 +51,7 @@ The key is chosen when the entity is created: `id_type` (90233) and `id_column` 
 
 ## Changing an entity
 
-- **Renaming** (`table_name` in an update) renames the table and keeps its records. The API path changes with it. Fields that point at the entity follow, and so do the entity names in `set_record` rules and rollup definitions. An entity that a field of the platform's own entities points at cannot be renamed (90286): `users`, `roles`, `permissions`, `modules` and `entities`.
+- **Renaming** (`table_name` in an update) renames the table and keeps its records. The API path changes with it. Fields that point at the entity follow, and so do its RACI process gates and the entity names in `set_record` rules and rollup definitions. The entities that the platform's own fields point at, `users`, `roles`, `permissions`, `modules` and `entities`, cannot be renamed (90286).
 - **`view_permission`, `edit_permission` and `select_rule`** rebuild the access policies at once.
 - **`label_column`** moves the label to another field. A key, a timestamp or a rollup field cannot be the label (90270).
 - **Deleting** an entity drops its table with every record in it. It is refused while a field of another entity points at it, whatever that field's delete mode (90260), while a [rollup](/docs/business-logic/rollups) of another entity aggregates over it (90266), while [RACI events](/docs/raci#raci-events) name it (`23503`, or `23001` on PostgreSQL 18), and in the cases listed under [Subtypes and extensions](/docs/entities-and-fields/relationships#subtypes-and-extensions).

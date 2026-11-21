@@ -4,7 +4,7 @@ description: 'How Semantius encodes computed fields, validation rules, row-level
 order: 2
 ---
 
-Business logic in Semantius is **data, not code**. Rules live on the same entities and fields as your schema, expressed in [JsonLogic](/docs/business-logic/jsonlogic), and evaluated by a PL/pgSQL engine inside the database itself. There are no hooks to deploy, no functions to host, and no out-of-band scripts to keep in sync with the model. Because enforcement happens at the storage layer, no agent, misbehaving client, or alternate API surface can bypass a rule: every write and every read passes through the same engine. The one exception is a `cascade` delete: deleting a parent also deletes its `cascade` children, without checking the user's permissions on them or their `select_rule` (see [Delete modes](/docs/entities-and-fields/relationships#delete-modes)).
+Business logic in Semantius is **data, not code**. Rules live on the same entities and fields as your schema, expressed in [JsonLogic](/docs/business-logic/jsonlogic), and evaluated by a PL/pgSQL engine inside the database itself. There are no hooks to deploy, no functions to host, and no out-of-band scripts to keep in sync with the model. Because enforcement happens at the storage layer, no agent, misbehaving client, or alternate API surface can bypass a rule: every write and every read passes through the same engine. Three cases fall outside it. A `cascade` delete deletes a parent's `cascade` children without checking the user's permissions on them or their `select_rule` (see [Delete modes](/docs/entities-and-fields/relationships#delete-modes)). Deleting an entity or a module, which takes `admin`, drops its tables with every record in them. And the rules of an [unmanaged entity](/docs/entities-and-fields/entities#managed-entities) are stored but not enforced.
 
 The platform exposes five extension points. Each one is a column on either an entity or a field, and each one holds a JsonLogic expression (or an array of them):
 
@@ -22,7 +22,7 @@ JsonLogic gives Semantius a single, portable expression language that:
 
 - Serializes cleanly as JSON, so rules sit alongside the rest of the model in the same markdown spec, the same database row, and the same diff.
 - Runs in the database (for `computed_fields`, `validation_rules`, `select_rule`) via a PL/pgSQL interpreter, and in the browser (for `input_type_rule`, and for a live preview of `computed_fields` while a form is edited), with no compiler or runtime to ship. A rollup filter is the one exception: it is compiled to SQL.
-- Cannot be bypassed. Because the engine lives in the database, every insert, update, and select is evaluated against the rules regardless of which client, agent, or service issued the request, apart from the `cascade` delete described above.
+- Cannot be bypassed. Because the engine lives in the database, every insert, update, delete and select is evaluated against the rules regardless of which client, agent, or service issued the request, apart from the three cases described above.
 - Is safe to evaluate against untrusted input, since it makes no writes and has no host access. Beyond the variables the platform binds for it, a rule reads only what `set_record`, `has_permission`, `is_raci_actor` and `has_consultation` look up in the database.
 - Is readable enough that agents can author, audit, and refactor rules without touching application code.
 

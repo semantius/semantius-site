@@ -18,7 +18,7 @@ When a record is added to or deleted from `fields`, the database structure is up
 | `format` | What the field holds and how it is stored. Default `text`. See [Formats](/docs/entities-and-fields/formats). |
 | `input_type` | `default`, `required`, `readonly`, `disabled` or `hidden`. `required` is enforced by the database; see [Required fields](#required-fields). |
 | `default_value` | The value a new record gets. See [Defaults](#defaults). |
-| `field_order` | The field's position in forms and grids. Left at `0`, it is set to the highest position below 900000 plus 10. `created_at` and `updated_at` sit at 999998 and 999999. |
+| `field_order` | The field's position in forms and grids. Left at `0`, it is set to 10 more than the highest position below 900000. `created_at` and `updated_at` sit at 999998 and 999999. |
 | `width` | The field's width in forms: `default`, `s`, `m` or `w`. |
 | `searchable` | Adds the field to the entity's full-text search. |
 | `unique_value` | No two records may hold the same value. Empty values (null, and `''` for text) are not compared. Only single fields: there is no uniqueness across several fields. |
@@ -52,7 +52,7 @@ Numbers, booleans and durations always hold a value. A `parent` field needs no c
 |---|---|
 | A number, `true`, `false` or text | That value, converted to the column's type. |
 | `today`, `tomorrow`, `yesterday`, `now`, `$today`, `$now` | On a `date` or `date-time` field, the day or moment of each insert, in UTC. A `time` field takes `now` and `$now` only. Elsewhere they are refused (90284). |
-| `$user_id` or `CURRENT_USER` | On a `reference` or `parent` field to `users`, the signed-in user. `$user_id` is refused on any other field (90283), and so is `CURRENT_USER`, except on a text field, where it stores the database role name, the same for every user. |
+| `$user_id` or `CURRENT_USER` | On a `reference` or `parent` field to `users`, the signed-in user. `$user_id` is refused on any other field (90283), and so is `CURRENT_USER`, except on a text field, where it stores the name of the database role the request runs as, which is the same for every user. |
 | `CURRENT_TIMESTAMP`, `CURRENT_DATE`, `now()`, `gen_random_uuid()` and a few other SQL functions | The function's result at each insert. |
 | Empty | The empty value of the format: see [Formats](/docs/entities-and-fields/formats). |
 
@@ -60,7 +60,7 @@ A default holds at most 200 characters, and no `;`, `--`, `/*` or control charac
 
 ## Changing a field
 
-- **Format.** A format can change only to one with the same column type: `text` to `email` or `enum`, `int32` to `rating`. Anything else, such as `int32` to `int64` or `text` to `date`, is refused (90223): drop the field and create it again. A `reference` takes the type of the key it points at, so `text` can become a `reference` to an entity with a `text` key, but not one to `users`, whose key is a number.
+- **Format.** A format can change only to one with the same column type: `text` to `email` or `enum`, `int32` to `rating`. Anything else, such as `int32` to `int64` or `text` to `date`, is refused (90223): drop the field, which loses its values, and create it again. A `reference` takes the type of the key it points at, so `text` can become a `reference` to an entity with a `text` key, but not one to `users`, whose key is a number.
 - **Required.** Making a field required, or adding a required field to a table that has records, is refused while records would break the check (90259). Give a new required field a default that passes.
 - **Enum values.** Removing a value that records still hold is refused (23514).
 - **Precision.** Changing it rewrites the column, and lowering it rounds the stored values.

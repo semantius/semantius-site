@@ -38,12 +38,12 @@ Connect to the target database as a superuser and run exactly these two statemen
 
 ```sql
 CREATE EXTENSION pg_semantius;
-SELECT semantius.migrate();
+CALL semantius.migrate();
 ```
 
 **Do not add `CASCADE`.** It looks harmless and it is not. `pg_semantius` needs the `pgcrypto` extension, and `CASCADE` would install it into whichever schema your session happens to be creating things in. The API key code expects to find it in `public`, which is where `semantius.migrate()` puts it. Leaving `CASCADE` off is what keeps the two in agreement.
 
-The second statement does the real work and takes a few seconds. It runs as one transaction, so if anything goes wrong you are left exactly where you started.
+The second statement does the real work and takes a few seconds. It commits after each migration file, so run it as a statement of its own, not inside `BEGIN` and `COMMIT` or with `psql -1`. If a file fails, the files before it stay applied, the error names the file that failed, and running the statement again continues from there.
 
 ## 3. Check It Worked
 

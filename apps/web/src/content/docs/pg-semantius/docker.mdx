@@ -52,7 +52,7 @@ Every value below applies **only when the database is first created**. Changing 
 
 | Step | What it does |
 | --- | --- |
-| Installs the extension | Runs `CREATE EXTENSION pg_semantius` and then `SELECT semantius.migrate()`, with no `CASCADE` |
+| Installs the extension | Runs `CREATE EXTENSION pg_semantius` and then `CALL semantius.migrate()`, with no `CASCADE` |
 | Enables the application account | Gives `semantius_authenticator` the ability to log in, with the password you supplied |
 | Adds the API's anonymous role | Creates the `anon` role that PostgREST uses before anybody signs in |
 | Loads sample data | Only when `NWIND` is set |

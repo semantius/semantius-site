@@ -137,7 +137,7 @@ Updating the web app and the sign-in service is one step: change `SEMANTIUS_APP_
 ```bash
 docker exec semantius-postgres psql -U postgres -d semantius \
   -c "ALTER EXTENSION pg_semantius UPDATE;" \
-  -c "SELECT semantius.migrate();"
+  -c "CALL semantius.migrate();"
 ```
 
 Both statements are safe to run again, because `migrate()` records what it has already applied and skips it. To see what is installed and whether anything is still pending, run `SELECT * FROM semantius.status();` the same way. [pg_semantius: Upgrade and Backup](/docs/pg-semantius/maintain) explains both in more detail, including which old versions have no upgrade path.

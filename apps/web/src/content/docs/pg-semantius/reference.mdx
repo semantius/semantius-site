@@ -13,7 +13,7 @@ Four functions live in the `semantius` schema. They are the only things the exte
 
 | Function | What it does |
 | --- | --- |
-| `semantius.migrate()` | Installs or updates the core schema. Superuser only. Runs as one transaction, and is safe to run again. |
+| `semantius.migrate()` | Installs or updates the core schema. Superuser only. Commits after each migration file, and is safe to run again. |
 | `semantius.pending()` | Lists what a `migrate()` would apply. Works before the first install. |
 | `semantius.version()` | The version of the installer, which is not always the version in the database. |
 | `semantius.status()` | The state of the installation. This is the one to trust. |

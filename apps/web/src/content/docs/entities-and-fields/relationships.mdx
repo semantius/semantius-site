@@ -26,12 +26,11 @@ A `reference` or `parent` field is the many side of a one to many relationship: 
 
 ## Many to many
 
-Many to many goes through a junction entity with two `parent` fields, one to each side. Set its `entity_type` to `junction`. The platform's own `user_roles` is one: it joins `users` and `roles`.
+Many to many goes through a junction entity with a `parent` field to each side, usually two. Set its `entity_type` to `junction`. The platform's own `user_roles` is one: it joins `users` and `roles`.
 
-- **The type changes how a record is named.** A junction record's full label (`_label`) is the labels of its parents, joined in field order, such as `Fuller › Westboro` for an employee and a territory. Its own label is not part of it.
 - **Its records still need a label**, typed or computed, because the label field is required on every entity.
-- **An entity whose only fields are two or more `parent` fields**, besides its key, label and timestamps, is labeled the same way, and has the same `label_parent` limits, even before its `entity_type` is set to `junction`.
 - **A junction cannot have a `label_parent`**, and no `label_parent` can point at one.
+- **Naming.** A junction record's full label (`_label`) is the labels of its parents, joined in field order, such as `Fuller › Westboro` for an employee and a territory; its own label is not part of it. This applies when `entity_type` is `junction`, and also to any entity whose only fields, besides its key, label and timestamps, are two or more `parent` fields, which then has the `label_parent` limits above as well.
 
 ## One to one
 
@@ -51,7 +50,7 @@ The subtype's own fields live in a table named `<table_name>_ext`, and `/<table_
 - The label comes from the root (90242), and field names must be unique along the chain (90243).
 - The base is fixed once set (90241), and so is the prefix of an `is_a` entity (90245).
 - These entities cannot have an `order_column` or a rollup, and the fields of an `is_a` entity cannot `cascade` (90249).
-- An `is_a` or `has_a` entity, or the base of one, cannot be deleted while it has records (90247). An entity that other entities are based on cannot be deleted until those entities are (90248).
+- An entity that other entities are based on cannot be deleted until those entities are (90248). An `is_a` or `has_a` entity cannot be deleted while it has records (90247), and neither can its base when a module delete removes both.
 
 ## Label columns
 

@@ -27,7 +27,7 @@ Install the newer version of the files the same way you installed the first, the
 
 ```sql
 ALTER EXTENSION pg_semantius UPDATE;
-SELECT semantius.migrate();
+CALL semantius.migrate();
 ```
 
 The first replaces the installer functions. The second applies whatever is new. Both are safe to run again, because `migrate()` keeps a record of what it has already applied and skips it.
