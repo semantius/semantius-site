@@ -5,19 +5,13 @@ description: 'The use-semantius agent skill: a drop-in instruction set that teac
 order: 3
 ---
 
-import SkillInstall from '~/components/common/SkillInstall.astro';
-
-`use-semantius` is an **agent skill** that ships alongside the [Semantius CLI](/docs/cli). Where the CLI gives an agent the ability to call Semantius, this skill teaches the agent **how to use it well**: which layer to reach for, which tool to pick, and which mistakes to avoid.
+`use-semantius` is an **agent skill** that ships alongside the [Semantius CLI](/docs/cli). Where the CLI gives an agent the ability to call Semantius, this skill teaches the agent **how to use it well**: which tool to pick and which mistakes to avoid.
 
 It covers the whole of the work on a Semantius instance: building a module from a description, reviewing or changing an existing one, setting up roles and permissions, working with records, and answering analytical questions. Install it whenever you want a coding agent to operate Semantius autonomously from a shell.
 
 ## Installation
 
-Pull the skill bundle into your agent. Leave the **Agent** dropdown on **All** to install for every detected agent, or pick a specific agent to target just that one. Toggle **Global** to install into your home directory instead of the current project.
-
-<SkillInstall url="semantius/semantius-cli" />
-
-Supports [OpenCode, Claude Code, Codex, Cursor, and 51 more](https://github.com/vercel-labs/skills#supported-agents). See the [skills documentation](https://github.com/vercel-labs/skills) to learn how to install skills for your agent.
+`use-semantius` is installed together with the Semantius CLI and the other skills. Follow [Agent Skills Installation](/docs/agent-skills/installation).
 
 ## When the Skill Triggers
 
@@ -38,36 +32,11 @@ Asked to build something that needs its own records, the agent models it on the 
 
 Asked to review an existing module, it reads the whole module, checks it against the same conventions, suggests what the leading products have that the module lacks, and reports. Nothing is written until you pick what to apply.
 
-## The Three-Layer Mental Model
-
-The single most important thing the skill teaches an agent is that Semantius is **three distinct layers**, and that each layer has its own toolset. Picking the wrong layer is the most common failure mode.
-
-```mermaid
-flowchart TB
-    L1["Layer 1<br/>Semantic Data Model"]
-    L2["Layer 2<br/>Business Data"]
-    L3["Layer 3<br/>Analytics"]
-    L1 -->|defines schema for| L2
-    L2 -->|queried by| L3
-```
-
-| Layer | What it covers | Tools |
-| --- | --- | --- |
-| **Layer 1** &nbsp;Semantic Data Model | Entities, fields, modules, relationships, RBAC | `create_entity`, `create_field`, `create_permission`, ... |
-| **Layer 2** &nbsp;Business Data | Actual records in your entity tables | `postgrestRequest`, `sqlToRest` |
-| **Layer 3** &nbsp;Analytics | Cross-table queries, aggregations, time series | `cube` discover, validate, load, chart |
-
-**Rule of thumb:**
-
-- Defining *what exists* (schema, permissions, roles): **Layer 1 typed tools**.
-- Working with *actual records* in a single table: **Layer 2 `postgrestRequest`**.
-- Querying *across tables* or needing *aggregations and metrics*: **Layer 3 `cube`**.
-
 ## The Two Modes
 
-The CLI works in two modes, and the skill maps each one onto the layers above.
+The CLI works in two modes.
 
-### `crud` mode: schema and records (Layers 1 and 2)
+### `crud` mode: schema and records
 
 The typed `create_*`, `read_*`, `update_*`, `delete_*` tools manage the semantic data model itself. Alongside them, `postgrestRequest` operates on the actual rows in your business tables:
 
@@ -82,7 +51,7 @@ semantius call crud postgrestRequest '{"method":"POST","path":"/orders","body":{
 semantius call crud postgrestRequest '{"method":"PATCH","path":"/products?category=eq.electronics","body":{"on_sale":true}}'
 ```
 
-### `cube` mode: analytics (Layer 3)
+### `cube` mode: analytics
 
 `cube` mode speaks the CubeJS query DSL: measures, dimensions, time dimensions, filters, joins. The skill enforces one rule above all others: **always call `discover` first**. The `discover` response includes the cube schema, the complete query language reference, and the date filtering guide, so the agent never has to guess syntax.
 
@@ -96,31 +65,6 @@ The skill bakes in a small set of rules that prevent the most common mistakes:
 4. **`reference_table` mandates relational format.** Any field that points at another table must use `format: "reference"` (independent lifecycle) or `format: "parent"` (ownership / cascade delete).
 5. **Warn before destructive changes.** Renaming `table_name` or `field_name`, deleting entities or fields: ask the user first.
 6. **Link to the result.** After a schema change or a record operation, hand back a link to the app in the form `{ui_baseurl}/{module_slug}/{table_name}`, with `/{id}` added for one record, so the user can check it. `ui_baseurl` is the instance's own address, read from the signed-in user's profile, and `module_slug` is the module's lowercase slug, never its name.
-
-## Reference Material
-
-The skill ships with a small library of focused reference files that the agent loads on demand. Each one is scoped to a single concern:
-
-| Reference | Purpose |
-| --- | --- |
-| `preflight.md` | The checks before any work: the CLI is installed and signed in, and Bun and jq are available. |
-| `cli-usage.md` | CLI commands, credentials and hosts, shell patterns, chaining, installation, moving entities and modules between hosts. |
-| `build-module.md` | Building something new: what it delivers, the sample-data question, verification and the final response. |
-| `review-module.md` | Reviewing an existing module: what to read and check, the report, and applying what you pick. |
-| `data-modeling.md` | Layer 1: modules, entities, fields, relationships, enum values and labels, safe evolution. |
-| `entity-families.md` | Layer 1: subtypes and extensions (`is_a` and `has_a`). |
-| `jsonlogic.md` | Layer 1: computed fields, validation rules, the extension operators, lookups across entities, `input_type_rule`. |
-| `rollup-fields.md` | Layer 1: rollup fields over child records. |
-| `select-rule.md` | Layer 1: which rows a user may read, with `select_rule`. |
-| `rbac.md` | Layer 1: permissions, roles, user assignments, the hierarchy and restricted steps. |
-| `crud-tools.md` | Layer 1 typed tools and Layer 2 `postgrestRequest` / `sqlToRest`, bulk operations, reading the audit logs. |
-| `seed-data.md` | Sample records for a new module. |
-| `cube-queries.md` | Layer 3: query DSL, date filtering, analysis modes. |
-| `cube-tools.md` | Layer 3: `discover`, `validate`, `load`, `chart` signatures. |
-| `webhooks.md` | Receiving records from external systems through signed webhook receivers. |
-| `muse-questions.md`, `dot-questions.md` | How to ask questions in agents that have no question tool. |
-
-Beside them, the skill ships scripts that the agent runs rather than reads, such as the checks every schema write goes through. The agent does not read all of the references upfront. It picks the right reference based on the task: data modeling work loads `data-modeling.md`, an analytical question loads `cube-queries.md`, and so on.
 
 ## What You Get in Practice
 
@@ -136,7 +80,7 @@ With `use-semantius` installed, you can hand a coding agent prompts like:
 
 > "Import this CSV into the products table."
 
-The agent picks the correct layer, follows the read-before-write and schema-first rules, calls the right typed tool or `postgrestRequest` or `cube` query, and reports back with the UI link to verify.
+The agent follows the read-before-write and schema-first rules, calls the right typed tool or `postgrestRequest` or `cube` query, and reports back with the UI link to verify.
 
 ## Next Steps
 
