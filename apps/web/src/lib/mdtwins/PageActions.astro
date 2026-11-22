@@ -22,13 +22,10 @@
  * it does not navigate.
  *
  * The copy action FETCHES the .md at click time rather than inlining it at
- * build time. entry.data.markdownTwin exists and would save the request, but it
- * costs up to 15KB of duplicated content per page and is the pre-composed body
- * without the twin's header and Related footer, so it is not what the .md URL
- * actually serves.
+ * build time: the twin is written from this page's HTML after the page has
+ * rendered, so it does not exist yet while the page renders.
  */
-import { toMarkdownPath } from '~/lib/dualmark/paths';
-import { hasMarkdownTwin } from '~/lib/dualmark/excluded';
+import { advertisedTwinUrl, toMarkdownPath } from './paths';
 
 interface Props {
 	/** Page path, normally Astro.url.pathname. */
@@ -39,13 +36,13 @@ interface Props {
 
 const { pathname, noindex = false } = Astro.props;
 
-// Twins are emitted for noindex pages too, so this is about consistency rather
-// than a 404: if <head> deliberately does not advertise a twin, the page header
-// must not either.
-const show = !noindex && hasMarkdownTwin(pathname);
+// Same rule as the <link rel="alternate"> in SEO.astro: if <head> does not
+// advertise a twin, the page header must not either.
+const mdUrl = advertisedTwinUrl(pathname, Astro.site, noindex);
+const show = mdUrl !== undefined;
 
+// Relative, so a preview deployment links to its own twin.
 const mdPath = toMarkdownPath(pathname);
-const mdUrl = new URL(mdPath, Astro.site).toString();
 
 // Point the assistants at the twin, not the HTML page. That is the whole
 // payoff: they read clean markdown instead of parsing our nav, cookie banner

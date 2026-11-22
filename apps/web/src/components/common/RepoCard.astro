@@ -6,9 +6,7 @@
  *   <RepoCard repo="semantius/semantius-self-hosted" license="MIT"
  *     description="The whole platform in one Docker Compose setup." />
  *
- * The markdown twin cannot run this component, so `rewriteMdx()` in
- * lib/dualmark/source.ts writes its markdown form from the same attributes.
- * Both take the URL from lib/repo-card.ts.
+ * The URL comes from lib/repo-card.ts.
  *
  * Styling is Tailwind utilities only. A scoped <style> would not load when the
  * component is rendered only from MDX (see "Astro component styles inside MDX

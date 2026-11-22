@@ -1,13 +1,6 @@
 /**
- * The deploy prompt for a blueprint, defined once.
- *
- * The detail page renders it in a copyable command box; the markdown twin has
- * to write it out, because a twin cannot run the component. When each built the
- * string itself, only the page had it: all 56 twins shipped without the single
- * most actionable line on the page, and nothing noticed until a parity check
- * compared the two.
- *
- * Import from both. Never retype the prompt.
+ * The deploy prompt for a blueprint, rendered by the blueprint detail page
+ * (pages/blueprints/[slug]/index.astro) in a copyable command box.
  */
 export const blueprintDeployHeading = (systemName: string): string =>
 	`Use the ${systemName} semantic blueprint`;

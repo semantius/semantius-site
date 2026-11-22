@@ -9,74 +9,8 @@ import {
 	extractSubsetMarkdown,
 	renderSubsetHtml,
 } from './lib/models-extract';
-import { sourceToMarkdown, sourceKindFor, mdxNeedsExtraction } from './lib/dualmark/source';
-import { SITE_PLACEHOLDER } from './lib/dualmark/paths';
-
-// The loader CANNOT know the real site origin: Vite merges apps/web/.env
-// (SITE_URL=http://localhost:4321) into process.env after astro.config.mjs is
-// evaluated, so reading it here yields the dev URL even in a production build.
-// Links are absolutized against a reserved placeholder instead, and the twin
-// writers swap in the real origin from Astro's resolved `site`.
-
-/**
- * Wrap a glob loader so each entry gains `markdownTwin`: the entry body run
- * through the unified AST pipeline, ready to be served at <page-url>.md.
- *
- * This happens in the LOADER, which runs in Node, rather than in the .md route,
- * which the Cloudflare adapter prerenders inside workerd. remark-mdx pulls in
- * acorn, so keeping it out of the route sidesteps the question entirely. Same
- * reasoning and same shape as the blueprints loader below.
- *
- * Only the BODY is produced here. The breadcrumb header and related-links
- * footer need the whole collection to compute, so the route composes those.
- */
-function withMarkdownTwin(base: ReturnType<typeof glob>) {
-	return {
-		name: 'markdown-twin',
-		load: async (ctx: Parameters<typeof base.load>[0]) => {
-			await base.load(ctx);
-			for (const [id, entry] of ctx.store.entries()) {
-				const e = entry as {
-					body?: string;
-					data: Record<string, unknown>;
-					filePath?: string;
-					rendered?: unknown;
-					deferredRender?: boolean;
-				};
-				// Left undefined when the source cannot express what the page shows
-				// (see mdxNeedsExtraction). manifest.ts then declines to claim the
-				// page, and astro:build:done extracts the twin from the rendered
-				// HTML instead - the only place that content exists.
-				const kind = sourceKindFor(e.filePath ?? id);
-				const body = e.body ?? '';
-				const markdownTwin =
-					kind === 'mdx' && mdxNeedsExtraction(body)
-						? undefined
-						: sourceToMarkdown({ kind, text: body }, { siteUrl: SITE_PLACEHOLDER });
-				const newData = await ctx.parseData({
-					id,
-					data: { ...e.data, markdownTwin },
-					filePath: e.filePath,
-				});
-				// Fresh digest: store.set is a no-op when the digest matches what the
-				// inner glob loader already wrote, so the derived field would never
-				// reach the store. Same trap the blueprints loader documents.
-				ctx.store.set({
-					id,
-					data: newData,
-					body: e.body,
-					filePath: e.filePath,
-					digest: ctx.generateDigest(JSON.stringify(newData)),
-					rendered: e.rendered as never,
-					deferredRender: e.deferredRender,
-				});
-			}
-		},
-	};
-}
-
 const blogCollection = defineCollection({
-    loader: withMarkdownTwin(glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" })),
+    loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
 	// Type-check frontmatter using a schema
 	schema: ({ image }) => z.object({
 		title: z.string(),
@@ -90,13 +24,11 @@ const blogCollection = defineCollection({
         isVideo: z.boolean().optional().default(false),
         noindex: z.boolean().optional().default(false),
         nofollow: z.boolean().optional().default(false),
-        // Derived by the loader: the body as agent-facing markdown.
-        markdownTwin: z.string().optional(),
 	}),
 });
 
 const docsCollection = defineCollection({
-    loader: withMarkdownTwin(glob({ pattern: "**/*.{md,mdx}", base: "./src/content/docs" })),
+    loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/docs" }),
     schema: z.object({
         title: z.string(),
         navTitle: z.string().optional(),
@@ -107,8 +39,6 @@ const docsCollection = defineCollection({
         order: z.number().optional(),
         noindex: z.boolean().optional().default(false),
         nofollow: z.boolean().optional().default(false),
-        // Derived by the loader: the body as agent-facing markdown.
-        markdownTwin: z.string().optional(),
     }),
 });
 
@@ -156,7 +86,7 @@ const blueprintsCollection = defineCollection({
                     data: { ...e.data, overview, subsetHtml },
                     filePath: e.filePath,
                 });
-                // Use a fresh digest — `store.set` is a no-op when the digest
+                // Use a fresh digest: `store.set` is a no-op when the digest
                 // matches what the inner glob loader already wrote, so the
                 // derived fields would otherwise never reach the store.
                 ctx.store.set({

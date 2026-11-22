@@ -1,0 +1,20 @@
+// Every redirect the site serves. Each key is the path a visitor requests and
+// "to" is where it sends them. Read by astro.config.mjs.
+//
+// "permanent": true sends a 301. Browsers cache a 301 indefinitely and search
+// engines treat it as a move, so once visitors have followed one, changing its
+// target no longer reaches them. Leave "permanent" out for a 302, which nobody
+// caches, so the target can still change later (vanity URLs).
+//
+// The markdown twin of each redirect (/a.md -> /b.md, same status) is derived
+// in astro.config.mjs, so it is never listed here.
+//
+// Whether a moved page needs a redirect, and which kind, is the owner's
+// decision, not an agent's: ask. Write the reason in a comment above each
+// entry so it is still known later.
+{
+
+  // Vanity URL for the pg_semantius docs. The target may move, so it is a 302.
+  "/pg_semantius": { "to": "/docs/pg-semantius" }  
+
+}

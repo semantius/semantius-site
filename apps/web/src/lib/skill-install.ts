@@ -1,20 +1,13 @@
 /**
  * The skills install command, defined once.
  *
- * Three renderers need this string and none of them can call the others:
+ * Two renderers need this string and neither can call the other:
  *
  *   - `components/common/SkillInstall.astro` prints it on the page
  *   - its browser script rebuilds it when the agent or global toggle changes
- *   - `lib/dualmark/source.ts` emits it into the markdown twin, because a twin
- *     cannot run an Astro component
  *
- * They each used to compute it, and they drifted: the page rendered
- * `npx skills add semantius/semantius-cli --all --global` while the twin wrote
- * `npx skills add https://github.com/semantius/semantius-cli --global` — a
- * different install, shipped silently to every agent that read the twin instead
- * of the page. Nothing failed, because nothing compared the two.
- *
- * Import this from every renderer. Never re-derive the string.
+ * Import this from both and never re-derive the string: copies of one string
+ * drift apart.
  */
 export interface SkillInstallOptions {
 	/** Target agent. "all" is special: it emits --all and never --agent. */

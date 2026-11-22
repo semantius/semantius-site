@@ -30,6 +30,6 @@ company owns.
 
 ## Third-Party Code
 
-The markdown twin code in `src/lib/dualmark/` is adapted from
+Part of the markdown twin code in `src/lib/mdtwins/` is adapted from
 [dualmark](https://github.com/dodopayments/dualmark) under the Apache License
 2.0. Its `NOTICE`, license text and per-file headers must stay in place.

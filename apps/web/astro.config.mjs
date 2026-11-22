@@ -13,7 +13,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import sirv from 'sirv';
 import matter from 'gray-matter';
-import { markdownTwins } from './src/lib/dualmark/integration';
+import { parse as parseJsonc, printParseErrorCode } from 'jsonc-parser';
+import { markdownTwins } from './src/lib/mdtwins/integration';
+import { nonContentSelectors } from './src/lib/mdtwins/extract';
+import { withTwinRedirects } from './src/lib/mdtwins/redirects';
 import { skillSourceUrl } from './src/lib/repo';
 import { skillInstallCommand } from './src/lib/skill-install';
 // Imported statically rather than with `await import('pagefind')` inside the
@@ -196,7 +199,7 @@ async function initMermaidEnhanced() {
         window.mermaid = mermaid;
         await init();
     } catch (err) {
-        console.error('[mermaid-enhanced] Failed to initialise:', err);
+        console.error('[mermaid-enhanced] Failed to initialize:', err);
     }
 }
 
@@ -244,8 +247,9 @@ function pagefindIndex() {
         const out = fileURLToPath(dir);
         const { index, errors } = await pagefind.createIndex({
           // Sidebars, breadcrumbs, TOC, heading permalinks and anything marked
-          // data-pagefind-ignore never reach the index.
-          excludeSelectors: ['aside', 'nav', '.heading-anchor', '[data-pagefind-ignore]'],
+          // data-pagefind-ignore never reach the index. The same list decides
+          // what the markdown twins leave out (src/lib/mdtwins/extract.ts).
+          excludeSelectors: nonContentSelectors(),
         });
         if (!index) { logger.error(errors.join('\n')); return; }
         const { page_count } = await index.addDirectory({ path: out });
@@ -454,67 +458,34 @@ function getAdapter() {
   }
 }
 
-// Docs URLs have moved three times: flat -> nested folders -> grouped under a
-// sub-collection (/docs/reference/...) -> back to top-level folders, now that
-// tab membership is declared in content/docs/nav.json instead of being implied
-// by the folder path. Every legacy URL points at its final destination rather
-// than chaining through an intermediate scheme.
-//
-// Scheme 2 has no entries any more: the move back to top-level folders restored
-// exactly those URLs, so they are live pages again and must not be redirected.
 /**
- * Turn a map of HTML redirects into the same map for their markdown twins:
- *   "/docs/cli-overview" -> "/docs/cli"
- * becomes
- *   "/docs/cli-overview.md" -> "/docs/cli.md"
- *
- * Targets that are already a file (the blueprint source downloads) or external
- * are skipped, since they have no twin.
+ * Reads src/data/redirects.jsonc, the only list of redirects, into the shape of
+ * Astro's `redirects` option. "permanent": true is a 301; without it, a 302.
+ * withTwinRedirects() adds each redirect's markdown twin form (/a.md -> /b.md).
  */
-function markdownRedirects(map) {
-  // The home page's twin is /index.md, not "/.md".
-  const twin = (p) => `${p === '/' ? '/index' : p.replace(/\/$/, '')}.md`;
-  const out = {};
-  for (const [from, to] of Object.entries(map)) {
-    if (typeof to !== 'string' || !to.startsWith('/') || /\.[a-z0-9]{2,4}$/i.test(to)) continue;
-    out[twin(from)] = twin(to);
+function loadRedirects() {
+  const file = new URL('./src/data/redirects.jsonc', import.meta.url);
+  const text = fs.readFileSync(file, 'utf8');
+  const errors = [];
+  const list = parseJsonc(text, errors, { allowTrailingComma: true });
+  // jsonc-parser recovers from a syntax error instead of throwing, which would
+  // drop entries without a word. Fail the way JSON.parse would.
+  if (errors.length) {
+    const { error, offset } = errors[0];
+    const before = text.slice(0, offset).split('\n');
+    throw new Error(
+      `${fileURLToPath(file)}:${before.length}:${before.at(-1).length + 1}: ${printParseErrorCode(error)}`,
+    );
   }
-  return out;
+  return withTwinRedirects(
+    Object.fromEntries(
+      Object.entries(list).map(([from, { to, permanent }]) => [
+        from,
+        { status: permanent ? 301 : 302, destination: to },
+      ]),
+    ),
+  );
 }
-
-const docsLegacyRedirects = {
-  // Scheme 1: flat URLs, the only scheme before the nested-folder refactor.
-  '/docs/mcp-connectors-overview': '/docs/mcp-connectors',
-  '/docs/mcp-connectors-installation': '/docs/mcp-connectors/installation',
-  '/docs/agent-skills-overview': '/docs/agent-skills',
-  '/docs/agent-skills-installation': '/docs/agent-skills/installation',
-  '/docs/cli-overview': '/docs/cli',
-  '/docs/cli-command': '/docs/cli/command',
-
-  // Scheme 3: grouped under /docs/reference/. /docs/reference itself stays live
-  // as the tab's start page, so it is deliberately absent here.
-  '/docs/reference/business-logic': '/docs/business-logic',
-  '/docs/reference/business-logic/jsonlogic': '/docs/business-logic/jsonlogic',
-  '/docs/reference/business-logic/extensions': '/docs/business-logic/extensions',
-  '/docs/reference/mcp-connectors': '/docs/mcp-connectors',
-  '/docs/reference/mcp-connectors/installation': '/docs/mcp-connectors/installation',
-  '/docs/reference/agent-skills': '/docs/agent-skills',
-  '/docs/reference/agent-skills/installation': '/docs/agent-skills/installation',
-  '/docs/reference/cli': '/docs/cli',
-  '/docs/reference/cli/command': '/docs/cli/command',
-
-  // Renamed so each URL matches its section title (Entities and Fields,
-  // Permissions and Roles). Only each folder's index existed under the old
-  // name; the subpages were added with the new one.
-  '/docs/entities': '/docs/entities-and-fields',
-  '/docs/permissions': '/docs/permissions-and-roles',
-};
-
-// Pages that came with the site template and were deleted rather than rewritten.
-// They were in the sitemap and llms.txt, so their URLs are already indexed.
-const removedPageRedirects = {
-  '/showcase': '/',
-};
 
 // https://astro.build/config
 export default defineConfig({
@@ -528,15 +499,8 @@ export default defineConfig({
   // build.format: 'file'. That sets ending='.html' unconditionally and makes
   // the canonical /docs/cli.html.
   trailingSlash: 'never',
-  redirects: {
-    ...docsLegacyRedirects,
-    ...removedPageRedirects,
-    // Markdown twins of every legacy path. Without these, an agent that was
-    // given an old URL and appends ".md" gets a 404, because Astro's redirects
-    // only cover the HTML form. Derived from the same maps so the two can
-    // never disagree about where a legacy path now lives.
-    ...markdownRedirects({ ...docsLegacyRedirects, ...removedPageRedirects }),
-  },
+  // Every redirect, with its markdown twin's, from src/data/redirects.jsonc.
+  redirects: loadRedirects(),
   fonts: [
     {
       provider: fontProviders.google(),

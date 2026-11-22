@@ -241,9 +241,8 @@ export function tabPages(nav: DocsCollectionNav): NavNode[] {
   return [nav.node, ...flattenNodes(nav.folders)];
 }
 
-// Docs > tab > section > page, shared by the visible breadcrumb, the JSON-LD
-// BreadcrumbList and the markdown twin's location line, which used to derive
-// it three different ways and disagreed. A level is dropped when it is the
+// Docs > tab > section > page, shared by the visible breadcrumb and the JSON-LD
+// BreadcrumbList so the two cannot disagree. A level is dropped when it is the
 // page itself, and a section tab's section is dropped because it IS the tab.
 export function docsTrail(
   nav: DocsCollectionNav | null | undefined,

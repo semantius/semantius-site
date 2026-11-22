@@ -3,9 +3,9 @@
  * See ./NOTICE. Modified: trimmed the currency table to what we emit, split
  * out collapseBlankLines, and joinLines now keeps empty strings.
  *
- * IMPORTANT: normalizeUnicode is for strings WE compose (titles, descriptions,
- * metadata lines), never for verbatim content bodies. Blueprint bodies carry
- * mermaid fences where `-->` and `->` are syntax, and code fences where a
+ * IMPORTANT: normalizeUnicode is for the header and footer that compose.ts
+ * writes (title, description, breadcrumb), never for an extracted body. Bodies
+ * carry mermaid fences where `-->` and `->` are syntax, and code fences where a
  * glyph may be load-bearing. Rewriting those would corrupt them.
  */
 
@@ -69,20 +69,4 @@ export function joinLines(...parts: Array<string | false | null | undefined>): s
 	return parts
 		.filter((x): x is string => x !== null && x !== undefined && x !== false)
 		.join('\n');
-}
-
-/** ISO date only, no time. Undefined-safe so converters can pass optionals. */
-export function fmtDate(d: Date | string | undefined): string | undefined {
-	if (!d) return undefined;
-	const date = typeof d === 'string' ? new Date(d) : d;
-	if (Number.isNaN(date.getTime())) return undefined;
-	return date.toISOString().slice(0, 10);
-}
-
-export function slugToTitle(slug: string): string {
-	return slug
-		.split(/[-/]/)
-		.filter(Boolean)
-		.map((w) => (w[0] ? w[0].toUpperCase() + w.slice(1) : w))
-		.join(' ');
 }

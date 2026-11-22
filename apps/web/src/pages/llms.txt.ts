@@ -8,7 +8,7 @@ import {
 	skillPath, SKILLS_INDEX_PATH,
 	CHANGELOG_PATH,
 } from '~/lib/routes';
-import { twinUrl } from '~/lib/dualmark/nav';
+import { twinUrl } from '~/lib/mdtwins/paths';
 import { buildDocsTree, getDocsCollectionNavs, tabPages } from '~/lib/docs-tree';
 import { SOLUTIONS } from '~/data/solutions';
 import { SAMPLE_PROMPTS, promptPath } from '~/data/sample-prompts';

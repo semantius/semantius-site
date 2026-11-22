@@ -3,6 +3,10 @@
   "editor.defaultFormatter": "esbenp.prettier-vscode",
   "[markdown]": { "editor.formatOnSave": false },
   "[mdx]": { "editor.formatOnSave": false },
+  // A user-level "[jsonc]" formatter beats the Prettier default above, and VS
+  // Code's built-in JSON formatter puts every object on its own lines. That
+  // breaks the one-redirect-per-line layout of apps/web/src/data/redirects.jsonc.
+  "[jsonc]": { "editor.formatOnSave": false },
   "editor.codeActionsOnSave": {
     "source.fixAll.eslint": "explicit"
   },

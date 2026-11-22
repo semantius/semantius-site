@@ -108,9 +108,9 @@ const AGENTS: { value: string; label: string }[] = [
 ];
 
 // Server render matches the default control state (Agent = All, Global = on).
-// The client script reconciles this with any saved cookie on load. Both it and
-// the markdown-twin writer build the same string from ~/lib/skill-install, so
-// the page, the copy button and the twin cannot disagree.
+// The client script reconciles this with any saved cookie on load. It builds
+// the string from ~/lib/skill-install too, so the page and the copy button
+// cannot disagree.
 const defaultCommand = skillInstallCommand(url);
 ---
 

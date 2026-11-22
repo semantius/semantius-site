@@ -1,9 +1,8 @@
 /**
  * The single source of truth for every content-derived URL on this site.
  *
- * Every .astro page, the markdown twin writers and rss.xml.js import from here.
- * The point is that the HTML route set and the twin route set cannot diverge:
- * if a slug rule changes, it changes in one place for both.
+ * Every .astro page, the blueprint source route, llms.txt and rss.xml.js import
+ * from here, so a slug rule changes in one place for all of them.
  *
  * This is not hypothetical. Before this module existed, rss.xml.js derived blog
  * links from `post.slug`, which the Astro content layer stopped providing, so
