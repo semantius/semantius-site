@@ -4,7 +4,7 @@ import { type CollectionEntry, getCollection, render } from 'astro:content';
 import { githubBlobUrl } from '~/lib/repo';
 import Layout from '~/layouts/Layout.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
-import { blueprintSourcePath } from '~/lib/routes';
+import { BLUEPRINTS_INDEX_PATH, blueprintPath, blueprintSourcePath } from '~/lib/routes';
 
 export async function getStaticPaths() {
 	const specs = await getCollection('blueprints');
@@ -25,10 +25,16 @@ const systemName = spec.data.system_name;
 ---
 
 <Layout
-	title={`${systemName} — Blueprint`}
+	title={`${systemName}: Blueprint`}
 	description={spec.data.description ?? `Semantic data blueprint for ${systemName}.`}
 	noindex={spec.data.noindex}
 	nofollow={spec.data.nofollow}
+	breadcrumbs={[
+		{ name: 'Blueprints', href: BLUEPRINTS_INDEX_PATH },
+		// The detail page's own name for this blueprint (see [slug]/index.astro).
+		{ name: spec.data.system_description ?? systemName, href: blueprintPath(spec) },
+		{ name: 'Blueprint', href: Astro.url.pathname },
+	]}
 >
 	<PageHeader>
 		<div class="max-w-3xl mx-auto px-6">

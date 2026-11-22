@@ -26,12 +26,12 @@ After `astro build` has written every page, `integration.ts` takes each page in 
 1. **Skip** it if `hasMarkdownTwin()` in `paths.ts` says it has no twin. Only `/404` is excluded today.
 2. **Use the override** if `overrides/<page path>.md` exists, copied as is.
 3. **Otherwise convert** the page's `index.html` with `twinFromHtml()` in `compose.ts`:
-   - `pageFacts()` reads what the page publishes about itself: `<title>`, `<meta name="description">`, the JSON-LD `BreadcrumbList`, and its `rel="prev"` and `rel="next"` links.
-   - `htmlToMarkdown()` converts the content region to the body.
-   - `docHeader()` and `docFooter()` put the shared header and footer around it.
+   - `pageFacts()` reads what the page publishes about itself (see [What the converter reads](#what-the-converter-reads-from-a-page)).
+   - `htmlToMarkdown()` converts the content region, without its `<h1>`, to the body.
+   - The shared header and footer go around it.
 4. **Write** it next to the page, as `dist/client/<page path>.md`.
 
-It then writes `llms-full.txt`, an index of every twin with its title, and reports in the build log (see [Build log](#build-log)).
+It then writes `llms-full.txt`, an index of every twin with its title (except those of noindex pages), and reports in the build log (see [Build log](#build-log)).
 
 In `astro dev` there is no build output, so the same integration serves `/<page>.md` on request: it fetches the page from the dev server and runs the same `twinFromHtml()`. `llms-full.txt` exists only after a build.
 
@@ -42,8 +42,8 @@ In `astro dev` there is no build output, so the same integration serves `/<page>
 | `integration.ts` | The Astro integration: writes every twin and `llms-full.txt` after the build, serves twins in `astro dev`, reports in the build log. Registered in `astro.config.mjs`. |
 | `compose.ts` | `twinFromHtml()`, the complete twin for one page, and the shared header and footer layout. |
 | `extract.ts` | The only converter: HTML to markdown, every generic rule, `pageFacts()`, and the `NON_CONTENT` list shared with site search. |
-| `paths.ts` | Every URL rule: `/foo` to `/foo.md`, which pages have no twin, absolute twin and canonical URLs, the URL a page advertises. |
-| `redirects.ts` | `withTwinRedirects()`: every redirect in `src/data/redirects.jsonc` also redirects its twin (`/old.md` to `/new.md`, same status). |
+| `paths.ts` | Every URL rule: `/foo` to `/foo.md` and back, which pages have no twin, the absolute twin URL, the URL a page advertises. |
+| `redirects.ts` | `withTwinRedirects()`: every redirect in `apps/web/redirects.jsonc` also redirects its twin (`/old.md` to `/new.md`, same status). |
 | `text.ts` | Small text helpers for the header and footer. |
 | `PageActions.astro` | The "View as Markdown, Copy as Markdown, Ask Claude, Ask ChatGPT" row under a docs page's title. Placed by `layouts/DocsLayout.astro`. |
 | `overrides/` | Hand-written twins. Does not exist until the first one is written. |
@@ -71,9 +71,11 @@ No page carries markup for the twin's sake. The converter reads what the HTML al
 
 | In the page | In the twin |
 | --- | --- |
-| `<h1>`, or `<title>` without the site name | title |
+| the first `<h1>` in `<main>`, or `<title>` without the site name | title (the `<h1>` leaves the body) |
 | `<meta name="description">` | description |
-| JSON-LD `BreadcrumbList` | "This page location". A wrong breadcrumb is wrong for search engines too, so fix it on the page. |
+| `<link rel="canonical">` | the "URL" line |
+| JSON-LD `BreadcrumbList` | "This page location", exactly as published. A page that passes no `breadcrumbs` to `Layout.astro` gets one built from URL slugs ("Hvac svc mgmt"), so give it real names on the page: that fixes search engines and the twin at once. |
+| `<meta name="robots" content="noindex">` | the twin is still written, but not listed in `llms-full.txt` |
 | `<a rel="prev">`, `<a rel="next">` | "Related" footer, labeled as the link reads ("Previous: Modules") |
 | `<pre data-language="bash">` (Shiki, every fenced block) | code block in that language |
 | `<pre class="mermaid">` | mermaid code block |
@@ -112,7 +114,7 @@ Use an override only when a page's twin cannot be made right by fixing the page 
 
 ## Redirects
 
-Redirects are listed in `src/data/redirects.jsonc`. `withTwinRedirects()` gives each one a twin redirect with the same status, so `/old.md` follows `/old`. Never list the `.md` form in that file.
+Redirects are listed in `apps/web/redirects.jsonc`. `withTwinRedirects()` gives each one a twin redirect with the same status, so `/old.md` follows `/old`. Never list the `.md` form in that file.
 
 ## Build log
 

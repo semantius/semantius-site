@@ -31,16 +31,21 @@ export function toMarkdownPath(pathname: string): string {
 	return p.endsWith('.md') ? p : `${p}.md`;
 }
 
+/** The inverse: "/index.md" -> "/", "/a/b.md" -> "/a/b". */
+export function pagePathOfTwin(markdownPath: string): string {
+	return markdownPath === '/index.md' ? '/' : markdownPath.replace(/\.md$/, '');
+}
+
 /**
- * Pages with no twin. Only /404 today: an error page, not content. The pattern
- * tolerates a trailing slash because Astro has reported this route both ways.
+ * Pages with no twin. Only /404 today: an error page, not content. Matched
+ * against normalizePagePath(), so a trailing slash never reaches the pattern.
  *
  * Only structural exclusions belong here. The one other reason to add an entry
  * is a content hold: copy that must not become cleanly quotable yet (/pricing
  * sat here while it carried placeholder claims). Such an entry should say when
  * it comes off.
  */
-const EXCLUDED = [/^\/404\/?$/];
+const EXCLUDED = [/^\/404$/];
 
 export function hasMarkdownTwin(pathname: string): boolean {
 	return !EXCLUDED.some((re) => re.test(normalizePagePath(pathname)));
@@ -56,18 +61,15 @@ export function markdownUrl(pathname: string, site: URL | string | undefined): s
 	return new URL(toMarkdownPath(pathname), site).toString();
 }
 
-/** Absolute canonical HTML URL, without a trailing slash. */
-export function canonicalUrl(pathname: string, site: URL | string | undefined): string {
-	return new URL(normalizePagePath(pathname), site).toString();
-}
-
 /**
  * Where a link to an internal page should point from inside a twin or from
  * llms.txt: the page's twin when it has one, so an agent following links stays
- * in markdown, and the HTML page otherwise.
+ * in markdown, and the HTML page (slash-less) otherwise.
  */
 export function twinUrl(pathname: string, site: URL | string | undefined): string {
-	return hasMarkdownTwin(pathname) ? markdownUrl(pathname, site) : canonicalUrl(pathname, site);
+	return hasMarkdownTwin(pathname)
+		? markdownUrl(pathname, site)
+		: new URL(normalizePagePath(pathname), site).toString();
 }
 
 /**

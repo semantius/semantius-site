@@ -6,14 +6,16 @@ import Command from '~/components/common/Command.astro';
 import { INSTALL_CLI, INSTALL_SKILL, OPENCLAW_NOTE } from '~/data/install-steps';
 ---
 
-<ol class="space-y-6 text-left">
-  <li>
+{/* Not an <ol>: the step numbers are part of the copy, so a list would number
+    them twice, for screen readers and in the page's markdown twin. */}
+<div class="space-y-6 text-left">
+  <div>
     <p class="font-semibold mb-2">1. Install the CLI</p>
     <Command command={INSTALL_CLI} />
-  </li>
-  <li>
+  </div>
+  <div>
     <p class="font-semibold mb-2">2. Install the skill</p>
     <Command command={INSTALL_SKILL} />
     <p class="mt-2 text-sm text-foreground/70">{OPENCLAW_NOTE}</p>
-  </li>
-</ol>
+  </div>
+</div>

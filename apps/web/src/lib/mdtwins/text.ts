@@ -1,58 +1,14 @@
 /**
  * Adapted from dualmark (Apache-2.0): packages/core/src/text.ts
- * See ./NOTICE. Modified: trimmed the currency table to what we emit, split
- * out collapseBlankLines, and joinLines now keeps empty strings.
+ * See ./NOTICE. Modified: kept only joinLines, which now keeps empty strings,
+ * and collapseBlankLines, split out of cleanBody.
  *
- * IMPORTANT: normalizeUnicode is for the header and footer that compose.ts
- * writes (title, description, breadcrumb), never for an extracted body. Bodies
- * carry mermaid fences where `-->` and `->` are syntax, and code fences where a
- * glyph may be load-bearing. Rewriting those would corrupt them.
+ * Twins keep the page's own characters (typographic quotes, dashes, arrows):
+ * they are served as UTF-8 (public/_headers), and folding them to ASCII would
+ * also rewrite code and mermaid fences, where `-->` is syntax.
  */
 
-/**
- * Fold typographic characters down to ASCII so agents see plain text.
- *
- * Written with \u escapes rather than literal characters on purpose: these are
- * exactly the codepoints that get mangled by an editor, a locale or a diff
- * tool, and a silently corrupted replacement table fails without any error.
- *
- * Note the em dash maps to "--" and the en dash to "-", which also happens to
- * match the project rule against using either as punctuation.
- */
-export function normalizeUnicode(text: string): string {
-	return text
-		// zero-width space, ZWNJ, ZWJ, BOM
-		.replace(/[​‌‍﻿]/g, '')
-		// variation selector-16 (emoji presentation), soft hyphen
-		.replace(/️/g, '')
-		.replace(/­/g, '')
-		// non-breaking, hair and narrow no-break spaces
-		.replace(/[   ]/g, ' ')
-		// hyphen, non-breaking hyphen
-		.replace(/[‐‑]/g, '-')
-		// single quotes and apostrophe variants
-		.replace(/[‘’‚ʼʻ]/g, "'")
-		// double quotes and guillemets
-		.replace(/[“”„«»]/g, '"')
-		// en dash, em dash, ellipsis
-		.replace(/–/g, '-')
-		.replace(/—/g, '--')
-		.replace(/…/g, '...')
-		// bullet, middle dot
-		.replace(/[•·]/g, '-')
-		// arrows
-		.replace(/→/g, '->')
-		.replace(/←/g, '<-')
-		// multiplication sign, approx, greater-or-equal
-		.replace(/×/g, 'x')
-		.replace(/≈/g, '~=')
-		.replace(/≥/g, '>=')
-		// currency symbols we actually use
-		.replace(/€/g, 'EUR ')
-		.replace(/£/g, 'GBP ');
-}
-
-/** Collapse runs of 3+ blank lines and trim. Safe on verbatim bodies. */
+/** Collapse runs of 3+ blank lines and trim. */
 export function collapseBlankLines(text: string): string {
 	return text.replace(/\n{3,}/g, '\n\n').trim();
 }

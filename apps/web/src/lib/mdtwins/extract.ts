@@ -22,7 +22,7 @@ import rehypeParse from 'rehype-parse';
 import rehypeRemark from 'rehype-remark';
 import remarkGfm from 'remark-gfm';
 import remarkStringify from 'remark-stringify';
-import { visit, SKIP } from 'unist-util-visit';
+import { visit, SKIP, EXIT } from 'unist-util-visit';
 import { collapseBlankLines } from './text';
 import { isPagePath, twinUrl } from './paths';
 
@@ -46,7 +46,7 @@ const STRINGIFY_OPTIONS = {
  * removes it from search and from the twin at once. Kept as data rather than
  * as CSS selector strings so both sides can use it without a selector engine.
  */
-export const NON_CONTENT: { tags: string[]; classes: string[]; attributes: string[] } = {
+const NON_CONTENT: { tags: string[]; classes: string[]; attributes: string[] } = {
 	tags: ['aside', 'nav'],
 	classes: ['heading-anchor'],
 	attributes: ['data-pagefind-ignore'],
@@ -88,6 +88,31 @@ function textOf(node: any): string {
 	return (node.children ?? []).map(textOf).join('');
 }
 
+/** Text as a reader sees it on one line: a <br> is a space, whitespace collapsed. */
+function plainText(node: any): string {
+	const walk = (n: any): string =>
+		n.type === 'text' ? (n.value ?? '') : n.tagName === 'br' ? ' ' : (n.children ?? []).map(walk).join('');
+	return walk(node).replace(/\s+/g, ' ').trim();
+}
+
+/** The page's content region: <main>, or the whole document when it has none. */
+function contentRoot(tree: any): any {
+	let main: any;
+	visit(tree, 'element', (node: any) => {
+		if (!main && node.tagName === 'main') main = node;
+	});
+	return main ?? tree;
+}
+
+/** The page's own title heading: the first <h1> in its content region. */
+function pageHeading(root: any): any {
+	let h1: any;
+	visit(root, 'element', (node: any) => {
+		if (!h1 && node.tagName === 'h1') h1 = node;
+	});
+	return h1;
+}
+
 function classList(node: any): string[] {
 	return ([] as string[]).concat((node.properties?.className as string[]) ?? []);
 }
@@ -104,14 +129,19 @@ function isNonContent(node: any): boolean {
 	return node.properties?.ariaHidden === 'true' || node.properties?.ariaHidden === true;
 }
 
-/** Keep only <main>, minus everything that is not content. */
+/** Keep only <main>, minus its title heading and everything that is not content. */
 function contentRegion() {
 	return (tree: any) => {
-		let main: any;
-		visit(tree, 'element', (node: any) => {
-			if (!main && node.tagName === 'main') main = node;
+		const root = contentRoot(tree);
+		// The <h1> is the twin's title (pageFacts), written by the header; left in
+		// the body it would give the twin a second top-level heading.
+		const h1 = pageHeading(root);
+		visit(root, 'element', (node: any, index: number | undefined, parent: any) => {
+			if (node !== h1 || index === undefined || !parent) return;
+			parent.children.splice(index, 1);
+			return EXIT;
 		});
-		if (main) tree.children = main.children;
+		if (root !== tree) tree.children = root.children;
 
 		// HTML comments are not elements, so an element-only visitor lets them
 		// through: "<!-- Hover Gradient Background -->" and Astro's own
@@ -387,10 +417,16 @@ export function htmlToMarkdown(html: string, siteUrl: string): string {
 /* -------------------------------------------------------------------------- */
 
 export interface PageFacts {
+	/** The page's <h1> (see pageHeading), as one line of text. */
+	heading?: string;
 	/** <title>, without the site name around it. */
 	title?: string;
 	/** <meta name="description">. */
 	description?: string;
+	/** <link rel="canonical">: the page's own URL as it publishes it. */
+	canonical?: string;
+	/** <meta name="robots" content="noindex">: the page asks not to be indexed. */
+	noindex: boolean;
 	/** The page's JSON-LD BreadcrumbList names, outermost first. Empty when it has none. */
 	trail: string[];
 	/** The page's rel="prev" and rel="next" links, for the twin's "Related" footer. */
@@ -410,15 +446,29 @@ function breadcrumbNames(json: unknown): string[] | undefined {
 }
 
 /**
- * What the header and footer need, read from the page rather than computed a
- * second time: the same title, description and breadcrumb the page publishes
- * to browsers and search engines.
+ * What the header, the footer and llms-full.txt need, read from the page rather
+ * than computed a second time: the same heading, title, description, canonical
+ * URL, breadcrumb and robots directive the page publishes to browsers and
+ * search engines.
  */
 export function pageFacts(html: string): PageFacts {
 	const tree = unified().use(rehypeParse, { fragment: false }).parse(html);
-	const facts: PageFacts = { trail: [], related: [] };
+	const h1 = pageHeading(contentRoot(tree));
+	const facts: PageFacts = {
+		heading: h1 ? plainText(h1) || undefined : undefined,
+		noindex: false,
+		trail: [],
+		related: [],
+	};
 
 	visit(tree, 'element', (node: any) => {
+		const rel = ([] as string[]).concat(node.properties?.rel ?? []);
+		if (node.tagName === 'link' && rel.includes('canonical') && facts.canonical === undefined) {
+			facts.canonical = String(node.properties.href ?? '') || undefined;
+		}
+		if (node.tagName === 'meta' && node.properties?.name === 'robots') {
+			facts.noindex ||= /\bnoindex\b/i.test(String(node.properties.content ?? ''));
+		}
 		if (node.tagName === 'title' && facts.title === undefined) {
 			// "Thing - Semantius Agentic Data Platform" and "Semantius | The ...":
 			// the site name is browser-tab chrome and blurs what the page is about.
@@ -441,7 +491,6 @@ export function pageFacts(html: string): PageFacts {
 		// which the body leaves out, so they are read here from the whole page.
 		// The label is what the link shows, "Previous" and the page title as
 		// separate pieces of text, joined: "Previous: Modules".
-		const rel = ([] as string[]).concat(node.properties?.rel ?? []);
 		if (
 			node.tagName === 'a' &&
 			(rel.includes('prev') || rel.includes('next')) &&

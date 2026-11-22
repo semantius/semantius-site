@@ -24,15 +24,15 @@
  *   - [Formats](https://www.semantius.com/docs/entities-and-fields/formats.md)
  *   - [Full index for agents](https://www.semantius.com/llms.txt)
  */
-import { joinLines, normalizeUnicode } from './text';
+import { joinLines } from './text';
 import { htmlToMarkdown, pageFacts } from './extract';
-import { canonicalUrl, twinUrl } from './paths';
+import { twinUrl } from './paths';
 
-export interface DocMeta {
+interface DocMeta {
 	title: string;
 	description?: string;
-	/** Canonical HTML URL of the page this twin mirrors. Absolute. */
-	url: string;
+	/** The page's canonical URL, as its <link rel="canonical"> publishes it. */
+	url?: string;
 	/**
 	 * Breadcrumb trail, outermost first, ENDING with the page itself. A trail
 	 * that stops at the parent renders as a single generic crumb on any two-level
@@ -43,7 +43,7 @@ export interface DocMeta {
 	indexUrl: string;
 }
 
-export interface RelatedLink {
+interface RelatedLink {
 	title: string;
 	/** Absolute URL, pointing at the .md twin so agents stay in markdown. */
 	href: string;
@@ -54,101 +54,85 @@ export interface RelatedLink {
  * as context rather than content, which is the shape Neon uses and which
  * agents appear to tolerate well.
  */
-export function docHeader(meta: DocMeta): string {
+function docHeader(meta: DocMeta): string {
 	// Two crumbs minimum: with one, the only crumb IS the page, so the line
 	// would name the page it heads and nothing else.
 	const location =
 		meta.trail.length > 1 ? `> This page location: ${meta.trail.join(' > ')}` : undefined;
-	return normalizeUnicode(
-		joinLines(
-			location,
-			`> Full index for agents: ${meta.indexUrl}`,
-			'',
-			`# ${meta.title}`,
-			'',
-			// Prefix every line: a description that spans paragraphs would
-			// otherwise leave the rest dangling as body text above the URL line.
-			meta.description &&
-				meta.description
-					.trim()
-					.split('\n')
-					.map((l) => (l.trim() ? `> ${l.trim()}` : '>'))
-					.join('\n'),
-			meta.description && '',
-			`- **URL**: ${meta.url}`,
-			'',
-			'---',
-			'',
-			'',
-		),
+	return joinLines(
+		location,
+		`> Full index for agents: ${meta.indexUrl}`,
+		'',
+		`# ${meta.title}`,
+		'',
+		// Prefix every line: a description that spans paragraphs would
+		// otherwise leave the rest dangling as body text above the URL line.
+		meta.description &&
+			meta.description
+				.trim()
+				.split('\n')
+				.map((l) => (l.trim() ? `> ${l.trim()}` : '>'))
+				.join('\n'),
+		meta.description && '',
+		meta.url && `- **URL**: ${meta.url}`,
+		'',
+		'---',
+		'',
+		'',
 	);
 }
 
 /** Footer. Without related links it is the index link alone, never an empty "Related" heading. */
-export function docFooter(related: RelatedLink[], indexUrl: string): string {
+function docFooter(related: RelatedLink[], indexUrl: string): string {
 	if (related.length === 0) {
-		return normalizeUnicode(`\n\n---\n\n- [Full index for agents](${indexUrl})\n`);
+		return `\n\n---\n\n- [Full index for agents](${indexUrl})\n`;
 	}
-	return normalizeUnicode(
-		joinLines(
-			'',
-			'',
-			'---',
-			'',
-			'## Related',
-			'',
-			...related.map((r) => `- [${r.title}](${r.href})`),
-			`- [Full index for agents](${indexUrl})`,
-			'',
-		),
+	return joinLines(
+		'',
+		'',
+		'---',
+		'',
+		'## Related',
+		'',
+		...related.map((r) => `- [${r.title}](${r.href})`),
+		`- [Full index for agents](${indexUrl})`,
+		'',
 	);
 }
 
-/**
- * The page's own <h1>, lifted out of the body so the twin does not carry two
- * top-level titles, and preferred as the title: the visible heading ("Product
- * Updates") says more than the <title> tag ("Changelog"), which exists for
- * browser tabs and search results.
- *
- * ATX (# Title) and setext (Title over ===): remark-stringify falls back to
- * setext when a heading contains a hard break, as the home page's does. A
- * setext heading spans EVERY line above its underline, so the whole run is
- * taken, or the home twin loses the first half of its title.
- */
-function liftLeadingH1(body: string): { heading?: string; rest: string } {
-	const match = body.match(/^#\s+(.+?)\s*$/m) ?? body.match(/^((?:.+\r?\n)+?)=+\s*$/m);
-	if (!match || body.indexOf(match[0]) >= 200) return { rest: body };
-	return {
-		// Hard breaks inside it are a trailing backslash per line.
-		heading: match[1].replace(/\\?\r?\n/g, ' ').replace(/\s+/g, ' ').trim(),
-		rest: body.replace(match[0], '').replace(/^\s+/, ''),
-	};
+export interface Twin {
+	markdown: string;
+	/** The twin's title, as its "# " line says it. */
+	title: string;
+	/** The page asks not to be indexed, so the twin is not listed in llms-full.txt. */
+	noindex: boolean;
 }
 
 /**
  * A page's complete twin, made from its built HTML. The only way a twin is
  * produced, apart from a hand-written override (see README.md).
+ *
+ * The title is the page's visible <h1> (extract.ts takes it out of the body),
+ * falling back to <title>: the heading ("Product Updates") says more than the
+ * tag ("Changelog"), which exists for browser tabs and search results. The
+ * breadcrumb, URL and description are exactly what the page publishes.
  */
-export function twinFromHtml(html: string, pagePath: string, siteUrl: string): string {
+export function twinFromHtml(html: string, pagePath: string, siteUrl: string): Twin {
 	const indexUrl = new URL('/llms.txt', siteUrl).toString();
 	const facts = pageFacts(html);
-	const { heading, rest } = liftLeadingH1(htmlToMarkdown(html, siteUrl));
-	const title = heading ?? facts.title ?? pagePath;
-	// The page's own breadcrumb, with its last crumb (the page itself) replaced
-	// by the visible heading, which is what the reader sees as the page's name.
-	const trail = facts.trail.length ? [...facts.trail.slice(0, -1), title] : [];
-	return (
+	const title = facts.heading ?? facts.title ?? pagePath;
+	const markdown =
 		docHeader({
 			title,
 			description: facts.description,
-			url: canonicalUrl(pagePath, siteUrl),
-			trail,
+			url: facts.canonical,
+			trail: facts.trail,
 			indexUrl,
 		}) +
-		rest +
+		htmlToMarkdown(html, siteUrl) +
 		docFooter(
 			facts.related.map((r) => ({ title: r.title, href: twinUrl(r.path, siteUrl) })),
 			indexUrl,
-		)
-	);
+		);
+	return { markdown, title, noindex: facts.noindex };
 }

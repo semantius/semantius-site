@@ -25,7 +25,7 @@
 # because Cloudflare matches these rules against the REQUEST path and applies
 # them after resolving the 404 asset. That was verified on a preview deploy.
 # Accepted, because the 404 status code is the primary signal and stays correct,
-# whereas dropping this line mis-decodes all 232 valid markdown files. The clean
+# whereas dropping this line mis-decodes every valid markdown file. The clean
 # fix for both is a markdown-aware 404, which needs a Worker.
 #
 # Cache-Control is safe under /*.md but must NEVER appear under /*: the
@@ -46,7 +46,6 @@
   Content-Type: text/markdown; charset=utf-8
   X-Content-Type-Options: nosniff
   Cache-Control: public, max-age=3600
-  Vary: Accept
 
 # Twins point at their HTML page with rel="canonical".
 #
@@ -79,8 +78,14 @@
   Link: </blueprints/:s1/blueprint>; rel="canonical"
 /blueprints/:s1.md
   Link: </blueprints/:s1>; rel="canonical"
+/templates/:s1.md
+  Link: </templates/:s1>; rel="canonical"
+/prompts/:s1.md
+  Link: </prompts/:s1>; rel="canonical"
+/solutions/:s1.md
+  Link: </solutions/:s1>; rel="canonical"
 
-# There is deliberately NO rule for /blueprints/source/:s1.md, the 56 verbatim
+# There is deliberately NO rule for /blueprints/source/:s1.md, the verbatim
 # specification downloads. They are unique content with no HTML page, so they
 # self-canonicalise and stay indexable, which is the point of publishing them.
 #

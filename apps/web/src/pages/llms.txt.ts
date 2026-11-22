@@ -4,10 +4,12 @@ import intro from '~/data/llms-intro.md?raw';
 import {
 	blogPath, BLOG_INDEX_PATH,
 	DOCS_INDEX_PATH,
-	blueprintPath, BLUEPRINTS_INDEX_PATH,
+	blueprintPath, blueprintBodyPath, BLUEPRINTS_INDEX_PATH,
+	domainHasLanding, domainPath,
 	skillPath, SKILLS_INDEX_PATH,
 	CHANGELOG_PATH,
 } from '~/lib/routes';
+import { TEMPLATE_CATEGORIES, TEMPLATES_PATH, templateCategoryPath } from '~/data/templates';
 import { twinUrl } from '~/lib/mdtwins/paths';
 import { buildDocsTree, getDocsCollectionNavs, tabPages } from '~/lib/docs-tree';
 import { SOLUTIONS } from '~/data/solutions';
@@ -39,7 +41,8 @@ export const prerender = true;
  * markdown rather than bouncing back into HTML.
  */
 export const GET: APIRoute = async ({ site }) => {
-	const base = (site ?? new URL('https://www.semantius.com')).toString();
+	// astro.config.mjs always sets `site`.
+	const base = site!.toString();
 	const md = (path: string) => twinUrl(path, base);
 
 	const [docs, blog, blueprints, domains, catalogs] = await Promise.all([
@@ -107,6 +110,7 @@ export const GET: APIRoute = async ({ site }) => {
 		`- [Design system](${md('/design')}): typography, color and component reference.`,
 		`- [Privacy](${md('/privacy')}): how data is handled.`,
 		`- [Terms](${md('/terms')}): terms of service.`,
+		`- [Bot simulator](${md('/botsim')}): proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you.`,
 	]);
 
 	// Blueprints grouped by owning domain. 56 entries is a lot for one list, so
@@ -122,23 +126,24 @@ export const GET: APIRoute = async ({ site }) => {
 		// filed under one "Other" heading and the grouping did no work at all.
 		const group = domainByModule.get(bp.data.system_slug.toUpperCase()) ?? 'Other';
 		const desc = bp.data.system_description ?? bp.data.description;
-		const line = `- [${bp.data.system_name}](${md(blueprintPath(bp))})${desc ? `: ${desc}` : ''}`;
+		const line =
+			`- [${bp.data.system_name}](${md(blueprintPath(bp))})${desc ? `: ${desc}` : ''}` +
+			` ([full specification](${md(blueprintBodyPath(bp))}))`;
 		const existing = byDomain.get(group);
 		if (existing) existing.push(line);
 		else byDomain.set(group, [line]);
 	}
 	// Domain landings carry the buyer-facing copy for a whole domain and were
 	// reachable from no index at all. A domain whose code collides with a
-	// blueprint slug has no landing page (see blueprints/[slug]/index.astro).
+	// blueprint slug has no landing page (see domainHasLanding in lib/routes.ts).
 	const blueprintSlugs = new Set(blueprints.map((b) => b.data.system_slug));
 	section('Semantic blueprints', [
 		`- [All blueprints](${md(BLUEPRINTS_INDEX_PATH)}): the full catalog.`,
 		...domains
-			.filter((d) => !blueprintSlugs.has(d.data.code.toLowerCase()))
+			.filter((d) => domainHasLanding(d, blueprintSlugs))
 			.map((d) => {
 				const desc = d.data.catalog_description ?? d.data.description;
-				const path = `/blueprints/${d.data.code.toLowerCase()}`;
-				return `- [${d.data.name}](${md(path)})${desc ? `: ${desc}` : ''}`;
+				return `- [${d.data.name}](${md(domainPath(d))})${desc ? `: ${desc}` : ''}`;
 			}),
 	]);
 	for (const [domain, lines] of byDomain) section(`Blueprints: ${domain}`, lines);
@@ -149,6 +154,16 @@ export const GET: APIRoute = async ({ site }) => {
 			const desc = c.data.catalog_tagline ?? c.data.catalog_description;
 			return `- [${c.data.domain_name}](${md(skillPath(c))})${desc ? `: ${desc}` : ''}`;
 		}),
+	]);
+
+	// One page per category, each listing its sample prompts by title.
+	section('Templates', [
+		`- [All templates](${md(TEMPLATES_PATH)}): every category on one page.`,
+		...TEMPLATE_CATEGORIES.map(
+			(c) =>
+				`- [${c.name} templates](${md(templateCategoryPath(c))}): ` +
+				c.templates.map((t) => t.title).join(', '),
+		),
 	]);
 
 	section('Blog', [

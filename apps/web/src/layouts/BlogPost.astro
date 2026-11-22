@@ -1,5 +1,6 @@
 ---
 import Layout from './Layout.astro';
+import { BLOG_INDEX_PATH } from '~/lib/routes';
 import { Image } from 'astro:assets';
 import AudioPlayer from '~/components/common/AudioPlayer.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
@@ -40,7 +41,19 @@ import ScrollProgress from '~/components/layout/ScrollProgress.astro';
 
 <script type="application/ld+json" set:html={JSON.stringify(schema)} slot="head"></script>
 
-<Layout title={title} description={description} image={heroImage?.src} article={true} noindex={noindex} nofollow={nofollow}>
+<Layout
+  title={title}
+  description={description}
+  image={heroImage?.src}
+  article={true}
+  noindex={noindex}
+  nofollow={nofollow}
+  breadcrumbs={[
+    { name: 'Home', href: '/' },
+    { name: 'Blog', href: BLOG_INDEX_PATH },
+    { name: title, href: Astro.url.pathname },
+  ]}
+>
   <ScrollProgress />
   <article class="pb-20">
     <PageHeader class="max-w-4xl mx-auto px-6">

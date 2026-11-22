@@ -11,7 +11,7 @@ export interface PageRedirect {
  * was given an old URL and appends ".md" gets a 404, because Astro's redirects
  * only cover the HTML form.
  *
- * Derived rather than listed in src/data/redirects.jsonc, so the two forms can
+ * Derived rather than listed in apps/web/redirects.jsonc, so the two forms can
  * never disagree about where an old path now lives. A target with no twin (a
  * file, an external URL, an excluded page) gets no twin redirect.
  */

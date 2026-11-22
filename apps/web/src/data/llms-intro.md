@@ -4,8 +4,8 @@
 
 ## Machine-readable formats
 
-Almost every page on this site is also published as markdown, at the same path
-with ".md" appended:
+Every page on this site is also published as markdown, at the same path with
+".md" appended:
 
     https://www.semantius.com/docs/cli        ->  https://www.semantius.com/docs/cli.md
     https://www.semantius.com/about           ->  https://www.semantius.com/about.md
@@ -19,7 +19,7 @@ Each HTML page advertises its own twin with
 `<link rel="alternate" type="text/markdown" href="...">`. Every link below
 points at the markdown form, so you can follow them without leaving markdown.
 
-An index of the documentation, blog and blueprint twins is at
+An index of every markdown twin, with its title, is at
 https://www.semantius.com/llms-full.txt
 
 Blueprints additionally publish their complete source specification, YAML

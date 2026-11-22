@@ -11,7 +11,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { twinFromHtml } from './compose';
-import { hasMarkdownTwin, markdownUrl, normalizePagePath, toMarkdownPath } from './paths';
+import {
+	hasMarkdownTwin,
+	markdownUrl,
+	normalizePagePath,
+	pagePathOfTwin,
+	toMarkdownPath,
+} from './paths';
 
 /** Hand-written twins, relative to the project root. See README.md. */
 const OVERRIDES_DIR = 'src/lib/mdtwins/overrides';
@@ -53,7 +59,7 @@ function llmsFull(entries: Array<{ url: string; title: string }>, siteUrl: strin
 export function markdownTwins() {
 	let root = process.cwd();
 	let clientDir: string | undefined;
-	let siteFromConfig: string | undefined;
+	let site = '';
 	let buildStart = 0;
 
 	return {
@@ -65,8 +71,9 @@ export function markdownTwins() {
 				// Take the origin from the RESOLVED Astro config, never from
 				// process.env: Vite merges apps/web/.env (SITE_URL=localhost:4321)
 				// into process.env after astro.config.mjs is evaluated, so reading it
-				// later bakes the dev URL into production output.
-				if (config.site) siteFromConfig = String(config.site).replace(/\/+$/, '');
+				// later bakes the dev URL into production output. astro.config.mjs
+				// always sets `site`.
+				site = String(config.site).replace(/\/+$/, '');
 			},
 
 			// `astro dev` has no build output to read, so a twin is made on request
@@ -78,17 +85,21 @@ export function markdownTwins() {
 					try {
 						const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://dev').pathname);
 						if (!pathname.endsWith('.md')) return next();
-						const pagePath = pathname === '/index.md' ? '/' : pathname.slice(0, -3);
+						const pagePath = pagePathOfTwin(pathname);
 						if (!hasMarkdownTwin(pagePath)) return next();
 
-						const origin = `http://${req.headers.host}`;
 						let markdown = overrideFor(root, pagePath);
 						if (markdown === undefined) {
-							const page = await fetch(new URL(pagePath, origin));
+							// redirect: 'manual', so a redirected page (a vanity URL) is not
+							// followed here: its .md form has a redirect of its own in Astro's
+							// config, which answers it as the deployed site does.
+							const page = await fetch(new URL(pagePath, `http://${req.headers.host}`), {
+								redirect: 'manual',
+							});
 							if (!page.ok || !(page.headers.get('content-type') ?? '').includes('text/html')) {
 								return next();
 							}
-							markdown = twinFromHtml(await page.text(), pagePath, siteFromConfig ?? origin);
+							markdown = twinFromHtml(await page.text(), pagePath, site).markdown;
 						}
 						res.setHeader('Content-Type', 'text/markdown; charset=utf-8');
 						res.end(markdown);
@@ -104,7 +115,6 @@ export function markdownTwins() {
 
 			'astro:build:done': ({ dir, pages, logger }: any) => {
 				const outDir = clientDir ?? fileURLToPath(dir);
-				const siteUrl = siteFromConfig ?? 'https://www.semantius.com';
 
 				const extracted: string[] = [];
 				const overridden: string[] = [];
@@ -125,9 +135,11 @@ export function markdownTwins() {
 						continue;
 					}
 
+					// Made even when an override replaces it: its title and noindex come
+					// from the page, which the override does not change.
+					const twin = twinFromHtml(fs.readFileSync(htmlAbs, 'utf8'), pagePath, site);
 					const override = overrideFor(root, pagePath);
-					const markdown =
-						override ?? twinFromHtml(fs.readFileSync(htmlAbs, 'utf8'), pagePath, siteUrl);
+					const markdown = override ?? twin.markdown;
 					(override === undefined ? extracted : overridden).push(pagePath);
 
 					const mdRel = toMarkdownPath(pagePath).slice(1);
@@ -146,14 +158,18 @@ export function markdownTwins() {
 					fs.mkdirSync(path.dirname(mdAbs), { recursive: true });
 					fs.writeFileSync(mdAbs, markdown, 'utf8');
 					if (markdown.length < SIZE_FLOOR_BYTES) thin.push([mdRel, markdown.length]);
-					index.push({
-						url: markdownUrl(pagePath, siteUrl),
-						// The twin's own title: the first "# " heading, which docHeader always writes.
-						title: markdown.match(/^#\s+(.+)$/m)?.[1]?.trim() ?? pagePath,
-					});
+					// Same rule as advertisedTwinUrl(): a page that asks not to be
+					// indexed is not pointed at. Its twin is still written.
+					if (!twin.noindex) {
+						index.push({
+							url: markdownUrl(pagePath, site),
+							// An override's own "# " line names it; otherwise the page does.
+							title: (override && override.match(/^#\s+(.+)$/m)?.[1]?.trim()) || twin.title,
+						});
+					}
 				}
 
-				fs.writeFileSync(path.join(outDir, 'llms-full.txt'), llmsFull(index, siteUrl), 'utf8');
+				fs.writeFileSync(path.join(outDir, 'llms-full.txt'), llmsFull(index, site), 'utf8');
 				logger.info(
 					`${extracted.length + overridden.length} markdown twins ` +
 						`(${extracted.length} extracted, ${overridden.length} hand-written overrides)`,

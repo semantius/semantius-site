@@ -459,12 +459,12 @@ function getAdapter() {
 }
 
 /**
- * Reads src/data/redirects.jsonc, the only list of redirects, into the shape of
+ * Reads redirects.jsonc, the only list of page redirects, into the shape of
  * Astro's `redirects` option. "permanent": true is a 301; without it, a 302.
  * withTwinRedirects() adds each redirect's markdown twin form (/a.md -> /b.md).
  */
 function loadRedirects() {
-  const file = new URL('./src/data/redirects.jsonc', import.meta.url);
+  const file = new URL('./redirects.jsonc', import.meta.url);
   const text = fs.readFileSync(file, 'utf8');
   const errors = [];
   const list = parseJsonc(text, errors, { allowTrailingComma: true });
@@ -499,7 +499,7 @@ export default defineConfig({
   // build.format: 'file'. That sets ending='.html' unconditionally and makes
   // the canonical /docs/cli.html.
   trailingSlash: 'never',
-  // Every redirect, with its markdown twin's, from src/data/redirects.jsonc.
+  // Every page redirect, with its markdown twin's, from redirects.jsonc.
   redirects: loadRedirects(),
   fonts: [
     {
@@ -566,10 +566,9 @@ export default defineConfig({
     // whole site to its mobile layout (desktop nav and multi-column grids gone).
     (await import("astro-compress")).default({ Image: false, JavaScript: true, HTML: false, CSS: false }),
     // Keep last (see pagefindIndex docblock).
-    // Tier B markdown twins: extract from the rendered HTML of any page the
-    // .md route did not already emit from source. Must run BEFORE
-    // pagefindIndex(), which has to stay last; Pagefind globs **/*.html so the
-    // .md files it writes are never indexed.
+    // Markdown twins, made from every page's built HTML (src/lib/mdtwins).
+    // Must run BEFORE pagefindIndex(), which has to stay last; Pagefind globs
+    // **/*.html so the .md files it writes are never indexed.
     // siteUrl is read from the resolved Astro config inside the integration,
     // not from process.env: Vite merges apps/web/.env (SITE_URL=localhost:4321)
     // into process.env after this file is evaluated.

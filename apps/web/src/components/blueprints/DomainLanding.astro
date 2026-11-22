@@ -5,6 +5,7 @@
 import Layout from '~/layouts/Layout.astro';
 import ModuleCard from '~/components/blueprints/ModuleCard.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
+import { BLUEPRINTS_INDEX_PATH } from '~/lib/routes';
 
 interface ModuleData {
 	code: string;
@@ -27,7 +28,14 @@ const { domain } = Astro.props;
 const description = domain.catalog_description ?? domain.description;
 ---
 
-<Layout title={domain.name} description={description}>
+<Layout
+	title={domain.name}
+	description={description}
+	breadcrumbs={[
+		{ name: 'Blueprints', href: BLUEPRINTS_INDEX_PATH },
+		{ name: domain.name, href: Astro.url.pathname },
+	]}
+>
 	<PageHeader>
 		<div class="max-w-5xl mx-auto px-6">
 			<div class="mb-6">

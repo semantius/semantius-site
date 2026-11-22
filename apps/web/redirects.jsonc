@@ -1,5 +1,7 @@
-// Every redirect the site serves. Each key is the path a visitor requests and
-// "to" is where it sends them. Read by astro.config.mjs.
+// The site's page redirects. Each key is the path a visitor requests and "to"
+// is where it sends them. Read by astro.config.mjs. (The trailing-slash
+// catch-all, Cloudflare's own .html and slash handling, and the apex-to-www
+// rule live elsewhere: see CONTEXT-MEMORY.md, Deployment.)
 //
 // "permanent": true sends a 301. Browsers cache a 301 indefinitely and search
 // engines treat it as a move, so once visitors have followed one, changing its
@@ -7,7 +9,7 @@
 // caches, so the target can still change later (vanity URLs).
 //
 // The markdown twin of each redirect (/a.md -> /b.md, same status) is derived
-// in astro.config.mjs, so it is never listed here.
+// by src/lib/mdtwins/redirects.ts, so it is never listed here.
 //
 // Whether a moved page needs a redirect, and which kind, is the owner's
 // decision, not an agent's: ask. Write the reason in a comment above each

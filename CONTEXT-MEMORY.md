@@ -28,7 +28,7 @@ Four things a spelling sweep must **not** "fix":
 - `analyses` is the correct American plural of "analysis" (`root_cause_analyses`,
   `skills_gap_analyses`).
 - `aria-labelledby` is a standard HTML attribute.
-- `apps/web/src/lib/dualmark/NOTICE` says `licence`. It is vendored third-party
+- `apps/web/src/lib/mdtwins/NOTICE` says `licence`. It is vendored third-party
   attribution, so changing it is a license question rather than a spelling one.
 - Several hundred words are spelled `-ise` in both dialects: `promise`,
   `enterprise`, `franchise`, `otherwise`, `improvise`, `surprising`, `exercising`.
@@ -61,6 +61,15 @@ one long line with triple spaces. Use Write or Edit for such content.
 **Name the root cause, not only the fix.** When a change works around a structural
 problem instead of removing it, say so in the hand-back and the commit message, name
 the structural problem, and list the other places it affects.
+
+**Redirects are the owner's decision.** When pages are moved, redirects might be
+needed, but whether one is needed and what type is not for an agent to decide: always
+ask.
+
+**Nothing is committed before the owner has reviewed it.** When a preview deploy needs
+a commit first (AGENTS.md, Verification Workflow), stop and ask instead: the owner
+reviews the uncommitted changes, and the commit and deploy happen only after the owner
+says so.
 
 ## Working from the founder's page specifications
 
@@ -129,52 +138,27 @@ Never cite `pnpm lint` as evidence that a change is clean; run `pnpm build`.
 
 ### Every page is published twice: HTML and markdown
 
-The site serves an agent-facing markdown twin of every page at `<page-url>.md`
-(`/about/` → `/about.md`, `/` → `/index.md`). This is the AEO layer, ported from
-[dualmark](https://github.com/dodopayments/dualmark) (Apache-2.0) and inlined under
-`src/lib/dualmark/` rather than depended on. Keep the `NOTICE` and the per-file
-"Adapted from dualmark" headers: they are the license obligation.
+Each page has a markdown twin at `<page-url>.md`. Every twin is converted from the
+page's built HTML after the build, never re-rendered from source or collection data,
+because a second renderer of the same page drifts. All twin code is in
+`apps/web/src/lib/mdtwins/`, whose README is the reference. When a twin is wrong, fix
+the page markup or a generic rule in `extract.ts`, never twin text in code. A
+hand-written override in `mdtwins/overrides/` is the only exception.
 
-Three tiers, in priority order. **Nothing here ever fails the build, and no page ever
-requires a hand-written twin**; those two properties are the design, not an accident.
-
-| Tier | Source | Written by |
-| ---- | ------ | ---------- |
-| A | content collections, via a unified AST pipeline | `src/pages/[...twin].md.ts` + `src/lib/dualmark/manifest.ts` |
-| B | the page's own rendered HTML, the universal fallback | `markdownTwins()` in `src/lib/dualmark/integration.ts` |
-| C | a hand-written file in `src/data/twin-overrides/<path>.md` | the route writer, presence is the whole mechanism |
-
-Things that are non-obvious and easy to break:
-
-- **There are two writers, and there have to be.** Tier B reads built HTML, which does
-  not exist until every route has rendered, so it cannot live in a `getStaticPaths`
-  route. The integration writes a twin for any page the route did not claim during
-  *this* build (compared by mtime against build start, so a rebuild over a dirty `dist`
-  does not silently skip extraction).
-- **Tier B reuses the Pagefind content contract.** `<main data-pagefind-body>` in
-  `Layout.astro` plus `excludeSelectors` in `astro.config.mjs` define what counts as
-  content, for both the search index and the twins. Marking a region
-  `data-pagefind-ignore` improves both at once, which is the reason not to invent a
-  second selector list.
-- **The MDX branch must stay an AST walk, never regex.** `docs/cli/command.mdx` has a
-  bash heredoc (`<<EOF`) inside a code fence; any tag-stripping regex mangles it. The
-  visitor never enters `code` nodes.
-- **`normalizeUnicode` is only for strings we compose**, never for verbatim bodies.
-  Blueprint bodies carry mermaid fences where `-->` and `->` are syntax.
-- **`joinLines` keeps empty strings** on purpose: they are how callers request a blank
-  line, and markdown is whitespace-significant.
+- Keep the `NOTICE` and the per-file "Adapted from dualmark" headers: they are the
+  license obligation.
 - **`/blueprints/source/<file-id>.md` is not a twin.** It is the verbatim source download,
   frontmatter included, and its URL is interpolated into a copyable command on the
   detail page, so those URLs are already in users' agent transcripts. The bytes and the
-  path shape are frozen. Its namespace (file ids, all ending `-semantic-blueprint`) must
-  stay disjoint from page slugs; `getStaticPaths` throws if they ever collide, which is
-  the one deliberate hard failure in the feature because it guards data loss.
+  path shape are frozen. Its namespace must stay disjoint from page paths; the build
+  fails if a twin would overwrite a download, which is the one deliberate hard failure
+  in the feature because it guards data loss.
 
 ### All content URLs come from `src/lib/routes.ts`
 
-Slug derivation lives in exactly one module, imported by the `.astro` pages, the twin
-writers, `llms.txt` and `rss.xml.js`. Deriving the same URL in two places lets the
-copies drift apart. Add a helper
+Slug derivation lives in exactly one module, imported by the `.astro` pages, the
+blueprint source route, `llms.txt` and `rss.xml.js`. Deriving the same URL in two
+places lets the copies drift apart. Add a helper
 here rather than inlining a second expression.
 
 ### React islands
@@ -193,6 +177,13 @@ here rather than inlining a second expression.
   every page.
 
 ## Deployment
+
+### Deploy from Git Bash, not PowerShell
+
+Run `pnpm preview:wrangler` from Git Bash, not PowerShell: in PowerShell `bash`
+resolves to WSL's `bash.exe`, which does not inherit Windows environment variables, so
+`deploy-wrangler.sh` reports `CLOUDFLARE_API_TOKEN is not set` although dotenvx
+decrypted it.
 
 ### `agent-browser screenshot` needs an absolute path
 
@@ -346,11 +337,11 @@ redirect, so a hand-typed slashed URL 404s locally. That is expected.
 There are no `prerender = false` routes, so Astro builds in `static` mode. Consequences a future session must not undo by accident:
 
 - `workplace/wrangler.jsonc` is an **assets-only Worker** (no `main`). Astro emits no `dist/server/entry.mjs` in static mode, so pointing `main` at it breaks the deploy. Only re-add `main` if an on-demand route is introduced on purpose.
-- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/lib/dualmark/manifest.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`. The failure mode is a **zero-byte file, not an error**, so check sizes: `find dist/client -name '*.md' -size -100c` must print nothing.
+- With the Cloudflare adapter, prerendering runs **inside workerd**, not Node. `node:fs` reads of repo files (for example `../../blueprints/*.md`) silently produce empty output there. Bundle such files with `import.meta.glob(..., { query: '?raw', eager: true })` instead (see `apps/web/src/pages/[...blueprintSource].md.ts`). The node adapter hides this because it forces server mode and prerenders in Node, so always verify repo-file endpoints with `ADAPTER=cloudflare`. The failure mode is a **zero-byte file, not an error**, so check sizes: `find dist/client -name '*.md' -size -100c` must print nothing.
 - That rule is narrower than it looks, and treating it as a blanket ban costs work:
   - **`entry.body` from `getCollection()` is safe in workerd.** The content-layer store is bundled as a Vite virtual module, not read from disk at prerender time. Only reach for `import.meta.glob` when you need a repo file *verbatim including frontmatter*, or a file that is in no collection at all.
   - **`astro:build:done` runs in Node under every adapter.** Anything needing the filesystem, or a heavy dependency you would rather not bundle into workerd, belongs in an integration hook rather than a route. `markdownTwins()` and `pagefindIndex()` both rely on this.
-  - Heavy parsers are better run in a **content loader** than in a route: the loaders run in Node, and a derived field on the entry is then free at render time. `docs` and `blog` derive `markdownTwin` this way, mirroring how `blueprints` derives `overview` and `subsetHtml`.
+  - Heavy parsers are better run in a **content loader** than in a route: the loaders run in Node, and a derived field on the entry is then free at render time. `blueprints` derives `overview` and `subsetHtml` this way.
 
 ### Prerendered endpoint response headers are discarded
 
@@ -374,7 +365,7 @@ One trap in `_headers` itself: Cloudflare matches rules against the **request** 
 
 `ADAPTER` can still override the default from the environment, but it is not part of turbo's cache key, so `ADAPTER=<x> pnpm build` can replay a cached build made with another adapter.
 
-The `redirects` map in `astro.config.mjs` materializes only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
+Page redirects are listed in `apps/web/redirects.jsonc`. `loadRedirects()` in `astro.config.mjs` reads them, and `withTwinRedirects()` in `src/lib/mdtwins/redirects.ts` adds each one's markdown twin redirect. They materialize only in an adapter build, as `dist/client/_redirects`. Post-build sanity checks worth keeping:
 
 ```bash
 find apps/web/dist/client -name '*.md' -size -100c   # must print nothing
@@ -384,54 +375,6 @@ ls apps/web/dist/client/_redirects apps/web/dist/client/_headers
 `dist/server/` is created but stays empty in static mode. That is expected; it is not a sign SSR crept in.
 
 The `ADAPTER` switch still carries `netlify`, `vercel` and `node` branches. They are dormant rollback paths, not live targets.
-
-### A twin and its page must not be rendered twice from two places
-
-Every page here is rendered twice: by Astro components, and by the twin writers
-in `src/lib/dualmark/`. Where the second renderer **re-derives a value the first
-one computes**, the two drift silently.
-
-The rule: **one definition, imported by both renderers.**
-`lib/skill-install.ts` and `lib/blueprint-deploy.ts` exist for exactly that, and
-the join key is `system_slug` (the lowercased module code), never `system_name`.
-
-Two corollaries worth keeping:
-
-- **If the page computes it, extract it; if the source is it, copy it.** A
-  component that builds its content from a collection, such as a self-closing
-  `<ModelList />`, cannot be re-rendered from MDX. `mdxNeedsExtraction()` detects
-  that shape and withholds the source twin so Tier B extracts the page.
-- **Meaning encoded only in CSS does not survive.** Pills separated by `gap-2`
-  flatten into one token run ("Skill-Based AssignmentService Catalog Authoring").
-  Mark up a list as `<ul>/<li>`; the twin then gets the boundary for free, and so
-  does a screen reader.
-
-### The parity guard is the only thing that sees this class of bug
-
-`integration.ts` compares each source-derived twin against markdown extracted
-from the page it shipped with, and warns about sentences the page has and the
-twin lacks. It is a warning, never a build failure: some divergence is
-deliberate.
-
-Keep it tuned rather than silencing it: table rows, fenced code
-and link-only lines are excluded because they differ by formatting alone, and
-both sides are typography-folded because Tier A bodies are ASCII while pages are
-not.
-
-**Writing prose that names a URL? Use a code span, not a bare URL.** The two
-renderers stringify a self-linking URL differently: the source pipeline emits
-`[url](url)`, the HTML extractor collapses it to `<url>`, and the guard reports
-every such sentence as drift. A code span round-trips identically through both.
-The same applies to the leaked-origin guard next to it, which exists to catch a
-dev origin baked in at load time and so matches only the unswapped placeholder
-and the dev site origin: a page may legitimately name `localhost` (the
-self-hosting docs are about a stack reached at `http://localhost:3000`), and
-matching any `localhost:` made it warn on every build, which is how a real leak
-gets ignored.
-
-Currently accepted (not a regression): the `/blog`, `/docs` and `/blueprints`
-index twins do not carry the page's marketing lede, because the composed twin
-writes its own description of the page. Anything else it reports is a bug.
 
 ### Quote-aware attribute regexes, or the abstract truncates
 
@@ -519,9 +462,9 @@ Consequences when adding or restructuring docs:
 - **Sections are folders, never bare `.mdx` files at the top level.** A folder whose only file is `index.mdx` renders as a plain sidebar link rather than an expandable node, so a single-page section costs nothing. This also rules out the `X.mdx` beside `X/` collision, where both map to the same URL and collapse onto one nav node.
 - **Every tab folder needs its own `index.mdx`.** It is the tab's start page, and it supplies the tab label and the `/docs` hub-card description. The manifest deliberately carries no copy, so labels cannot drift from the pages they name.
 - **The breadcrumb no longer mirrors the URL.** It reads `Docs > <tab> > <folder> > <page>` with the tab resolved through `nav.json`, while the URL is `/docs/<folder>/<page>`. Nothing may infer the tab from the path. That includes the JSON-LD `BreadcrumbList`: docs pages pass it explicitly.
-- **A tab can be a single section** by listing its own folder in `folders` (Self-Hosting does). Its index.mdx is then the tab start page and the section landing at once, so every consumer has to avoid naming that node twice. The sidebar, the reading order and the trail therefore come only from `tabSidebarNodes()`, `tabPages()` and `docsTrail()` in `docs-tree.ts`, which DocsLayout, the twin manifest and llms.txt all call. Re-deriving any of them inline lets the page, the twin and the JSON-LD drift apart.
+- **A tab can be a single section** by listing its own folder in `folders` (Self-Hosting does). Its index.mdx is then the tab start page and the section landing at once, so every consumer has to avoid naming that node twice. The sidebar, the reading order and the trail therefore come only from `tabSidebarNodes()`, `tabPages()` and `docsTrail()` in `docs-tree.ts`, which DocsLayout and llms.txt call. Re-deriving any of them inline lets the page and the JSON-LD drift apart.
 - Two guards fail the build and name the offender: an entry listed with no matching folder, and a folder listed by two tabs.
-- Moving doc files changes their URLs. Old URLs get 301s from `docsLegacyRedirects` in `astro.config.mjs`, pointed at the final destination rather than chained through earlier schemes. **When a restructure restores an older scheme's URLs, that scheme's entries must be deleted, not retargeted**, or the redirect shadows the live page it now collides with.
+- Moving doc files changes their URLs. A redirect whose source path becomes a live page again shadows that page.
 
 ## Styling
 

@@ -24,8 +24,10 @@ const outputs = [
       {outputs.map((o) => (
         <li class="relative rounded-xl border border-foreground/15 bg-foreground/5 p-4 text-center">
           <span class="absolute -top-6 left-1/2 hidden h-6 w-0.5 -translate-x-1/2 bg-primary/60 sm:block" aria-hidden="true"></span>
-          <span class="block font-semibold">{o.layer}</span>
-          <span class="mt-2 block text-sm text-foreground/75">{o.line}</span>
+          {/* Paragraphs, not block spans: only real elements separate the two
+              lines once CSS is gone, as for screen readers and the markdown twin. */}
+          <p class="font-semibold">{o.layer}</p>
+          <p class="mt-2 text-sm text-foreground/75">{o.line}</p>
         </li>
       ))}
     </ul>
