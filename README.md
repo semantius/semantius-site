@@ -27,8 +27,6 @@ Every page is published twice: as HTML for people and as markdown for AI agents.
 
 Every twin is converted from its page's built HTML after the build, so a twin cannot say something its page does not. The only exception is a hand-written override, one file per page, added on purpose. All twin code lives in [`apps/web/src/lib/mdtwins`](./apps/web/src/lib/mdtwins/), and its [README](./apps/web/src/lib/mdtwins/README.md) explains how it works, what each file does and how to write an override.
 
-**`/blueprints/source/<id>.md` is not a twin.** It is the original blueprint file, offered as a download, and its URL appears in a copyable command on each blueprint page. Changing its path or contents breaks commands people have already copied.
-
 ## Search
 
 Site search uses [Pagefind](https://pagefind.app/), which builds a static index when the site is built. It indexes the HTML pages only and never reads the markdown twins.

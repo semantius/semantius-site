@@ -5,7 +5,7 @@ import PageHeader from '~/components/layout/PageHeader.astro';
 import PageTitle from '~/components/layout/PageTitle.astro';
 import {
     Boxes, Database, Plug, Terminal, Bot,
-    LayoutDashboard, Workflow, Library
+    LayoutDashboard, Workflow
 } from 'lucide-react';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
@@ -70,24 +70,15 @@ const features = [
         icon: Workflow,
         color: 'text-indigo-400',
         bg: 'bg-indigo-400/10'
-    },
-    {
-        slug: 'blueprint_catalog',
-        title: 'Blueprint Catalog',
-        description: 'A curated catalog of customizable, readily deployable blueprints covering domains like CRM, ITSM, and HRIS.',
-        href: '/blueprints',
-        icon: Library,
-        color: 'text-cyan-400',
-        bg: 'bg-cyan-400/10'
     }
 ];
 ---
 
-<Layout title="Features - Semantius Agentic Data Platform" description="The capabilities that make up the Semantius Agentic Data Platform: semantic models, a PostgreSQL based core, MCP connectors, a headless CLI, agent skills, UI, automation, and a blueprint catalog.">
+<Layout title="Features - Semantius Agentic Data Platform" description="The capabilities that make up the Semantius Agentic Data Platform: semantic models, a PostgreSQL based core, MCP connectors, a headless CLI, agent skills, UI and automation.">
     <PageHeader>
         <PageTitle
             title='The Semantius Agentic Data Platform'
-            description='A complete platform for building agent native business applications: a semantic model at the core, PostgreSQL backed APIs, MCP connectors for humans, a CLI for agents, agent skills, a generated UI, automation, and a catalog of ready to deploy blueprints.'
+            description='A complete platform for building agent native business applications: a semantic model at the core, PostgreSQL backed APIs, MCP connectors for humans, a CLI for agents, agent skills, a generated UI and automation.'
         />
     </PageHeader>
 

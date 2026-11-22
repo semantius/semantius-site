@@ -4,8 +4,6 @@ import intro from '~/data/llms-intro.md?raw';
 import {
 	blogPath, BLOG_INDEX_PATH,
 	DOCS_INDEX_PATH,
-	blueprintPath, blueprintBodyPath, BLUEPRINTS_INDEX_PATH,
-	domainHasLanding, domainPath,
 	skillPath, SKILLS_INDEX_PATH,
 	CHANGELOG_PATH,
 } from '~/lib/routes';
@@ -45,11 +43,9 @@ export const GET: APIRoute = async ({ site }) => {
 	const base = site!.toString();
 	const md = (path: string) => twinUrl(path, base);
 
-	const [docs, blog, blueprints, domains, catalogs] = await Promise.all([
+	const [docs, blog, catalogs] = await Promise.all([
 		getCollection('docs'),
 		getCollection('blog'),
-		getCollection('blueprints'),
-		getCollection('domains'),
 		getCollection('catalogs'),
 	]);
 
@@ -112,41 +108,6 @@ export const GET: APIRoute = async ({ site }) => {
 		`- [Terms](${md('/terms')}): terms of service.`,
 		`- [Bot simulator](${md('/botsim')}): proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you.`,
 	]);
-
-	// Blueprints grouped by owning domain. 56 entries is a lot for one list, so
-	// the grouping is what makes it navigable.
-	const domainByModule = new Map<string, string>();
-	for (const d of domains) {
-		for (const m of d.data.modules) domainByModule.set(m.code, d.data.name);
-	}
-	const byDomain = new Map<string, string[]>();
-	for (const bp of blueprints) {
-		// Keyed by module code; system_slug is that code lowercased. Using
-		// system_name (the label) matched nothing, so all 56 blueprints were
-		// filed under one "Other" heading and the grouping did no work at all.
-		const group = domainByModule.get(bp.data.system_slug.toUpperCase()) ?? 'Other';
-		const desc = bp.data.system_description ?? bp.data.description;
-		const line =
-			`- [${bp.data.system_name}](${md(blueprintPath(bp))})${desc ? `: ${desc}` : ''}` +
-			` ([full specification](${md(blueprintBodyPath(bp))}))`;
-		const existing = byDomain.get(group);
-		if (existing) existing.push(line);
-		else byDomain.set(group, [line]);
-	}
-	// Domain landings carry the buyer-facing copy for a whole domain and were
-	// reachable from no index at all. A domain whose code collides with a
-	// blueprint slug has no landing page (see domainHasLanding in lib/routes.ts).
-	const blueprintSlugs = new Set(blueprints.map((b) => b.data.system_slug));
-	section('Semantic blueprints', [
-		`- [All blueprints](${md(BLUEPRINTS_INDEX_PATH)}): the full catalog.`,
-		...domains
-			.filter((d) => domainHasLanding(d, blueprintSlugs))
-			.map((d) => {
-				const desc = d.data.catalog_description ?? d.data.description;
-				return `- [${d.data.name}](${md(domainPath(d))})${desc ? `: ${desc}` : ''}`;
-			}),
-	]);
-	for (const [domain, lines] of byDomain) section(`Blueprints: ${domain}`, lines);
 
 	section('Agent skills', [
 		`- [All skills](${md(SKILLS_INDEX_PATH)}): the full library.`,

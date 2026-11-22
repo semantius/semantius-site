@@ -25,6 +25,14 @@ const OVERRIDES_DIR = 'src/lib/mdtwins/overrides';
 /** Twins below this are almost certainly a bug, or a page worth an override. */
 const SIZE_FLOOR_BYTES = 200;
 
+/**
+ * The dev SITE_URL. Found in a twin, it means the dev origin reached the writer
+ * instead of the configured site, the bug that once shipped localhost links in
+ * twins. Other localhost addresses are legitimate content (the self-hosting
+ * docs are about a stack at http://localhost:3000), so only this one is matched.
+ */
+const DEV_ORIGIN = 'http://localhost:4321';
+
 /** The hand-written twin for a page, if one exists: overrides/<page path>.md. */
 function overrideFor(root: string, pagePath: string): string | undefined {
 	const file = path.join(root, OVERRIDES_DIR, toMarkdownPath(pagePath));
@@ -34,10 +42,10 @@ function overrideFor(root: string, pagePath: string): string | undefined {
 /**
  * llms-full.txt: every twin, one per line, with its title.
  *
- * Deliberately an INDEX, not a concatenation of the site. A full-text dump
- * would be about 2 MB, most of it blueprint entity tables, which no agent can
- * usefully hold in context. llms-full.txt is a convention, not a
- * specification, so it can be the useful artifact rather than the literal one.
+ * Deliberately an INDEX, not a concatenation of the site: a full-text dump is
+ * more than an agent can usefully hold in context, and every twin is one fetch
+ * away. llms-full.txt is a convention, not a specification, so it can be the
+ * useful artifact rather than the literal one.
  * Written here because only now is every twin known.
  */
 function llmsFull(entries: Array<{ url: string; title: string }>, siteUrl: string): string {
@@ -60,7 +68,6 @@ export function markdownTwins() {
 	let root = process.cwd();
 	let clientDir: string | undefined;
 	let site = '';
-	let buildStart = 0;
 
 	return {
 		name: 'markdown-twins',
@@ -78,8 +85,7 @@ export function markdownTwins() {
 
 			// `astro dev` has no build output to read, so a twin is made on request
 			// from the page the dev server renders, by the same twinFromHtml() the
-			// build uses. A .md request that is not a twin (the blueprint source
-			// downloads) finds no HTML page and passes through to its route.
+			// build uses. A .md request with no HTML page behind it passes through.
 			'astro:server:setup': ({ server }: any) => {
 				server.middlewares.use(async (req: any, res: any, next: (err?: unknown) => void) => {
 					try {
@@ -109,10 +115,6 @@ export function markdownTwins() {
 				});
 			},
 
-			'astro:build:start': () => {
-				buildStart = Date.now();
-			},
-
 			'astro:build:done': ({ dir, pages, logger }: any) => {
 				const outDir = clientDir ?? fileURLToPath(dir);
 
@@ -120,6 +122,7 @@ export function markdownTwins() {
 				const overridden: string[] = [];
 				const missing: string[] = [];
 				const thin: Array<[string, number]> = [];
+				const leaked: string[] = [];
 				const index: Array<{ url: string; title: string }> = [];
 
 				for (const page of pages as Array<{ pathname: string }>) {
@@ -144,20 +147,10 @@ export function markdownTwins() {
 
 					const mdRel = toMarkdownPath(pagePath).slice(1);
 					const mdAbs = path.join(outDir, mdRel);
-					// A .md file at this path written during THIS build came from a route
-					// (the blueprint source downloads), so a page and a download share a
-					// path and one would silently overwrite the other. The one deliberate
-					// hard failure here, because what it prevents is data loss. A file
-					// left over from an earlier build is older than buildStart.
-					if (fs.existsSync(mdAbs) && fs.statSync(mdAbs).mtimeMs >= buildStart - 1000) {
-						throw new Error(
-							`${mdRel} is both a route's output and the twin of ${pagePath}. ` +
-								`Move one of them: one file would overwrite the other.`,
-						);
-					}
 					fs.mkdirSync(path.dirname(mdAbs), { recursive: true });
 					fs.writeFileSync(mdAbs, markdown, 'utf8');
 					if (markdown.length < SIZE_FLOOR_BYTES) thin.push([mdRel, markdown.length]);
+					if (markdown.includes(DEV_ORIGIN)) leaked.push(mdRel);
 					// Same rule as advertisedTwinUrl(): a page that asks not to be
 					// indexed is not pointed at. Its twin is still written.
 					if (!twin.noindex) {
@@ -175,37 +168,12 @@ export function markdownTwins() {
 						`(${extracted.length} extracted, ${overridden.length} hand-written overrides)`,
 				);
 
-				// Regression guard for the class of bug that once shipped localhost URLs
-				// inside twins: the dev SITE_URL reaching a writer instead of the
-				// configured site. A twin may legitimately name some other localhost
-				// address (the self-hosting docs are about a stack at
-				// http://localhost:3000), so only the dev origin itself is matched.
-				const allMd: string[] = [];
-				const walk = (d: string) => {
-					for (const e of fs.readdirSync(d, { withFileTypes: true })) {
-						const f = path.join(d, e.name);
-						if (e.isDirectory()) walk(f);
-						else if (e.name.endsWith('.md')) allMd.push(f);
-					}
-				};
-				walk(outDir);
-				const leaked = allMd.filter((f) => fs.readFileSync(f, 'utf8').includes('http://localhost:4321'));
 				if (leaked.length) {
-					const names = leaked.slice(0, 10).map((f) => path.relative(outDir, f));
 					logger.warn(
-						`${leaked.length} twin(s) contain the dev origin http://localhost:4321. The ` +
-							`configured site origin is not reaching a writer:\n  ${names.join('\n  ')}`,
+						`${leaked.length} twin(s) contain the dev origin ${DEV_ORIGIN}. The configured ` +
+							`site origin is not reaching the writer:\n  ${leaked.slice(0, 10).join('\n  ')}`,
 					);
 				}
-
-				// The verbatim blueprint sources are not twins and are written by their
-				// own route. Counted here so a regression that emptied or dropped them
-				// is visible in the build log. split/join rather than a regex: an
-				// earlier character-class version matched nothing on Windows.
-				const sources = allMd.filter((f) =>
-					f.split(path.sep).join('/').includes('/blueprints/source/'),
-				);
-				logger.info(`${allMd.length} .md files total (${sources.length} verbatim blueprint sources)`);
 
 				// Reports, never throws: a missing or thin twin is a quality problem,
 				// not a release blocker.

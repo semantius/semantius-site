@@ -197,9 +197,9 @@ function contentRegion() {
  * The language of a code block, from what the HTML already carries:
  *
  * - Shiki's <pre data-language="bash">: every fenced block in markdown and MDX.
- * - <pre class="mermaid">: diagrams, from remarkMermaid() in astro.config.mjs
- *   and renderSubsetHtml() in lib/models-extract.ts. The class is the diagram
- *   script's own contract, so it cannot be renamed without breaking the page.
+ * - <pre class="mermaid">: diagrams, from remarkMermaid() in astro.config.mjs.
+ *   The class is the diagram script's own contract, so it cannot be renamed
+ *   without breaking the page.
  * - .command-text: the command box of Command.astro and SkillInstall.astro, a
  *   styled <code> or <textarea> rather than a <pre>. Inside a chat box
  *   (.command.is-chat) it is a prompt, otherwise a shell command. The class is

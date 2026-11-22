@@ -4,11 +4,7 @@ import { glob, file } from 'astro/loaders';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import matter from 'gray-matter';
-import {
-	extractOverview,
-	extractSubsetMarkdown,
-	renderSubsetHtml,
-} from './lib/models-extract';
+
 const blogCollection = defineCollection({
     loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
 	// Type-check frontmatter using a schema
@@ -55,68 +51,6 @@ const changelogCollection = defineCollection({
         migrationUrl: z.string().optional(),
         noindex: z.boolean().optional().default(false),
         nofollow: z.boolean().optional().default(false),
-    }),
-});
-
-// Wraps the standard `glob` loader to enrich each blueprint entry with values
-// derived from the markdown body once at collection-build time, instead of
-// re-extracting them on every page render. Pages just read `data.overview` and
-// `data.subsetHtml` like any other frontmatter field.
-// Blueprints live at /blueprints in the repo root (two levels above apps/web).
-const baseBlueprintsGlob = glob({ pattern: '**/*.{md,mdx}', base: '../../blueprints' });
-const blueprintsCollection = defineCollection({
-    loader: {
-        name: 'blueprints',
-        load: async (ctx) => {
-            await baseBlueprintsGlob.load(ctx);
-            for (const [id, entry] of ctx.store.entries()) {
-                const e = entry as {
-                    body?: string;
-                    data: Record<string, unknown>;
-                    filePath?: string;
-                    rendered?: unknown;
-                    deferredRender?: boolean;
-                };
-                const body: string = e.body ?? '';
-                const overview = extractOverview(body);
-                const subsetMarkdown = extractSubsetMarkdown(body);
-                const subsetHtml = renderSubsetHtml(subsetMarkdown);
-                const newData = await ctx.parseData({
-                    id,
-                    data: { ...e.data, overview, subsetHtml },
-                    filePath: e.filePath,
-                });
-                // Use a fresh digest: `store.set` is a no-op when the digest
-                // matches what the inner glob loader already wrote, so the
-                // derived fields would otherwise never reach the store.
-                ctx.store.set({
-                    id,
-                    data: newData,
-                    body: e.body,
-                    filePath: e.filePath,
-                    digest: ctx.generateDigest(JSON.stringify(newData)),
-                    rendered: e.rendered as never,
-                    deferredRender: e.deferredRender,
-                });
-            }
-        },
-    },
-    schema: z.object({
-        artifact: z.string().optional(),
-        fact_sheet_version: z.string().optional(),
-        system_name: z.string(),
-        system_slug: z.string(),
-        system_description: z.string().optional(),
-        domain_code: z.string().optional(),
-        domain_modules: z.array(z.string()).optional(),
-        related_modules: z.array(z.string()).optional(),
-        created_at: z.coerce.date(),
-        description: z.string().optional(),
-        noindex: z.boolean().optional().default(false),
-        nofollow: z.boolean().optional().default(false),
-        // Derived by the loader from the markdown body.
-        overview: z.string().optional(),
-        subsetHtml: z.string().optional(),
     }),
 });
 
@@ -192,11 +126,9 @@ const skillsCollection = defineCollection({
 });
 
 // The domain map (../../domain-map/domain-map.json, repo root) is the single
-// source of truth for the domains that group the semantic blueprints. Each
-// domain owns a set of modules; a module's blueprint page lives at
-// /blueprints/<module-code-lowercased>. Loaded via the `file` loader (path is
-// relative to the Astro project root, same convention as the blueprints glob
-// base above). The parser lifts the nested `domains` array and stamps an `id`
+// source of truth for the domains; the skills index uses it for their order and
+// selection. Loaded via the `file` loader (path is relative to the Astro project
+// root). The parser lifts the nested `domains` array and stamps an `id`
 // (required by the file loader) and `order` (preserves source order).
 const domainsCollection = defineCollection({
     loader: file('../../domain-map/domain-map.json', {
@@ -256,7 +188,6 @@ export const collections = {
 	'blog': blogCollection,
     'docs': docsCollection,
     'changelog': changelogCollection,
-    'blueprints': blueprintsCollection,
     'skills': skillsCollection,
     'domains': domainsCollection,
     'catalogs': catalogsCollection,

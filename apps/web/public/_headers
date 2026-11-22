@@ -39,8 +39,7 @@
 # calls contradictory. Rules here ADD, they do not override.
 #
 # Nothing markdown is suppressed now. Twins are consolidated onto their HTML
-# page with rel="canonical"; the verbatim blueprint sources have no HTML page
-# and self-canonicalise. Suppressing either would work against the point of
+# page with rel="canonical". Suppressing them would work against the point of
 # publishing them.
 /*.md
   Content-Type: text/markdown; charset=utf-8
@@ -74,26 +73,12 @@
   Link: </blog/:s1>; rel="canonical"
 /skills/:s1.md
   Link: </skills/:s1>; rel="canonical"
-/blueprints/:s1/blueprint.md
-  Link: </blueprints/:s1/blueprint>; rel="canonical"
-/blueprints/:s1.md
-  Link: </blueprints/:s1>; rel="canonical"
 /templates/:s1.md
   Link: </templates/:s1>; rel="canonical"
 /prompts/:s1.md
   Link: </prompts/:s1>; rel="canonical"
 /solutions/:s1.md
   Link: </solutions/:s1>; rel="canonical"
-
-# There is deliberately NO rule for /blueprints/source/:s1.md, the verbatim
-# specification downloads. They are unique content with no HTML page, so they
-# self-canonicalise and stay indexable, which is the point of publishing them.
-#
-# They only became addressable at all once they moved out of /blueprints/ into
-# /blueprints/source/. While both sets shared one segment, /blueprints/:s1.md
-# matched 68 real twins and 56 source files alike, and _headers matches whole
-# segments, so neither a canonical nor a noindex could be applied to one without
-# hitting the other. See blueprintSourcePath() in src/lib/routes.ts.
 
 # There is deliberately NO per-page "Link: rel=alternate" rule here.
 #

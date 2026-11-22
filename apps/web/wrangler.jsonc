@@ -2,5 +2,7 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "semantius-site",
 	"compatibility_date": "2026-03-17",
+	// multiformats@9.9.0 imports Node's `crypto` module, which Workers reject
+	// without nodejs_compat. Keep this flag in workplace/wrangler.jsonc too.
 	"compatibility_flags": ["nodejs_compat"]
 }

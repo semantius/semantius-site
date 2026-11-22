@@ -1,8 +1,8 @@
 /**
  * The single source of truth for every content-derived URL on this site.
  *
- * Every .astro page, the blueprint source route, llms.txt and rss.xml.js import
- * from here, so a slug rule changes in one place for all of them.
+ * Every .astro page, llms.txt and rss.xml.js import from here, so a slug rule
+ * changes in one place for all of them.
  *
  * This is not hypothetical. Before this module existed, rss.xml.js derived blog
  * links from `post.slug`, which the Astro content layer stopped providing, so
@@ -45,66 +45,6 @@ export function docsPath(doc: CollectionEntry<'docs'>): string {
 }
 
 export const DOCS_INDEX_PATH = '/docs';
-
-/* blueprints ----------------------------------------------------------- */
-
-export function blueprintSlug(bp: CollectionEntry<'blueprints'>): string {
-	return bp.data.system_slug;
-}
-
-/** The detail page: overview plus entity summary. */
-export function blueprintPath(bp: CollectionEntry<'blueprints'>): string {
-	return `/blueprints/${blueprintSlug(bp)}`;
-}
-
-/** The full-body page. 56 pages, easy to forget when enumerating routes. */
-export function blueprintBodyPath(bp: CollectionEntry<'blueprints'>): string {
-	return `/blueprints/${blueprintSlug(bp)}/blueprint`;
-}
-
-/**
- * The verbatim source download, keyed on the FILE id rather than the slug.
- * This is not a twin: no page exists at /blueprints/source/<file-id>. It is the
- * artifact users paste into an agent.
- *
- * The `source/` segment is load-bearing, not decoration. These files used to sit
- * at /blueprints/<file-id>.md, directly alongside the 68 real twins at
- * /blueprints/<slug>.md. public/_headers matches whole path segments, so no rule
- * could tell the two apart, and the twins could not be given a
- * rel="canonical" without pointing the 56 source files at a page that does not
- * exist. Moving them one level down makes both sets addressable.
- *
- * ALWAYS build source URLs from this function. Two pages used to interpolate the
- * old path by hand and would have broken silently on this move.
- */
-export function blueprintSourcePath(bp: CollectionEntry<'blueprints'>): string {
-	return `/blueprints/source/${bp.id}.md`;
-}
-
-export const BLUEPRINTS_INDEX_PATH = '/blueprints';
-
-/* domains -------------------------------------------------------------- */
-
-export function domainSlug(domain: CollectionEntry<'domains'>): string {
-	return domain.data.code.toLowerCase();
-}
-
-/**
- * Domain landings share the /blueprints/[slug] route with blueprint details,
- * and the blueprint wins when the codes collide. Three of the 15 domain codes
- * collide today (hvac-svc-mgmt, it-ops-starter, real-estate-agent), so those
- * three domains have no landing page at all.
- */
-export function domainHasLanding(
-	domain: CollectionEntry<'domains'>,
-	blueprintSlugs: Set<string>,
-): boolean {
-	return !blueprintSlugs.has(domainSlug(domain));
-}
-
-export function domainPath(domain: CollectionEntry<'domains'>): string {
-	return `/blueprints/${domainSlug(domain)}`;
-}
 
 /* skills --------------------------------------------------------------- */
 

@@ -266,9 +266,9 @@ function pagefindIndex() {
  *
  * Why the rule exists: html_handling 'drop-trailing-slash' only redirects when
  * an asset actually exists at the slash-less path. Redirect-only routes have no
- * HTML file, so /models/ fell through to the 404 page instead of reaching the
- * /models -> /blueprints rule. This catches every slashed request, and issues a
- * cacheable 301 instead of html_handling's 307.
+ * HTML file, so a slashed request to one (/pg_semantius/) fell through to the
+ * 404 page instead of reaching its redirect. This catches every slashed
+ * request, and issues a cacheable 301 instead of html_handling's 307.
  *
  * Why it must be last, and why this is an integration rather than a line in
  * public/_redirects: Cloudflare allows 2,000 static redirect rules but only 100
@@ -498,6 +498,8 @@ export default defineConfig({
   // in workplace/wrangler.jsonc. Do NOT "simplify" this with
   // build.format: 'file'. That sets ending='.html' unconditionally and makes
   // the canonical /docs/cli.html.
+  // `astro dev` and `astro preview` have no host-level redirect, so a hand-typed
+  // slashed URL 404s locally. That is expected.
   trailingSlash: 'never',
   // Every page redirect, with its markdown twin's, from redirects.jsonc.
   redirects: loadRedirects(),

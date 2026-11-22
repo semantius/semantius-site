@@ -108,10 +108,6 @@ Use an override only when a page's twin cannot be made right by fixing the page 
 
 **What you take on:** an override is a second copy of the page, so it no longer follows the page. When the page changes, update the override, or delete it to return to the generated twin. That is why there are none by default, and why each one should be a deliberate choice.
 
-## Not twins
-
-**`/blueprints/source/<id>.md`** is the original blueprint file, offered as a download. It is written by the route `src/pages/[...blueprintSource].md.ts`, not by this folder, and its URL appears in a copyable command on every blueprint page, so its path and bytes must not change. If a page ever got a twin at the same path, the build fails rather than overwriting one with the other.
-
 ## Redirects
 
 Redirects are listed in `apps/web/redirects.jsonc`. `withTwinRedirects()` gives each one a twin redirect with the same status, so `/old.md` follows `/old`. Never list the `.md` form in that file.
@@ -121,12 +117,11 @@ Redirects are listed in `apps/web/redirects.jsonc`. `withTwinRedirects()` gives 
 | Line | Meaning |
 | --- | --- |
 | `N markdown twins (X extracted, Y hand-written overrides)` | every twin written in this build |
-| `N .md files total (M verbatim blueprint sources)` | twins plus blueprint downloads |
 | `... twin(s) under 200 bytes` | extraction found almost nothing: fix the page, or consider an override |
 | `... page(s) have no HTML to make a twin from` | a page the build listed has no `index.html` |
 | `... contain the dev origin http://localhost:4321` | the dev `SITE_URL` reached a twin instead of the configured site |
 
-None of these fails the build. The only hard failure is the twin and download path collision described in [Not twins](#not-twins).
+None of these fails the build. The twins are the only `.md` files the site publishes, so nothing else can overwrite one.
 
 ## License
 

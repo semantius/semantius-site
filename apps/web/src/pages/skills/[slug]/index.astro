@@ -10,22 +10,16 @@ import SkillInstall from '~/components/common/SkillInstall.astro';
 
 // One skill per domain. The page is driven by the per-domain catalog copy
 // (catalogs collection, from skill-specs/<CODE>/catalog.yaml), with the slug =
-// domain code lowercased (e.g. /skills/ats). The domain map supplies the
-// modules whose blueprints back this domain.
+// domain code lowercased (e.g. /skills/ats).
 export async function getStaticPaths() {
 	const catalogs = await getCollection('catalogs');
-	const domains = await getCollection('domains');
-	const modulesByCode = new Map(domains.map((d) => [d.data.code, d.data.modules]));
 	return catalogs.map((catalog) => ({
 		params: { slug: (catalog.data.domain_code_lower ?? catalog.data.domain_code).toLowerCase() },
-		props: {
-			catalog: catalog.data,
-			modules: modulesByCode.get(catalog.data.domain_code) ?? [],
-		},
+		props: { catalog: catalog.data },
 	}));
 }
 
-const { catalog, modules } = Astro.props;
+const { catalog } = Astro.props;
 
 // The catalog_description block scalar holds one or more paragraphs separated
 // by blank lines.
@@ -107,28 +101,6 @@ const usageCommand = catalog.skill_name ? `/${catalog.skill_name} get started` :
 						{catalog.capability_names.map((capability) => (
 							<li class="inline-flex items-center rounded-full border border-border px-3 py-1.5 text-sm text-foreground/90">
 								{capability}
-							</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			{modules.length > 0 && (
-				<div class="mt-10 border-t border-border pt-8">
-					<h2 class="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-						Related blueprints
-					</h2>
-					{/* Also a list, for the same reason: adjacent <a> pills flattened
-					    into "[One](...)[Two](...)[Three](...)" on a single line. */}
-					<ul class="flex list-none flex-wrap gap-2 p-0">
-						{modules.map((module) => (
-							<li>
-								<a
-									href={`/blueprints/${module.code.toLowerCase()}`}
-									class="inline-flex items-center gap-1.5 rounded-full border border-primary px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-primary hover:text-white"
-								>
-									{module.name}
-								</a>
 							</li>
 						))}
 					</ul>

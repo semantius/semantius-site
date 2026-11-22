@@ -21,6 +21,3 @@ points at the markdown form, so you can follow them without leaving markdown.
 
 An index of every markdown twin, with its title, is at
 https://www.semantius.com/llms-full.txt
-
-Blueprints additionally publish their complete source specification, YAML
-frontmatter included, at https://www.semantius.com/blueprints/source/<file-id>.md
