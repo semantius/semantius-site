@@ -53,6 +53,8 @@ export interface CloudPlan {
 	/** `null`: no limit. People and agents each count as one user. */
 	userLimit: number | null;
 	maxComputeUnits: number;
+	/** GB-hours of compute a month. `null`: no limit. */
+	computeLimitGbHours: number | null;
 	/** `null`: no limit, storage is paid in credits. */
 	storageLimit: string | null;
 	topUps: boolean;
@@ -71,6 +73,7 @@ export const CLOUD_PLANS: CloudPlan[] = [
 		credits: 200,
 		userLimit: 5,
 		maxComputeUnits: 1,
+		computeLimitGbHours: 100,
 		storageLimit: '500 MB',
 		topUps: false,
 		support: 'Documentation only',
@@ -86,6 +89,7 @@ export const CLOUD_PLANS: CloudPlan[] = [
 		credits: 250,
 		userLimit: null,
 		maxComputeUnits: 32,
+		computeLimitGbHours: null,
 		storageLimit: null,
 		topUps: true,
 		// Response-time targets for the Standard plan are not decided, so the

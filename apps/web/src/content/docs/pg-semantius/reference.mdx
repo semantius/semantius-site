@@ -9,24 +9,24 @@ Lookup material for `pg_semantius`. The pages before this one explain when you n
 
 ## Functions
 
-Four functions live in the `semantius` schema. They are the only things the extension itself owns, along with the schema and the roles.
+One procedure and three functions live in the `semantius` schema. Together with the schema, they are the only things the extension itself owns. The roles are created by it but belong to the whole server.
 
 | Function | What it does |
 | --- | --- |
-| `semantius.migrate()` | Installs or updates the core schema. Superuser only. Commits after each migration file, and is safe to run again. |
-| `semantius.pending()` | Lists what a `migrate()` would apply. Works before the first install. |
-| `semantius.version()` | The version of the installer, which is not always the version in the database. |
+| `semantius.migrate()` | A procedure that installs or updates the core schema. Superuser only. Commits after each migration file, and is safe to run again. It refuses a database a newer version migrated, and one this version cannot update, before it changes anything. |
+| `semantius.pending()` | Lists the migrations that are waiting. Works before the first `migrate()`, and lists them even on a database `migrate()` refuses. |
+| `semantius.version()` | The version of the installer in this database, which is not necessarily what the schema has been migrated to. |
 | `semantius.status()` | The state of the installation. This is the one to trust. |
 
 `semantius.status()` returns a single row:
 
 | Column | Tells you |
 | --- | --- |
-| `extversion` | Version of the installer on the server |
-| `db_version` | Version actually installed in this database |
-| `applied`, `pending` | How many migrations have run, and how many are waiting |
-| `unknown_versions` | Migrations in the database that this build does not recognize |
-| `changed_versions` | Migrations whose source has changed since they were applied |
+| `extversion` | Version of the installer in this database, the same one `\dx` shows |
+| `db_version` | When the data model last changed: a timestamp the data dictionary updates on every change, so clients can tell their cached copy of the schema is out of date. It is not a version number. |
+| `applied`, `pending` | How many of this version's migrations have run, and how many are waiting |
+| `unknown_versions` | Migrations recorded in the database that this version does not include. Modules you deployed with the CLI, such as the Northwind sample, are listed here too. |
+| `changed_versions` | Run-once migrations recorded differently from this version. `migrate()` refuses a database that has one. |
 | `unowned_objects` | Objects with unexpected ownership, usually after a restore |
 | `default_acls_ok` | Whether default privileges survived a restore |
 | `jwt_aud_set` | Whether the token audience check is switched on |
@@ -46,7 +46,7 @@ If one of these names already exists with different properties, or if `semantius
 
 ## What Gets Created
 
-`CREATE EXTENSION` creates the four roles, the `semantius` schema, and the four functions above. Everything else comes from `semantius.migrate()` and is created as ordinary database objects, which is what makes backups and `DROP EXTENSION` behave normally.
+`CREATE EXTENSION` creates the four roles, the `semantius` schema, and the procedure and three functions above. Everything else comes from `semantius.migrate()` and is created as ordinary database objects, which is what makes backups and `DROP EXTENSION` behave normally.
 
 | Schema | Holds |
 | --- | --- |
@@ -60,13 +60,14 @@ Also created: four event triggers, which record schema changes and tell the API 
 
 ## Session Settings
 
-These are read from the session at runtime rather than set in a configuration file. In an ordinary deployment the API tier sets the first group and the extension manages the rest.
+These are read from the session at runtime rather than set in a configuration file. In an ordinary deployment the API tier sets the first three and the extension manages the rest.
 
 | Setting | Set by |
 | --- | --- |
 | `request.jwt.claims` | Your API tier, once per request, holding the verified sign-in token |
 | `request.jwt.claim.sub`, `.email`, `.role`, `.name`, `.aud` and similar | The same, one setting per claim, which is the style Neon and Supabase use |
-| `app.current_user_id`, `app.user_permissions`, `app.oauth_scopes` and others in the `app.` group | The permission code itself, per transaction |
+| `app.oauth_scopes` | Your API tier, to confine a session to the permissions a scope list names. Unset or empty means no confinement. |
+| `app.current_user_id`, `app.user_permissions` and the other settings in the `app.` group | The permission code itself, per transaction |
 | `dd.table_rename` | The data dictionary, while renaming a table |
 
 One row of `public._settings` is worth a deliberate decision. `jwt_aud` pins the audience a sign-in token must name. Set it, and a token for a different audience is rejected. Leave it unset, and the audience is not checked at all, so any token from your trusted issuer is accepted. Set it once you mint tokens for more than one audience from the same issuer.
@@ -83,16 +84,24 @@ One row of `public._settings` is worth a deliberate decision. `jwt_aud` pins the
 | `55000` | `the pgmq extension is installed` | The standalone queue extension is present, and this one carries its own |
 | `55000` | `pgcrypto must be installed in schema public` | Usually caused by `CASCADE`. Fix with `ALTER EXTENSION pgcrypto SET SCHEMA public`. |
 | `55000` | `existing role semantius_owner has unexpected attributes` | A role of that name exists and is not the expected one |
+| `55000` | `existing role semantius_owner already has members` | Another role was made a member of it, and would own every Semantius object after a restore |
 | `55000` | `semantius.migrate() cannot run inside a CREATE/ALTER EXTENSION script` | `migrate()` was called from within an extension script |
+| `55000` | `... from a newer pg_semantius build ...; use a newer pg_semantius, then ALTER EXTENSION pg_semantius UPDATE and CALL semantius.migrate()` | A newer version already migrated this database, as after a dump restored onto a server with older extension files. Nothing was changed. |
+| `55000` | `run-once migration ... in this database differs from this version: this database cannot be updated; replace the database with a fresh install` | This database recorded a run-once migration differently from this version, so it cannot reach this version's schema. Nothing was changed. |
+| `55000` | `migration ... in this database is not part of this version: this database cannot be updated; replace the database with a fresh install` | This database has a core migration from another build that this version does not include. Nothing was changed. |
+| `55P03` | `another migration is running` | Another `migrate()` or CLI run holds the lock. Run it again once that one has finished. |
+| `2D000` | `invalid transaction termination` | `CALL semantius.migrate()` ran inside `BEGIN` and `COMMIT` or with `psql -1` |
+| `P0001` | `migration _core.0100_rbac_rls.sql failed: role "..." does not have BYPASSRLS ...` | The installing superuser lacks the `BYPASSRLS` attribute. The hint gives the `ALTER ROLE` that adds it. |
+| `P0001` | `migration <app>.<file> failed: <message> (SQLSTATE <code>)` | That file failed. The files before it stay applied, and the next `migrate()` continues from there. |
 
 ## Requirements
 
 - **PostgreSQL 18**, the only tested version.
 - **A UTF8 database.** Checked at install time.
-- **Superuser rights** to install, and none to use.
+- **Superuser rights with the `BYPASSRLS` attribute** to install, and none to use. The `postgres` superuser that a new server starts with has it; a superuser you create with `CREATE ROLE` does not, unless you add it.
 - **No standalone `pgmq` extension** in the same database.
 
-`semantius.migrate()` also fixes several session settings for the duration of the install, so an unusual connection cannot change what gets built. It will refuse to run in a read-only transaction, under a statement or lock timeout shorter than the install takes, or at an isolation level above read committed.
+`semantius.migrate()` also fixes several session settings for the duration of the install, so an unusual connection cannot change what gets built. It still fails in a read-only transaction, under a statement timeout shorter than the install, and under a lock timeout shorter than a lock wait the install meets.
 
 ## Next Steps
 

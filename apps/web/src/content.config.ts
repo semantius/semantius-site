@@ -3,7 +3,9 @@ import { z } from 'astro/zod';
 import { glob, file } from 'astro/loaders';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import matter from 'gray-matter';
+import { ROADMAP_DISCUSSIONS_REPO, ROADMAP_CATEGORY_SLUG } from './lib/roadmap';
 
 const blogCollection = defineCollection({
     loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
@@ -184,8 +186,66 @@ const catalogsCollection = defineCollection({
     }),
 });
 
+// The roadmap entries are the discussions in the "Roadmap" category of the
+// semantius organization's GitHub Discussions (see lib/roadmap.ts), fetched with
+// the `gh` CLI at build time. This has to be a content loader: loaders run in
+// Node, while a route prerenders in workerd, where child_process does not exist.
+// `gh` must be installed and authenticated (locally `gh auth login`, in CI the
+// GH_TOKEN env var); if it fails, execFileSync throws and the build fails.
+const ghGraphql = (query: string, vars: Record<string, string>, jq: string, paginate = false): string =>
+    execFileSync(
+        'gh',
+        [
+            'api', 'graphql',
+            ...(paginate ? ['--paginate'] : []),
+            '-f', `query=${query}`,
+            ...Object.entries(vars).flatMap(([k, v]) => ['-f', `${k}=${v}`]),
+            '--jq', jq,
+        ],
+        { encoding: 'utf-8', maxBuffer: 64 * 1024 * 1024 },
+    );
+
+const roadmapCollection = defineCollection({
+    loader: {
+        name: 'roadmap',
+        load: async ({ store, parseData, generateDigest }) => {
+            const repo = { owner: ROADMAP_DISCUSSIONS_REPO.owner, name: ROADMAP_DISCUSSIONS_REPO.name };
+            const categoryId = ghGraphql(
+                'query($owner: String!, $name: String!, $slug: String!) { repository(owner: $owner, name: $name) { discussionCategory(slug: $slug) { id } } }',
+                { ...repo, slug: ROADMAP_CATEGORY_SLUG },
+                '.data.repository.discussionCategory.id',
+            ).trim();
+            // `--paginate` follows pageInfo.endCursor; `@json` prints one discussion per line.
+            const lines = ghGraphql(
+                'query($owner: String!, $name: String!, $categoryId: ID!, $endCursor: String) { repository(owner: $owner, name: $name) { discussions(first: 100, after: $endCursor, categoryId: $categoryId, orderBy: {field: CREATED_AT, direction: DESC}) { nodes { number title url labels(first: 100) { nodes { name } } } pageInfo { hasNextPage endCursor } } } }',
+                { ...repo, categoryId },
+                '.data.repository.discussions.nodes[] | {number, title, url, labels: [.labels.nodes[].name]} | @json',
+                true,
+            ).split('\n').filter((line) => line.trim() !== '');
+            // Replace the whole set, so a discussion that was deleted or moved out
+            // of the category does not survive in the content-layer cache.
+            store.clear();
+            for (const [order, line] of lines.entries()) {
+                const d = JSON.parse(line) as { number: number; title: string; url: string; labels: string[] };
+                const id = String(d.number);
+                const data = await parseData({ id, data: { ...d, order } });
+                store.set({ id, data, digest: generateDigest(data) });
+            }
+        },
+    },
+    schema: z.object({
+        number: z.number(),
+        title: z.string(),
+        url: z.string(),
+        labels: z.array(z.string()),
+        // Position in the order GitHub returned them: newest first.
+        order: z.number(),
+    }),
+});
+
 export const collections = {
 	'blog': blogCollection,
+    'roadmap': roadmapCollection,
     'docs': docsCollection,
     'changelog': changelogCollection,
     'skills': skillsCollection,

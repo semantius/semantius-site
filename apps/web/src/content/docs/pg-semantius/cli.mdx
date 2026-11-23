@@ -54,13 +54,24 @@ The option is the clearest for one-off work:
 
 `pg_semantius --help` lists the rest, including the tooling that generates type definitions for Drizzle and Kysely.
 
-`migrate` is the one you will use. `_core` is the Semantius core itself, and it is added automatically whenever you name anything else, so these two are the same:
+`migrate` is the one you will use. `_core` is the Semantius core itself. It is part of every run, added automatically whenever you name anything else, so this installs or updates the core on its own:
 
 <Command command="pg_semantius migrate --apps _core" />
 
 To deploy your own module, name its folder instead. To see the SQL without running it, add `--script`, which writes a file rather than touching the database.
 
+If the folder you run it from has an `apps/_core` of its own, that copy is used instead of the one inside the program. When some of its files are not the ones this release carries, `migrate` lists them and asks you to type `Y` before it applies them, because a database that recorded such a copy of a run-once migration cannot be updated by a release later. Without a terminal to ask, it stops; `--confirm` skips the question.
+
 `test` needs the pgTAP testing framework inside the target database. Install it with `pg_semantius migrate --apps test`, which is a normal thing to do on a development database and not something to run on a production one.
+
+## Keep It as New as the Database
+
+Before it changes anything, `migrate` checks that the database is one it can update, and stops with an error otherwise:
+
+- **A newer `pg_semantius` has already migrated the database.** The message ends with `use a newer pg_semantius`. This happens even when you only deploy a module of your own, because `_core` is part of every run. Run the installer again to get the current release, then repeat the command.
+- **The database cannot be brought to this release.** The message ends with `this database cannot be updated; replace the database with a fresh install`. Install the core into a new database and move your data across.
+
+Either way nothing has been changed.
 
 ## Three Commands That Delete Everything
 
@@ -72,7 +83,7 @@ These exist because rebuilding a development database from scratch is a normal t
 | `reset` | The same, then reinstalls a bare `_core` with no sample data |
 | `retest` | The same, then reinstalls `_core`, the sample module, and the tests, then runs them |
 
-**None of them can be undone, and none of them ask twice.** Each requires `--confirm` on the command line, which is the only safety catch there is. Check `--database-url` before you press enter, particularly if you keep several databases in `.env` files.
+**None of them can be undone.** Without `--confirm`, each asks once before it starts: `dropall` wants you to type `Y`, `reset` and `retest` want `yes`. With `--confirm` there is no question at all, so check `--database-url` before you press enter, particularly if you keep several databases in `.env` files.
 
 ## On Neon, Supabase, and Other Hosted Databases
 

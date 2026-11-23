@@ -12,7 +12,8 @@ const available = plan.status === 'available';
 const lines = [
   plan.userLimit === null ? 'No limit on users' : `Up to ${plan.userLimit} users, people and agents alike`,
   `Up to ${count(plan.maxComputeUnits)} compute ${plan.maxComputeUnits === 1 ? 'unit' : 'units'}`,
-  plan.storageLimit === null ? 'Unlimited data storage, paid in credits' : `Up to ${plan.storageLimit} of data storage`,
+  plan.computeLimitGbHours === null ? 'Unlimited compute' : `Up to ${count(plan.computeLimitGbHours)} GB-hours of compute a month`,
+  plan.storageLimit === null ? 'Unlimited data storage' : `Up to ${plan.storageLimit} of data storage`,
   ...(plan.topUps ? ['Top-ups available'] : []),
   ...(plan.webhookReceivers ? ['Webhook receivers'] : []),
   plan.support === 'Support' ? 'Support' : `Support: ${plan.support.toLowerCase()}`,

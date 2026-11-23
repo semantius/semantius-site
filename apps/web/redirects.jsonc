@@ -17,6 +17,6 @@
 {
 
   // Vanity URL for the pg_semantius docs. The target may move, so it is a 302.
-  "/pg_semantius": { "to": "/docs/pg-semantius" }  
-
+  "/pg_semantius": { "to": "/docs/pg-semantius" },
+  "/pg-semantius": { "to": "/docs/pg-semantius" }  
 }

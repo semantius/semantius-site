@@ -34,6 +34,10 @@ jobs:
       # It must be the full 64-char hex key (see CONTEXT-MEMORY.md, Deployment):
       # a 63-char value leaves every secret undecrypted without failing loudly.
       DOTENV_PRIVATE_KEY: ${{ secrets.DOTENV_PRIVATE_KEY }}
+      # The build runs `gh` to fetch the /roadmap entries from the public GitHub
+      # Discussions (content.config.ts, `roadmap` loader). gh is preinstalled on
+      # the runner but needs a token; the job's own token can read public data.
+      GH_TOKEN: ${{ github.token }}
       # Build-time vars (PUBLIC_POSTHOG_*) live in that committed .env too, so
       # there is nothing else to supply: apps/web/.env is untracked and absent on
       # a CI checkout, and with no file present Astro takes those values from the
@@ -54,7 +58,7 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Deploy
-        # `pnpm run <script>`, never `pnpm deploy:...` — pnpm has a built-in
+        # `pnpm run <script>`, never `pnpm deploy:...`: pnpm has a built-in
         # `deploy` command that shadows bare invocations.
         env:
           TARGET: ${{ inputs.target || 'production' }}
@@ -69,4 +73,4 @@ jobs:
       # in the run summary means the absence of a URL is visible at a glance.
       - name: Report deployed URL
         if: always()
-        run: test -f .preview-url.md && cat .preview-url.md >> "$GITHUB_STEP_SUMMARY" || echo 'No .preview-url.md — deploy did not complete.' >> "$GITHUB_STEP_SUMMARY"
+        run: test -f .preview-url.md && cat .preview-url.md >> "$GITHUB_STEP_SUMMARY" || echo 'No .preview-url.md, deploy did not complete.' >> "$GITHUB_STEP_SUMMARY"

@@ -165,6 +165,29 @@ function rehypeTableScroll() {
 }
 
 /**
+ * Adds the `repo-link` class to every link to a GitHub repository, which
+ * `src/styles/components.css` draws as the GitHub logo left of the link text.
+ * An .astro page sets the class by hand.
+ *
+ * A repository link goes to the repository itself, github.com/<owner>/<repo>:
+ * not to a page inside it (a release, a file) and not to an organization page
+ * such as github.com/orgs/<owner>/discussions.
+ */
+const GITHUB_REPO_URL = /^https?:\/\/(?:www\.)?github\.com\/(?!(?:orgs|sponsors|topics|marketplace|settings)\/)[\w.-]+\/[\w.-]+\/?$/i;
+
+function rehypeRepoLinks() {
+    return function transformer(tree) {
+        function walk(node) {
+            if (node.type === 'element' && node.tagName === 'a' && GITHUB_REPO_URL.test(String(node.properties?.href ?? ''))) {
+                node.properties.className = [...[].concat(node.properties.className ?? []), 'repo-link'];
+            }
+            node.children?.forEach(walk);
+        }
+        walk(tree);
+    };
+}
+
+/**
  * Custom Astro integration that replaces astro-mermaid.
  * The mermaid -> <pre class="mermaid"> transform is handled by remarkMermaid
  * (registered in the top-level markdown processor). This integration adds the
@@ -312,6 +335,32 @@ function trailingSlashRedirect() {
         const body = lines.join('\n').replace(/\s*$/, '');
         fs.writeFileSync(file, (body ? body + '\n' : '') + RULE + '\n');
         logger.info('catch-all trailing-slash rule appended to _redirects');
+      },
+    },
+  };
+}
+
+/**
+ * Gives `astro dev` its own Vite cache folder, node_modules/.vite-dev, instead
+ * of the default node_modules/.vite.
+ *
+ * `astro build`, `astro sync` and `astro check` start a temporary Vite server
+ * in production mode, and it pre-bundles the `optimizeDeps.include` list
+ * (React among it) into the same default folder. A build run while the dev
+ * server is up therefore replaces the dev server's React with React's
+ * production build, in which `jsxDEV` is undefined: every React island throws
+ * "_jsxDEV is not a function" while hydrating and disappears right after the
+ * server-rendered HTML shows. The dev server keeps serving the replaced files
+ * until it is restarted with a fresh cache.
+ */
+function devViteCacheDir() {
+  return {
+    name: 'dev-vite-cache-dir',
+    hooks: {
+      'astro:config:setup': ({ command, updateConfig }) => {
+        if (command === 'dev') {
+          updateConfig({ vite: { cacheDir: 'node_modules/.vite-dev' } });
+        }
       },
     },
   };
@@ -540,6 +589,7 @@ export default defineConfig({
         rehypeSlug,
         [rehypeAutolinkHeadings, autolinkHeadingsOptions],
         rehypeTableScroll,
+        rehypeRepoLinks,
       ],
     }),
   },
@@ -552,6 +602,7 @@ export default defineConfig({
       }
     }),
     react(),
+    devViteCacheDir(),
     // @astrojs/mdx 8 delegates MDX processing to `markdown.processor`, so
     // MDX files inherit the remark/rehype plugins configured in the
     // `unified()` call above (rehypeSlug and rehypeAutolinkHeadings among

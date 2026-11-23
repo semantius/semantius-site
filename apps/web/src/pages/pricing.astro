@@ -23,10 +23,8 @@ import {
   SUPPORT_HOURS,
   SUPPORT_TIERS,
   TOP_UP_PACKS,
-  WORKED_EXAMPLES,
   cloudOffers,
   count,
-  usageCredits,
   usd,
   type Cell,
   type CloudPlan,
@@ -37,8 +35,6 @@ import {
 // search, the markdown twin and a reader without JavaScript get all of it; the
 // script at the bottom only decides which panel is displayed.
 
-const planByKey = Object.fromEntries(CLOUD_PLANS.map((p) => [p.key, p])) as Record<CloudPlan['key'], CloudPlan>;
-
 const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell }[] = [
   { label: 'Price, monthly', cell: (p) => `${usd(p.monthlyPrice)} per month` },
   // Shown once the founder sets a yearly price (see HAS_YEARLY).
@@ -48,7 +44,8 @@ const compareRows: { label: string; hint?: string; cell: (p: CloudPlan) => Cell 
   { label: 'Credits included', hint: 'granted each month', cell: (p) => count(p.credits) },
   { label: 'Users', hint: 'people and agents each count as one', cell: (p) => (p.userLimit === null ? 'No limit' : String(p.userLimit)) },
   { label: 'Maximum compute', cell: (p) => `${p.maxComputeUnits} compute ${p.maxComputeUnits === 1 ? 'unit' : 'units'}` },
-  { label: 'Data storage limit', cell: (p) => p.storageLimit ?? 'Unlimited, paid in credits' },
+  { label: 'Compute limit', cell: (p) => (p.computeLimitGbHours === null ? 'Unlimited' : `${count(p.computeLimitGbHours)} GB-hours a month`) },
+  { label: 'Data storage limit', cell: (p) => p.storageLimit ?? 'Unlimited' },
   { label: 'Top-ups', cell: (p) => p.topUps },
   { label: 'Support', cell: (p) => p.support },
   { label: 'Webhook receivers', hint: 'let other systems send records in through a signed webhook', cell: (p) => p.webhookReceivers },
@@ -304,48 +301,6 @@ const td = 'py-3 px-4 text-sm align-top';
           </div>
         </section>
 
-        <section>
-          <h3 id="examples" class={sectionTitle}>Worked Examples</h3>
-          <p class={lede}>Compute depends on how long the database is active, not on the number of users. These three setups are illustrative: the usage is assumed, and the credits are worked out from the rates above. Each one shows the plan that costs least for it.</p>
-          <div class="grid gap-6 lg:grid-cols-3">
-            {WORKED_EXAMPLES.map((ex) => {
-              const c = usageCredits(ex.usage);
-              const u = ex.usage;
-              const rows = [
-                ['Compute', `${u.computeUnits} compute ${u.computeUnits === 1 ? 'unit' : 'units'}, ${count(u.hours)} hours a month (${u.activity})`, c.compute],
-                ['Data storage', `${u.storageGb} GB`, c.storage],
-                ['Egress', `${u.egressGb} GB`, c.egress],
-                ['Emails', `${count(u.emails)} emails`, c.email],
-              ] as const;
-              return (
-                <article class="flex flex-col rounded-3xl border border-foreground/10 bg-foreground/2 p-6">
-                  <h4 class="text-lg font-bold mb-1">{ex.title}</h4>
-                  <p class="text-sm text-muted-foreground mb-5">{ex.who}</p>
-                  <table class="w-full text-left border-collapse text-sm mb-5">
-                    <thead class="sr-only">
-                      <tr><th scope="col">Item</th><th scope="col">Assumed usage</th><th scope="col">Credits</th></tr>
-                    </thead>
-                    <tbody>
-                      {rows.map(([item, assumed, credits]) => (
-                        <tr class="border-b border-foreground/10">
-                          <th scope="row" class="py-2 pr-2 font-medium align-top">{item}</th>
-                          <td class="py-2 pr-2 text-muted-foreground align-top">{assumed}</td>
-                          <td class="py-2 text-right tabular-nums align-top">{count(Math.round(credits))}</td>
-                        </tr>
-                      ))}
-                      <tr>
-                        <th scope="row" class="pt-3 pr-2 font-semibold">Total</th>
-                        <td class="pt-3 pr-2 text-muted-foreground">credits a month</td>
-                        <td class="pt-3 text-right font-semibold tabular-nums">{count(Math.round(c.total))}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                  <p class="mt-auto text-sm leading-relaxed"><strong>{planByKey[ex.plan].name}:</strong> <span class="text-muted-foreground">{ex.cost}</span></p>
-                </article>
-              );
-            })}
-          </div>
-        </section>
       </div>
     </section>
 
@@ -366,7 +321,7 @@ const td = 'py-3 px-4 text-sm align-top';
           <p class={`${lede} mb-6`}>Everything you need to run Semantius on your own server is free and open source under the MIT license. Support is sold separately.</p>
           <div class="flex flex-wrap gap-3">
             <Button href="/docs/self-hosted">Read the self-hosting guide</Button>
-            <Button href="https://github.com/Semantius/semantius-self-hosted" variant="outline">View it on GitHub</Button>
+            <Button href="https://github.com/Semantius/semantius-self-hosted" variant="outline" class="repo-link">View it on GitHub</Button>
           </div>
         </section>
 

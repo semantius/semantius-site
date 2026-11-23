@@ -19,8 +19,10 @@ export const siteConfig = {
   },
   announcement: {
     enabled: true,
-    id: 'public_beta_waitlist',
-    link: '#signup',
+    // The id keys the visitor's dismissal in localStorage: a new announcement
+    // needs a new id, or everyone who closed the old one never sees it.
+    id: 'early_access_started',
+    link: '/blog/early-access',
     localizeLink: false,
   },
   blog: {
@@ -71,12 +73,13 @@ export const NAV_LINKS = [
       { href: '/pricing', label: 'Pricing', description: 'Cloud plans and self-hosting', icon: 'CreditCard' },
     ]
   },
+  // Solutions section temporarily hidden: it needs more work after go-live.
   // The three landing pages under their reader labels (change request 1, §9).
-  {
-    href: SOLUTIONS.guardrails.path,
-    label: 'Solutions',
-    children: Object.values(SOLUTIONS).map((s) => ({ href: s.path, label: s.readerLabel })),
-  },
+  // {
+  //   href: SOLUTIONS.guardrails.path,
+  //   label: 'Solutions',
+  //   children: Object.values(SOLUTIONS).map((s) => ({ href: s.path, label: s.readerLabel })),
+  // },
   // Docs, Blog and Changelog only (v1 spec, §9).
   {
     href: '/docs',

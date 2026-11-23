@@ -14,7 +14,7 @@ If you would rather not do this by hand, [the Docker image](/docs/pg-semantius/d
 ## What You Need
 
 - **PostgreSQL 18**, running on a machine you can copy files onto. This is the only version the extension is tested against.
-- **Superuser access** to that server, because the install creates roles and event triggers.
+- **Superuser access** to that server, because the install creates roles and event triggers. The superuser also needs the `BYPASSRLS` attribute. The `postgres` superuser a new server starts with has it; one you created yourself may need `ALTER ROLE <name> BYPASSRLS` first.
 - **A UTF8 database.** Encoding is checked at install time, and `LATIN1` and `SQL_ASCII` are refused.
 - **`make` and the PostgreSQL development files**, which is what provides the `pg_config` command.
 
@@ -30,7 +30,7 @@ Move into the folder it created and install it:
 
 <Command command="cd pg_semantius-0.5.0-beta1 && sudo make install" />
 
-This copies two files into the place PostgreSQL keeps its extensions. It compiles nothing, because `pg_semantius` is written in SQL rather than C. `sudo` is usually needed because that directory belongs to root.
+This copies the control file and the SQL scripts into the place PostgreSQL keeps its extensions: the full install of this version, and the upgrade scripts that lead to it from earlier versions, if there are any. It compiles nothing, because `pg_semantius` is written in SQL rather than C. `sudo` is usually needed because that directory belongs to root.
 
 ## 2. Install It in Your Database
 
@@ -41,7 +41,7 @@ CREATE EXTENSION pg_semantius;
 CALL semantius.migrate();
 ```
 
-`CREATE EXTENSION` does very little: it creates four roles, the `semantius` schema and four functions. `semantius.migrate()` does the real work and takes a few seconds, and it creates everything as ordinary database objects rather than as parts of the extension. That is why a backup is a plain `pg_dump`, why `DROP EXTENSION` touches no data, and why custom fields on core tables survive a restore ([Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)).
+`CREATE EXTENSION` does very little: it creates four roles, the `semantius` schema, and a procedure and three functions in it. `semantius.migrate()` does the real work and takes a few seconds, and it creates everything as ordinary database objects rather than as parts of the extension. That is why a backup is a plain `pg_dump`, why `DROP EXTENSION` touches no data, and why custom fields on core tables survive a restore ([Upgrade, Back Up, Remove](/docs/pg-semantius/maintain)).
 
 **Do not add `CASCADE`.** It looks harmless and it is not. `pg_semantius` needs the `pgcrypto` extension, and `CASCADE` would install it into whichever schema your session happens to be creating things in. The API key code expects to find it in `public`, which is where `semantius.migrate()` puts it. Leaving `CASCADE` off is what keeps the two in agreement.
 
@@ -53,9 +53,9 @@ The second statement commits after each migration file, so run it as a statement
 SELECT * FROM semantius.status();
 ```
 
-You want `pending` at `0` and `unknown_versions` and `changed_versions` both empty.
+You want `pending` at `0` and `unknown_versions` and `changed_versions` both empty. Once you deploy modules with [the CLI](/docs/pg-semantius/cli), their migrations are listed in `unknown_versions` too, because they are not part of the extension.
 
-Reach for this rather than `\dx`. That command reports the version of the installer you copied in step 1, which is not necessarily the state of the schema inside the database. `semantius.status()` reads the database itself.
+Reach for this rather than `\dx`. That command reports the version of the installer in this database, the one `CREATE EXTENSION` put there, which is not necessarily the state of the schema inside it. `semantius.status()` reads the database itself.
 
 ## 4. Give a Role a Password
 
@@ -84,6 +84,8 @@ Every refusal below is the install protecting the database, so the fix is always
 | `pgcrypto must be installed in schema public` | Run `ALTER EXTENSION pgcrypto SET SCHEMA public`. This is what `CASCADE` causes. |
 | `existing role semantius_owner has unexpected attributes` | A role of that name already exists and is not the one expected. Rename or remove it. |
 | `semantius.migrate() must be run by a superuser` | You ran the second statement on a different connection than the first. Reconnect as a superuser. |
+| `role "..." does not have BYPASSRLS` | Run the `ALTER ROLE ... BYPASSRLS` the hint names, then the second statement again. |
+| `another migration is running` | Wait for the other run to finish, then run the second statement again. |
 
 A full list, with SQLSTATE codes, is in the [reference](/docs/pg-semantius/reference).
 

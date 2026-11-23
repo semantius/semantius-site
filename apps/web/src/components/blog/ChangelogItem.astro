@@ -65,6 +65,11 @@ const labels = {
 };
 
 const typeLabel = labels[type] || type.charAt(0).toUpperCase() + type.slice(1);
+
+// A version whose first number is 2026 or higher is a date version
+// (e.g. "2026.11.23"). Date versions carry no type badge; semver entries
+// such as "1.0.0" keep theirs. The timeline icon is shown either way.
+const isDateVersion = Number.parseInt(version.split('.')[0], 10) >= 2026;
 ---
 
 <div id={version.replace(/\./g, '-')} class="relative pl-12 pb-16 last:pb-0 group scroll-mt-24">
@@ -86,9 +91,11 @@ const typeLabel = labels[type] || type.charAt(0).toUpperCase() + type.slice(1);
             <div class="flex items-center gap-3">
                 <span class="text-2xl font-bold font-display">{version}</span>
                 <div class="flex flex-wrap gap-2">
-                    <span class={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border ${colors[type]}`}>
-                        {typeLabel}
-                    </span>
+                    {!isDateVersion && (
+                        <span class={`px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border ${colors[type]}`}>
+                            {typeLabel}
+                        </span>
+                    )}
                     {isSecurity && type !== 'security' && (
                         <span class="flex items-center gap-1.5 px-3 py-1 text-[10px] font-bold uppercase tracking-widest rounded-full border border-amber-400/20 bg-amber-400/10 text-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.1)]">
                             <Shield size={12} fill="currentColor" fill-opacity="0.1" />
@@ -110,7 +117,7 @@ const typeLabel = labels[type] || type.charAt(0).toUpperCase() + type.slice(1);
                     <CopyButton text={copyText} />
                 </div>
             </div>
-            <div class="prose prose-invert prose-p:text-foreground/70 prose-li:text-foreground/70 prose-strong:text-foreground max-w-none">
+            <div class="prose dark:prose-invert prose-a:text-primary hover:prose-a:text-primary/80 prose-p:text-foreground/70 prose-li:text-foreground/70 prose-strong:text-foreground max-w-none">
                 <slot />
             </div>
             

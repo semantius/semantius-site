@@ -65,11 +65,13 @@ Three kinds of tag are published:
 
 | Tag | Means |
 | --- | --- |
-| `0.5.0-beta1-pg18` | One exact build. It never changes, so this is what to pin in anything you rely on. |
-| `latest-pg18` | The newest build for PostgreSQL 18 |
-| `latest` | The newest build, on the default PostgreSQL version |
+| `0.5.0-beta1-pg18` | One version. This is what to pin in anything you rely on. While it is the highest version, a rebuilt release of it replaces the image under the same tag; once a higher version is out, it stays as it is. |
+| `latest-pg18` | The highest version released for PostgreSQL 18, pre-releases included |
+| `latest` | The highest version released, on the default PostgreSQL version, pre-releases included |
 
 Every tag names a PostgreSQL major version, and there is deliberately no bare `0.5.0-beta1` tag. One release can ship the same extension for more than one PostgreSQL version, so a tag without the suffix would be ambiguous, and worse, could quietly change which PostgreSQL you were running.
+
+A different image started on an existing volume brings its own extension files but leaves the database as it was, because the setup steps run only on an empty database. Update the database yourself afterwards, as [Upgrade, Back Up, Remove](/docs/pg-semantius/maintain#upgrade) describes.
 
 ## The Rest of the Platform
 

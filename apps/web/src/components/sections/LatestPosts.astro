@@ -1,6 +1,7 @@
 ---
 import { getCollection, type CollectionEntry } from 'astro:content';
 import BlogCard from '~/components/blog/BlogCard.astro';
+import { getPostPreview } from '~/lib/blog-preview';
 
 interface Props {
   title?: string;
@@ -20,6 +21,7 @@ const posts = (await getCollection('blog'))
   .sort(
 	(a: CollectionEntry<'blog'>, b: CollectionEntry<'blog'>) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf()
   ).slice(0, count);
+const previews = await Promise.all(posts.map((post) => getPostPreview(post)));
 ---
 
 <section class="py-24 bg-white/2">
@@ -35,7 +37,7 @@ const posts = (await getCollection('blog'))
          </div>
 
          <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {posts.map((post: CollectionEntry<'blog'>) => (
+            {posts.map((post: CollectionEntry<'blog'>, i) => (
                 <BlogCard 
                     title={post.data.title}
                     description={post.data.description}
@@ -43,6 +45,7 @@ const posts = (await getCollection('blog'))
                     slug={`/blog/${post.id.replace(/\.[^/.]+$/, "")}`}
                     heroImage={post.data.heroImage}
                     isVideo={post.data.isVideo}
+                    preview={previews[i]}
                 />
             ))}
          </div>

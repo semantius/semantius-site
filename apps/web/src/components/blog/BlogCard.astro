@@ -1,7 +1,9 @@
 ---
 import { Image } from 'astro:assets';
+import clsx from 'clsx';
 import Card from '~/components/ui/Card.astro';
 import Badge from '~/components/ui/Badge.astro';
+import type { PostPreview } from '~/lib/blog-preview';
 
 interface Props {
   title: string;
@@ -10,9 +12,20 @@ interface Props {
   slug: string;
   heroImage?: ImageMetadata;
   isVideo?: boolean;
+  /** Fills the picture's space on a card without a heroImage: see lib/blog-preview.ts. */
+  preview?: PostPreview;
 }
 
-const { title, description, pubDate, slug, heroImage, isVideo = false } = Astro.props;
+const { title, description, pubDate, slug, heroImage, isVideo = false, preview } = Astro.props;
+
+/*
+  An image card is one big link. A text-only card can hold links to the post's
+  sections, and a link inside a link is invalid HTML: the parser closes the
+  outer one early and leaves most of the card outside it. So a text-only card
+  is an <article> whose title link is stretched over the whole card (see
+  .card-link below), with the section links lifted above it.
+*/
+const textOnly = !heroImage;
 
 const dateString = pubDate.toLocaleDateString('en', {
   year: 'numeric',
@@ -21,52 +34,146 @@ const dateString = pubDate.toLocaleDateString('en', {
 });
 ---
 
-<Card href={slug} class="p-0 overflow-hidden hover:shadow-primary/10 hover:-translate-y-1 block h-full group">
-  <div class="relative aspect-video w-full overflow-hidden bg-muted">
-    {heroImage ? (
-       <Image 
-         src={heroImage} 
-         alt={title} 
-         class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-         width={600}
-         densities={[1.5, 2]}
-       />
-    ) : (
-        <div class="h-full w-full flex items-center justify-center bg-black/5 dark:bg-white/5">
-            <span class="text-4xl">📝</span>
-        </div>
-    )}
+<Card
+  href={textOnly ? undefined : slug}
+  as={textOnly ? 'article' : undefined}
+  class={clsx(
+    'p-0 overflow-hidden hover:shadow-primary/10 hover:-translate-y-1 block h-full group',
+    // Card adds its hover styles only to a card with an href.
+    textOnly && 'relative flex flex-col hover:border-primary/20 hover:shadow-2xl',
+  )}
+>
+  {heroImage ? (
+    <div class="relative aspect-video w-full overflow-hidden bg-muted">
+      <Image
+        src={heroImage}
+        alt={title}
+        class="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        width={600}
+        densities={[1.5, 2]}
+      />
 
-    {isVideo && (
-      <div class="absolute top-2 right-2 z-10">
+      {isVideo && (
+        <div class="absolute top-2 right-2 z-10">
+          <Badge variant="destructive" class="shadow-sm">
+            Video
+          </Badge>
+        </div>
+      )}
+
+      <div class="absolute inset-0 bg-linear-to-t from-background/80 via-background/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+    </div>
+  ) : (
+    isVideo && (
+      <div class="pointer-events-none absolute top-2 right-2 z-10">
         <Badge variant="destructive" class="shadow-sm">
           Video
         </Badge>
       </div>
-    )}
-    
-    <div class="absolute inset-0 bg-linear-to-t from-background/80 via-background/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
-  </div>
+    )
+  )}
 
-  <div class="p-6">
+  <div class={clsx('p-6', textOnly && 'flex flex-1 flex-col')}>
     <div class="flex items-center gap-2 text-xs text-muted-foreground mb-3">
       <time datetime={pubDate.toISOString()}>{dateString}</time>
       <span>•</span>
       <span>Blog</span>
     </div>
-    
-    <h3 class="text-xl font-display font-bold mb-2 group-hover:text-primary transition-colors">
-      {title}
-    </h3>
-    
-    <p class="text-muted-foreground text-sm line-clamp-2">
-      {description}
-    </p>
 
-    {/* A call to action, not content: kept out of search and the markdown twin. */}
-    <div class="mt-4 flex items-center gap-2 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-2" data-pagefind-ignore>
+    <h3 class="text-xl font-display font-bold mb-2 group-hover:text-primary transition-colors">
+      {textOnly ? <a href={slug} class="card-link">{title}</a> : title}
+    </h3>
+
+    {heroImage ? (
+      <p class="text-muted-foreground text-sm line-clamp-2">
+        {description}
+      </p>
+    ) : (
+      /*
+        From md up, cards sit in rows. The spacer is as tall as an image card's
+        picture, which sets this card's own height so it matches its
+        neighbors, and the text sits on top of it, absolutely positioned, so a
+        long post never makes the row taller. Below md there are no neighbors:
+        the text sets the height, up to max-h-80. Either way, text cut off
+        fades out; the bottom padding is where the fade falls when it all fits.
+
+        The text is above the title link's overlay (z-10) but lets clicks
+        through (pointer-events-none), so only the section links catch them.
+      */
+      <div class="relative flex-1">
+        <div class="hidden md:block aspect-video" aria-hidden="true"></div>
+        <div class="preview-fade pointer-events-none relative z-10 max-h-80 overflow-hidden pb-8 md:absolute md:inset-0 md:max-h-none text-sm text-muted-foreground">
+          <p>{description}</p>
+
+          {/* The post's own text, repeated: kept out of search and the markdown twin. */}
+          {preview?.kind === 'headings' && (
+            <ul class="mt-3 text-foreground/80" data-pagefind-ignore>
+              {preview.headings.map((heading) => (
+                <li>
+                  {/*
+                    py-1 makes each row 28px tall, a comfortable tap target. The
+                    focus ring is drawn inside the link: the text area's
+                    overflow-hidden clips anything outside it.
+                  */}
+                  <a href={`${slug}#${heading.id}`} class="pointer-events-auto flex gap-2 rounded-sm py-1 underline-offset-4 transition-colors hover:text-primary hover:underline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+                    <span>{heading.text}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {preview?.kind === 'excerpt' && (
+            <div class="mt-3 space-y-3" data-pagefind-ignore>
+              {preview.paragraphs.map((paragraph) => <p>{paragraph}</p>)}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/*
+      A call to action, not content: kept out of search and the markdown twin.
+      On a text-only card it is not inside a link, so screen readers skip it:
+      the title link already opens the post.
+    */}
+    <div class="mt-4 flex items-center gap-2 text-sm font-medium text-primary opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-2" data-pagefind-ignore aria-hidden={textOnly ? 'true' : undefined}>
       <span>Read More</span>
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-4 h-4"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
     </div>
   </div>
 </Card>
+
+<style>
+  /* Fades out the last 2rem, which is the bottom padding unless text is cut off. */
+  .preview-fade {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 2rem), transparent);
+  }
+
+  /*
+    Stretched link: the title link's ::after covers the whole card (the
+    nearest positioned ancestor), so a click anywhere on it opens the post,
+    as a real link. Keyboard focus is drawn around the card for the same reason.
+    The z-index lifts it above the card's other positioned and transformed
+    parts, which would otherwise paint over it and swallow the click; only the
+    preview text (z-10) is higher, and it lets clicks through.
+  */
+  .card-link::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+
+  .card-link:focus-visible {
+    outline: none;
+  }
+
+  /* Inside the card's edge: its overflow-hidden clips anything outside it. */
+  .card-link:focus-visible::after {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -2px;
+    border-radius: 1rem;
+  }
+</style>

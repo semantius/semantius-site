@@ -10,21 +10,23 @@ import Tbd from '~/components/common/Tbd.astro';
 
 // Each title links to its blog post once it is published, and shows with a TBD
 // until then (change request 1, §8). A post is matched by its exact title.
-const ARTICLE_GROUPS = [
-  {
-    title: 'Agent Safety & Architecture',
-    articles: [
-      'How to build approval rules for AI agents with JSONLogic inside PostgreSQL',
-      'Rules in a prompt versus rules in Postgres: what your agent actually follows',
-    ],
-  },
-  {
-    title: 'Database-Driven Minimalism',
-    articles: [
-      "Why your agent can't connect a ticket to usage and lead status, and what fixes it",
-      'What Klarna actually did: unify first, and fewer tools follow',
-    ],
-  },
+// Commented out while none of the four posts is published: with no groups, only
+// the links column renders. Restore an entry once its post exists.
+const ARTICLE_GROUPS: { title: string; articles: string[] }[] = [
+  // {
+  //   title: 'Agent Safety & Architecture',
+  //   articles: [
+  //     'How to build approval rules for AI agents with JSONLogic inside PostgreSQL',
+  //     'Rules in a prompt versus rules in Postgres: what your agent actually follows',
+  //   ],
+  // },
+  // {
+  //   title: 'Database-Driven Minimalism',
+  //   articles: [
+  //     "Why your agent can't connect a ticket to usage and lead status, and what fixes it",
+  //     'What Klarna actually did: unify first, and fewer tools follow',
+  //   ],
+  // },
 ];
 
 const posts = await getCollection('blog');
@@ -58,13 +60,11 @@ const link = 'hover:text-foreground transition-colors';
         </div>
       ))}
       <div>
-        <h3 class="font-semibold mb-4 text-foreground">System Access Nodes</h3>
         <ul class="space-y-2 text-sm text-foreground/80">
           <li><a href="/contact" class={link}>Contact</a></li>
-          <li><a href="/llms.txt" class={link}>llms.txt</a></li>
           <li><a href="/docs/reference" class={link}>Docs</a></li>
+          <li><a href="/roadmap" class={link}>Roadmap</a></li>
           <li><a href={github} class={link}>GitHub</a></li>
-          <li><a href={awesomeAgentFirst} class={link}>The agent-first definition and list</a></li>
         </ul>
       </div>
     </div>

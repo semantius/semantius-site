@@ -1,0 +1,43 @@
+---
+export const prerender = true;
+import { getCollection } from 'astro:content';
+import Layout from '~/layouts/Layout.astro';
+import PageHeader from '~/components/layout/PageHeader.astro';
+import PageTitle from '~/components/layout/PageTitle.astro';
+import Container from '~/components/ui/Container.astro';
+import { ROADMAP_URL, roadmapLabelUrl } from '~/lib/roadmap';
+
+// Fetched from GitHub Discussions at build time (the `roadmap` loader in content.config.ts).
+const entries = (await getCollection('roadmap')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<Layout title="Roadmap - Semantius">
+  <PageHeader>
+    <PageTitle title="Roadmap" />
+  </PageHeader>
+
+  <Container as="section" class="max-w-2xl pb-24">
+    <div class="space-y-4 text-lg text-muted-foreground mb-10">
+      <p>
+        The Semantius roadmap is public on <a href={ROADMAP_URL} class="font-medium text-primary hover:underline underline-offset-4">GitHub</a>, where you can see every entry, rate it and comment on it.
+      </p>
+      <p>We appreciate your ratings, and we will review and discuss your ideas for the roadmap.</p>
+    </div>
+    <ul class="divide-y divide-border border-y border-border">
+      {entries.map((entry) => (
+        <li class="flex flex-wrap items-center gap-x-3 gap-y-2 py-4">
+          <a href={entry.data.url} class="text-foreground hover:text-primary transition-colors">{entry.data.title}</a>
+          {entry.data.labels.length > 0 && (
+            <ul class="flex flex-wrap gap-2">
+              {entry.data.labels.map((label) => (
+                <li>
+                  <a href={roadmapLabelUrl(label)} class="inline-flex items-center rounded-full border border-border px-2.5 py-0.5 text-xs text-foreground/80 hover:text-primary hover:border-primary transition-colors">{label}</a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </li>
+      ))}
+    </ul>
+  </Container>
+</Layout>

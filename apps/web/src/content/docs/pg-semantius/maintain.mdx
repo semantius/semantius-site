@@ -13,13 +13,9 @@ This page covers the three things you do to a database after it is working: move
 SELECT * FROM semantius.status();
 ```
 
-This is the one to trust. It reads the database and reports what is actually installed, how much is pending, and whether anything has drifted since it was applied.
+This is the one to trust. It reads the database and reports how many migrations have run and how many are waiting, migrations it does not recognize or that were recorded differently from this build, and whether ownership and default privileges survived a restore.
 
-`\dx` answers a different question. It reports the version of the installer sitting on the server, which after an upgrade is ahead of the database until you finish the job. To see what an upgrade would apply before running it:
-
-```sql
-SELECT * FROM semantius.pending();
-```
+`\dx` answers a different question. It reports the version of the installer in this database, the one `CREATE EXTENSION` or the last `ALTER EXTENSION ... UPDATE` put there. Right after an `ALTER EXTENSION ... UPDATE` it is ahead of the schema until `migrate()` has run.
 
 ## Upgrade
 
@@ -30,14 +26,43 @@ ALTER EXTENSION pg_semantius UPDATE;
 CALL semantius.migrate();
 ```
 
-The first replaces the installer functions. The second applies whatever is new. Both are safe to run again, because `migrate()` keeps a record of what it has already applied and skips it.
+The first replaces the installer, and nothing else. The second applies whatever is new. Both are safe to run again, because `migrate()` keeps a record of what it has applied and runs a file again only when it has changed.
+
+To see what the second statement will apply, run this between the two. `pending()` is part of the installer, so before the first statement it still answers for the old version:
+
+```sql
+SELECT * FROM semantius.pending();
+```
 
 **On the Docker image, pulling a newer tag is only half an upgrade.** The setup steps in the image run once, on an empty database, so a container started on an existing volume has newer extension files and an unchanged schema. Run the two statements above yourself afterwards.
 
-Two things that surprise people:
+## When migrate() Refuses
 
-- **A rebuilt release of the same version number does not reach a database that already has it.** `migrate()` skips anything it has applied before, by name. If you re-download a version and expect something to change, compare `changed_versions` from `semantius.status()` against the build you think you have.
-- **Versions before 0.5.0 have no upgrade path.** The 0.1.0, 0.3.0, and 0.4.0 builds were development snapshots and their history was discarded. Moving off one of them means taking a copy of your data, installing 0.5.0 into a new database, and loading the data back.
+Before it applies anything, `migrate()` checks that its version can update this database. If it cannot, `migrate()` stops with an error, changes nothing, and leaves no lock behind:
+
+- **The database is newer than the installer.** The message ends with `use a newer pg_semantius, then ALTER EXTENSION pg_semantius UPDATE and CALL semantius.migrate()`. A newer version has already migrated this database, which is what you get after restoring a dump onto a server with older extension files. Install the newer files and do what the message says.
+- **The database cannot be brought to this version.** The message ends with `this database cannot be updated; replace the database with a fresh install`. The migrations that create tables run only once, and this database recorded one of them differently from this version, so it would never get this version's tables. Install this version into a new database and move your data across.
+
+`semantius.pending()` does not run these checks, so on a refused database it still lists what is waiting.
+
+## Same Version, Rebuilt
+
+A rebuilt release keeps its version number, and PostgreSQL has no update from a version to itself, so `ALTER EXTENSION ... UPDATE` does nothing. Install the rebuilt files, then recreate the installer and migrate:
+
+```sql
+DROP EXTENSION pg_semantius;
+CREATE EXTENSION pg_semantius;
+CALL semantius.migrate();
+```
+
+`DROP EXTENSION` removes only the installer, so your data stays where it is. If the rebuild changed a migration that runs only once, which only a pre-release such as a beta may do, `migrate()` refuses the database as described above. A rebuilt [Docker image](/docs/pg-semantius/docker) of the same version tag, started on an existing volume, needs the same three statements.
+
+## Versions With No Upgrade Path
+
+- **0.5.0-beta1, as first published, cannot be updated.** Every later build, a rebuilt 0.5.0-beta1 included, refuses a database it built, with the "replace" message above.
+- **Versions before 0.5.0 have no upgrade path either.** The 0.1.0, 0.3.0, and 0.4.0 builds were development snapshots and their history was discarded.
+
+Moving off one of them means taking a copy of your data, installing the current version into a new database, and loading the data back.
 
 ## Back Up
 
@@ -45,24 +70,27 @@ Backup is a plain dump, and restore is a single pass. No flags to remember, no o
 
 ```bash
 pg_dump -Fc -d semantius -f semantius.dump
-createdb -T template0 restored
+createdb -T template0 -E UTF8 restored
 pg_restore -d restored semantius.dump
+psql -d restored -c "ALTER DATABASE restored SET timezone = 'UTC';"
+psql -d restored -c "ALTER DATABASE restored SET intervalstyle = 'iso_8601';"
 ```
 
 This works because `semantius.migrate()` creates your tables as ordinary database objects rather than as parts of the extension. Plain text dumps piped through `psql` work too, as do parallel restores and single-transaction restores. Custom fields you add to core tables survive a backup and restore as well, because they are just columns on ordinary tables.
 
-Four things worth knowing before you need them:
+Five things worth knowing before you need them:
 
 - **Restore into an empty database.** Do not run `migrate()` first. The dump carries its own `CREATE EXTENSION`, which puts the roles and functions back.
+- **The two `ALTER DATABASE` lines are part of the restore.** `migrate()` gave the original database those settings, a dump carries them only when it is restored with `--create`, and sign-ins are refused without them.
 - **Restore as a superuser with the same name as the one that installed it**, and do not use `--no-owner`. A differently named superuser still gets working data, but some ownership and default privileges are lost. `semantius.status()` reports it if this happens.
 - **On a brand new server, the four roles come back without passwords**, because the dump recreates them the way the install did. Set the login and password again afterwards.
-- **If the extension files are missing on the target server**, the `CREATE EXTENSION` line fails and everything else restores, so the database still works. Copy the files across and run `CREATE EXTENSION pg_semantius` to tidy up.
+- **The target server needs the extension files of the same version or a newer one.** The dump's `CREATE EXTENSION` installs whatever version the server has, and an older one's `migrate()` refuses the restored database as newer than itself. If the files are missing altogether, the `CREATE EXTENSION` line fails and everything else restores, so the database still works. Copy the files across and run `CREATE EXTENSION pg_semantius` to tidy up.
 
 Take the dump as a superuser, or as a role that is allowed to bypass row-level security. An ordinary account would back up only the rows it is permitted to see, which is a backup that looks fine until you restore it.
 
 ## Remove It
 
-`DROP EXTENSION pg_semantius` is safe and almost certainly not what you want on its own. It removes the `semantius` schema and its four functions, and nothing else. Your tables, your data, and your roles all stay exactly where they are, which is the whole point of the design.
+`DROP EXTENSION pg_semantius` is safe and almost certainly not what you want on its own. It removes the `semantius` schema with its procedure and three functions, and nothing else. Your tables, your data, and your roles all stay exactly where they are, which is the whole point of the design.
 
 To remove Semantius completely, run these in order. **The third statement deletes all of your data.**
 
@@ -72,11 +100,10 @@ DROP EVENT TRIGGER track_ddl_changes, track_ddl_drops, pgrst_ddl_watch, pgrst_dr
 DROP OWNED BY semantius_owner CASCADE;
 DROP SCHEMA IF EXISTS common, rbac, audit, pgmq CASCADE;
 DROP TABLE IF EXISTS public._versions;
-ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO PUBLIC;
 DROP OWNED BY semantius_user, authenticated, semantius_authenticator;
 ```
 
-The event triggers go second because they fire on every drop below them. The `ALTER DEFAULT PRIVILEGES` line near the end puts PostgreSQL's own default back, so functions you create later behave as they would in a database that never had any of this.
+The event triggers go second because they fire on every drop below them. The recipe leaves `pgcrypto` installed, because other things in the database may use it, and it keeps the `timezone` and `intervalstyle` settings `migrate()` gave the database.
 
 The four roles belong to the whole server rather than to one database, so remove them only once nothing else on that server is using them:
 
