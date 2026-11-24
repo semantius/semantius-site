@@ -5,7 +5,7 @@ import Schema from '~/components/layout/Schema.astro';
 import Section from '~/components/layout/Section.astro';
 import CTA from '~/components/sections/CTA.astro';
 import DataModelGraphic from '~/components/sections/DataModelGraphic.astro';
-import LiveDemo from '~/components/sections/LiveDemo.astro';
+import BotSim from '~/components/islands/BotSim.jsx';
 import Container from '~/components/ui/Container.astro';
 import Badge from '~/components/ui/Badge.astro';
 import Button from '~/components/ui/Button.astro';
@@ -18,7 +18,7 @@ import PageHeader from '~/components/layout/PageHeader.astro';
 // the copy as given. Where the build departs from it, home-deviations.md says how and
 // why; open gaps carry a TBD label and are listed in home-tbd.md.
 //
-// The hub names no install command, no test count and no CLI anywhere, and no
+// The hub names no install command and no test count anywhere, and no
 // technology (PostgreSQL, JSONLogic, PostgREST, React) above #specifications.
 
 // Once a live sandbox exists, this becomes "Deploy a live sandbox (1-click)".
@@ -175,8 +175,8 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
             <div>
                 <Badge class="mb-6 border-foreground/10">The agent-first data platform</Badge>
                 <h1 class="text-4xl md:text-6xl font-bold tracking-tight">Your AI agents are ready. Don't let your data hold them back.</h1>
-                <p class="mt-6 text-lg md:text-xl text-foreground/85 leading-relaxed">Stop stuffing business rules into fragile prompts. Our active data dictionary turns your data model into an API for your agents and an app for your team, at the same time. Enforce your guardrails in the database, and run your workflows with the agent you already use.</p>
-                <p class="mt-4 text-sm text-foreground/70">Works with always-on agents like Meta Muse, OpenAI Dots and Grokbot.</p>
+                <p class="mt-6 text-lg md:text-xl text-foreground/85 leading-relaxed">Stop stuffing business rules into fragile prompts. Define your tables, permissions, and guardrails once in our <strong><a href="/docs/data-catalog" class="font-bold text-primary hover:underline underline-offset-4">data catalog</a></strong>, and automatically get a live API &amp; CLI for your agents and a ready-to-use app for your team.</p>
+                <p class="mt-4 text-sm text-foreground/70 italic">Works with always-on agents like Meta Muse, OpenAI Dots and Grok Bot.</p>
                 <div class="mt-8 flex flex-col sm:flex-row gap-4">
                     <Button href={startFree.href} size="lg" class="rounded-full">{startFree.text}</Button>
                     <Button href="#specifications" variant="outline" size="lg" class="rounded-full border-foreground/30">Read the architecture manifesto</Button>
@@ -186,7 +186,8 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
         </Container>
     </PageHeader>
 
-    {/* 3. Routing grid */}
+    {/* 3. Routing grid: commented out, so it stays in the source but is not
+        rendered into the HTML.
     <Section id="routing" class="py-16! md:py-24!">
         <Container>
             <ul class="grid gap-6 md:grid-cols-3">
@@ -201,11 +202,13 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
             </ul>
         </Container>
     </Section>
+    */}
 
-    {/* 4. Live demo */}
+    {/* 4. Bot simulator (the /botsim proof of concept). client:visible so its
+        scripted playlist starts when the reader scrolls to it, not on page load. */}
     <Section id="demo" class="py-16! md:py-24!">
         <Container class="max-w-6xl">
-            <LiveDemo headingClass={h2} />
+            <BotSim client:visible />
         </Container>
     </Section>
 

@@ -724,9 +724,10 @@ a.command-skill-prefix:hover {
 
 /* Per-agent look for the /botsim window. BotSim sets --bot-sim-light-* and
  * --bot-sim-dark-* inline from the agent's theme, or DEFAULT_THEME, in
- * data/botsim.ts. .bot-sim-bot-bubble is only on agents with pill bubbles;
- * the typing bubble takes that background without the text color, so its
- * dots keep the muted text color. */
+ * data/botsim.ts. .bot-sim-bot-bubble is only on agents whose theme sets a
+ * botShape; the typing bubble takes that background without the text color,
+ * so its dots keep the muted text color. The border is transparent unless the
+ * theme sets botBorder, so bubbles are the same size either way. */
 .bot-sim-window {
   background-color: var(--bot-sim-light-bg);
 }
@@ -739,6 +740,7 @@ a.command-skill-prefix:hover {
 }
 .bot-sim-bot-bubble {
   background-color: var(--bot-sim-light-bot-bg);
+  border: 1px solid var(--bot-sim-light-bot-border, transparent);
 }
 .dark .bot-sim-window {
   background-color: var(--bot-sim-dark-bg);
@@ -752,6 +754,7 @@ a.command-skill-prefix:hover {
 }
 .dark .bot-sim-bot-bubble {
   background-color: var(--bot-sim-dark-bot-bg);
+  border-color: var(--bot-sim-dark-bot-border, transparent);
 }
 
 /* ---------------------------------------------------------------------------

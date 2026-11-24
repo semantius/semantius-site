@@ -1,32 +1,50 @@
 ---
 /**
- * The hub hero's graphic (change request 1, §2): one node, "Active data
- * dictionary", branching into three layers, each with one plain line. It names
- * no technology: on the hub those names appear only in the specifications
- * section and the footer.
+ * The hub hero's graphic: one node, the data catalog, branching into the two
+ * things it gives you, each with one plain line. The copy is the spec's, word
+ * for word, and it matches the hero paragraph ("a live API & CLI for your
+ * agents and a ready-to-use app for your team"). It names no technology: on
+ * the hub those names appear only in the specifications section and the footer.
  */
+const source = {
+  name: 'Data catalog',
+  href: '/docs/data-catalog',
+  line: 'Your tables, roles & business rules enforced on every change.',
+};
+// The two outputs link to vanity URLs (redirects.jsonc), not to the docs pages
+// directly, so the targets can move without touching the hub.
 const outputs = [
-  { layer: 'Data layer', line: 'Your records and rules, checked on every change.' },
-  { layer: 'Agent layer', line: 'Each agent works under its own login and role.' },
-  { layer: 'Human-in-the-loop layer', line: 'Your team approves what matters and sees only their part.' },
+  { name: 'Agent API & CLI', href: '/agents', line: 'Agents read & act under their own login & role.' },
+  { name: 'Team App', href: '/app', line: 'Humans view their part and approve key actions.' },
 ];
+
+// The whole box is the link target, but only the heading is the link: its
+// ::after stretches over the nearest positioned ancestor (the box). The
+// accessible name and the markdown twin's link text stay the heading alone,
+// and hovering anywhere on the box underlines it. The box draws the focus ring.
+const stretched =
+  'text-primary underline-offset-4 hover:underline focus-visible:outline-none after:absolute after:inset-0';
+const box = 'relative transition-colors has-[a:focus-visible]:ring-2 has-[a:focus-visible]:ring-primary';
 ---
 
 <figure class="mx-auto w-full max-w-lg">
-  <div class="mx-auto w-fit rounded-2xl border-2 border-primary bg-primary/10 px-6 py-4 text-center text-lg font-bold">
-    Active data dictionary
+  {/* Paragraphs, not block spans: only real elements separate the two lines
+      once CSS is gone, as for screen readers and the markdown twin. */}
+  <div class={`${box} mx-auto max-w-sm rounded-2xl border-2 border-primary bg-primary/10 px-6 py-4 text-center hover:bg-primary/20`}>
+    <p class="text-lg font-bold"><a href={source.href} class={stretched}>{source.name}</a></p>
+    <p class="mt-2 text-sm text-foreground/75">{source.line}</p>
   </div>
   <div class="mx-auto h-6 w-0.5 bg-primary/60" aria-hidden="true"></div>
   <div class="relative sm:pt-6">
-    {/* The bar joins the centers of the outer cards; on a phone the cards stack. */}
-    <span class="absolute top-0 left-[16.67%] right-[16.67%] hidden h-0.5 bg-primary/60 sm:block" aria-hidden="true"></span>
-    <ul class="grid gap-3 sm:grid-cols-3">
+    {/* The bar joins the centers of the two cards. Each center sits a quarter
+        of the way in, less a quarter of the gap (gap-3 is 0.75rem), so the bar
+        meets both drops exactly. On a phone the cards stack. */}
+    <span class="absolute top-0 left-[calc(25%-0.1875rem)] right-[calc(25%-0.1875rem)] hidden h-0.5 bg-primary/60 sm:block" aria-hidden="true"></span>
+    <ul class="grid gap-3 sm:grid-cols-2">
       {outputs.map((o) => (
-        <li class="relative rounded-xl border border-foreground/15 bg-foreground/5 p-4 text-center">
+        <li class={`${box} rounded-xl border border-foreground/15 bg-foreground/5 p-4 text-center hover:border-primary/60 hover:bg-foreground/10`}>
           <span class="absolute -top-6 left-1/2 hidden h-6 w-0.5 -translate-x-1/2 bg-primary/60 sm:block" aria-hidden="true"></span>
-          {/* Paragraphs, not block spans: only real elements separate the two
-              lines once CSS is gone, as for screen readers and the markdown twin. */}
-          <p class="font-semibold">{o.layer}</p>
+          <p class="font-semibold"><a href={o.href} class={stretched}>{o.name}</a></p>
           <p class="mt-2 text-sm text-foreground/75">{o.line}</p>
         </li>
       ))}

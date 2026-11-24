@@ -78,8 +78,11 @@ const PALETTE_VARS = {
 	youBubble: 'you-bg',
 	youText: 'you-fg',
 	botBubble: 'bot-bg',
+	botBorder: 'bot-border',
 	botText: 'bot-fg',
 };
+
+const RADIUS = { small: 'rounded-lg', large: 'rounded-2xl', pill: 'rounded-3xl' };
 
 /**
  * The agent's theme as inline custom properties (--bot-sim-light-bg and so
@@ -98,9 +101,9 @@ function themeStyle(theme) {
 }
 
 function messageClass(from, theme) {
-	const pill = Boolean(theme?.pillBubbles);
-	if (from === 'you') return `bot-sim-you px-4 py-2.5 ${pill ? 'rounded-3xl' : 'rounded-lg'}`;
-	const bubble = pill ? 'bot-sim-bot bot-sim-bot-bubble rounded-3xl px-4 py-2.5' : 'bot-sim-bot';
+	if (from === 'you') return `bot-sim-you px-4 py-2.5 ${RADIUS[theme?.youShape ?? 'small']}`;
+	const shape = theme?.botShape;
+	const bubble = shape ? `bot-sim-bot bot-sim-bot-bubble px-4 py-2.5 ${RADIUS[shape]}` : 'bot-sim-bot';
 	return theme?.serifReplies ? `${bubble} font-serif` : bubble;
 }
 
@@ -244,7 +247,7 @@ export default function BotSim() {
 	};
 
 	const live = statusLabel(selected.status);
-	const pill = Boolean(selected.theme?.pillBubbles);
+	const botShape = selected.theme?.botShape;
 
 	return (
 		<div className="bot-sim not-prose">
@@ -381,7 +384,7 @@ export default function BotSim() {
 								<div className="flex justify-start">
 									<div
 										className={`text-sm text-muted-foreground ${
-											pill ? 'bot-sim-bot-bubble rounded-3xl px-4 py-2.5' : 'py-1'
+											botShape ? `bot-sim-bot-bubble px-4 py-2.5 ${RADIUS[botShape]}` : 'py-1'
 										}`}
 									>
 										<StatusDots />

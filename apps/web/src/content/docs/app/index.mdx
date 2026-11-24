@@ -1,16 +1,25 @@
 ---
 title: "App"
-description: "The responsive Semantius web app, for traditional access to the data platform."
+description: "The metadata-driven Semantius web app, generated from your data catalog: always in sync, responsive, internationalizable, accessibility-optimized and open source."
 order: 0
 ---
 
-The Semantius app is a responsive web app. It provides traditional
-access to the data platform, beyond the agent-optimized
+import { Image } from 'astro:assets';
+import app1 from '~/assets/screenshots/app1.png';
+
+The Semantius app is a metadata-driven web interface for viewing and managing
+your data. Generated directly from your [data catalog](/docs/data-catalog), it
+gives teams a visual alternative to the agent-optimized
 [skills](/docs/agent-skills) and [CLI](/docs/cli).
 
-You can host the app yourself to brand and customize it completely.
-A self-hosted app works with both
-[Semantius Cloud](https://app.semantius.com) and a
-[self-hosted](/docs/self-hosted) Semantius backend. Its source is in
-the [semantius-app](https://github.com/semantius/semantius-app)
-repository.
+<Image src={app1} alt="The Semantius app showing the Customers list of a sample organization, with search, sort, filter and pagination controls" class="docs-screenshot" />
+
+- **Always in sync:** Built directly on your data catalog metadata, so any
+  schema or catalog change updates the UI immediately.
+- **Production-ready UX:** Fully responsive, internationalizable (i18n), and
+  accessibility-optimized out of the box.
+- **Open-source & customizable:** Self-host the app from the
+  [semantius-app](https://github.com/semantius/semantius-app) repository to
+  brand and customize it completely. It works with both
+  [Semantius Cloud](https://app.semantius.com) and a
+  [self-hosted](/docs/self-hosted) Semantius backend.

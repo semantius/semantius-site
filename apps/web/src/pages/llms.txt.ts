@@ -75,7 +75,7 @@ export const GET: APIRoute = async ({ site }) => {
 		`2. Install the skill: \`${INSTALL_SKILL}\`. ${OPENCLAW_NOTE}`,
 	]);
 	section('Agents it works with', [
-		'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grokbot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
+		'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grok Bot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
 	]);
 	section('What Semantius is not', ['- Not analytics.', '- Not an agent.', '- Not a code generator.']);
 

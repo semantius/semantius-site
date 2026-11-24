@@ -21,10 +21,15 @@ export interface BotPalette {
 	background: string;
 	youBubble: string;
 	youText: string;
-	/** Only used with pillBubbles: without them the agent's replies have no bubble. */
+	/** Only used with botShape: without it the agent's replies have no bubble. */
 	botBubble?: string;
+	/** A 1px border around the agent's bubble. */
+	botBorder?: string;
 	botText: string;
 }
+
+/** Bubble corners: small and large rounded corners, or fully rounded. */
+export type BubbleShape = 'small' | 'large' | 'pill';
 
 /**
  * An agent's own look, applied to the simulator window while that agent is
@@ -33,11 +38,10 @@ export interface BotPalette {
 export interface BotTheme {
 	light?: BotPalette;
 	dark?: BotPalette;
-	/**
-	 * Both sides in fully rounded bubbles. Without it, your messages sit in a
-	 * box with small rounded corners and the agent's replies are plain text.
-	 */
-	pillBubbles?: boolean;
+	/** Corners of your bubble. Default 'small'. */
+	youShape?: BubbleShape;
+	/** Puts the agent's replies in a bubble with these corners. Without it they are plain text. */
+	botShape?: BubbleShape;
 	/** Sets the agent's replies in the system serif font. */
 	serifReplies?: boolean;
 }
@@ -88,6 +92,27 @@ export const BOTS: BotSeed[] = [
 		job: 'Coordination',
 		color: '#000',
 		shape: 'circle',
+		// Sampled from Grok Bot screenshots.
+		theme: {
+			light: {
+				background: '#fcfcfc',
+				youBubble: '#282828',
+				youText: '#ffffff',
+				botBubble: '#f0f0f0',
+				botBorder: '#e4e4e4',
+				botText: '#1c1c1c',
+			},
+			dark: {
+				background: '#121212',
+				youBubble: '#3c3c3c',
+				youText: '#f5f5f5',
+				botBubble: '#1f1f1f',
+				botBorder: '#262626',
+				botText: '#f5f5f5',
+			},
+			youShape: 'pill',
+			botShape: 'large',
+		},
 		preview: 'booked the venue and sent the agenda',
 		time: '3:43 PM',
 		status: 'idle',
@@ -132,7 +157,8 @@ export const BOTS: BotSeed[] = [
 				botBubble: '#222222',
 				botText: '#ffffff',
 			},
-			pillBubbles: true,
+			youShape: 'pill',
+			botShape: 'pill',
 		},
 		preview: 'Typing...',
 		time: '11:43 PM',

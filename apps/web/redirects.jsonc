@@ -18,5 +18,10 @@
 
   // Vanity URL for the pg_semantius docs. The target may move, so it is a 302.
   "/pg_semantius": { "to": "/docs/pg-semantius" },
-  "/pg-semantius": { "to": "/docs/pg-semantius" }  
+  "/pg-semantius": { "to": "/docs/pg-semantius" },
+
+  // Vanity URLs linked from the home page hero diagram's two lower boxes
+  // ("Team App" and "Agent API & CLI"). The targets may move, so they are 302s.
+  "/app": { "to": "/docs/app" },
+  "/agents": { "to": "/docs/agent-skills" }
 }
