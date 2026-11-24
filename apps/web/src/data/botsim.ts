@@ -15,6 +15,52 @@ export interface ChatMessage {
 	text: string;
 }
 
+/** An agent's colors for one color mode. */
+export interface BotPalette {
+	/** The whole simulator window: sidebar and chat. */
+	background: string;
+	youBubble: string;
+	youText: string;
+	/** Only used with pillBubbles: without them the agent's replies have no bubble. */
+	botBubble?: string;
+	botText: string;
+}
+
+/**
+ * An agent's own look, applied to the simulator window while that agent is
+ * in view. A mode without a palette falls back to DEFAULT_THEME.
+ */
+export interface BotTheme {
+	light?: BotPalette;
+	dark?: BotPalette;
+	/**
+	 * Both sides in fully rounded bubbles. Without it, your messages sit in a
+	 * box with small rounded corners and the agent's replies are plain text.
+	 */
+	pillBubbles?: boolean;
+	/** Sets the agent's replies in the system serif font. */
+	serifReplies?: boolean;
+}
+
+/**
+ * The look of every agent without a theme of its own. Sampled from the
+ * reference screenshots for the default chat.
+ */
+export const DEFAULT_THEME = {
+	light: {
+		background: '#ffffff',
+		youBubble: '#f5f5f5',
+		youText: '#0a0a0a',
+		botText: '#0a0a0a',
+	},
+	dark: {
+		background: '#0a0a0a',
+		youBubble: '#262626',
+		youText: '#fafafa',
+		botText: '#fafafa',
+	},
+} satisfies Required<Pick<BotTheme, 'light' | 'dark'>>;
+
 export interface BotSeed {
 	id: string;
 	name: string;
@@ -22,6 +68,7 @@ export interface BotSeed {
 	color: string;
 	color2?: string;
 	shape: AvatarShape;
+	theme?: BotTheme;
 	preview: string;
 	time: string;
 	status: BotStatus;
@@ -37,9 +84,9 @@ export type SimEvent =
 export const BOTS: BotSeed[] = [
 	{
 		id: 'chief',
-		name: 'Chief of Staff',
+		name: 'Grok Bot',
 		job: 'Coordination',
-		color: '#10b981',
+		color: '#000',
 		shape: 'circle',
 		preview: 'booked the venue and sent the agenda',
 		time: '3:43 PM',
@@ -64,10 +111,29 @@ export const BOTS: BotSeed[] = [
 	},
 	{
 		id: 'new-agent',
-		name: 'New agent',
+		name: 'Meta Muse',
 		job: 'Intake',
-		color: '#f59e0b',
+		color: '#1d65c1',
 		shape: 'circle',
+		// Light colors are sampled from a Muse screenshot. Dark colors are read by
+		// eye from a second screenshot that was not available as a file.
+		theme: {
+			light: {
+				background: '#fcfcfc',
+				youBubble: '#b8dbfe',
+				youText: '#111112',
+				botBubble: '#e9eaeb',
+				botText: '#111112',
+			},
+			dark: {
+				background: '#1a1a1a',
+				youBubble: '#0b7ae8',
+				youText: '#ffffff',
+				botBubble: '#222222',
+				botText: '#ffffff',
+			},
+			pillBubbles: true,
+		},
 		preview: 'Typing...',
 		time: '11:43 PM',
 		status: 'thinking',
@@ -75,10 +141,26 @@ export const BOTS: BotSeed[] = [
 	},
 	{
 		id: 'inbox',
-		name: 'Inbox Manager',
+		name: 'Claude Duet',
 		job: 'Support queue',
-		color: '#3b82f6',
+		color: '#d97757',
 		shape: 'triangle',
+		// Colors read by eye from Claude screenshots that were not available as files.
+		theme: {
+			light: {
+				background: '#ffffff',
+				youBubble: '#f0f0f0',
+				youText: '#1a1a1a',
+				botText: '#1a1a1a',
+			},
+			dark: {
+				background: '#1f1f1f',
+				youBubble: '#2c2c2c',
+				youText: '#f0f0f0',
+				botText: '#f0f0f0',
+			},
+			serifReplies: true,
+		},
 		preview: 'inbox at zero, 5 drafts parked',
 		time: '8:43 PM',
 		status: 'idle',
@@ -102,9 +184,9 @@ export const BOTS: BotSeed[] = [
 	},
 	{
 		id: 'account',
-		name: 'Account Manager',
+		name: 'OpenAI dots',
 		job: 'Renewals',
-		color: '#8b5cf6',
+		color: '#000',
 		shape: 'circle',
 		preview: 'invited Vicky, noted the deal',
 		time: '6:43 PM',
@@ -185,7 +267,7 @@ export const BOTS: BotSeed[] = [
 			{
 				id: 'offsite-1',
 				from: 'you',
-				text: 'Chief of Staff owns the venue. Talent Scout covers travel. Come back if a date slips.',
+				text: 'Grok Bot owns the venue. Talent Scout covers travel. Come back if a date slips.',
 			},
 			{
 				id: 'offsite-2',

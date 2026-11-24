@@ -722,6 +722,38 @@ a.command-skill-prefix:hover {
   }
 }
 
+/* Per-agent look for the /botsim window. BotSim sets --bot-sim-light-* and
+ * --bot-sim-dark-* inline from the agent's theme, or DEFAULT_THEME, in
+ * data/botsim.ts. .bot-sim-bot-bubble is only on agents with pill bubbles;
+ * the typing bubble takes that background without the text color, so its
+ * dots keep the muted text color. */
+.bot-sim-window {
+  background-color: var(--bot-sim-light-bg);
+}
+.bot-sim-you {
+  background-color: var(--bot-sim-light-you-bg);
+  color: var(--bot-sim-light-you-fg);
+}
+.bot-sim-bot {
+  color: var(--bot-sim-light-bot-fg);
+}
+.bot-sim-bot-bubble {
+  background-color: var(--bot-sim-light-bot-bg);
+}
+.dark .bot-sim-window {
+  background-color: var(--bot-sim-dark-bg);
+}
+.dark .bot-sim-you {
+  background-color: var(--bot-sim-dark-you-bg);
+  color: var(--bot-sim-dark-you-fg);
+}
+.dark .bot-sim-bot {
+  color: var(--bot-sim-dark-bot-fg);
+}
+.dark .bot-sim-bot-bubble {
+  background-color: var(--bot-sim-dark-bot-bg);
+}
+
 /* ---------------------------------------------------------------------------
    The GitHub logo left of a repository link. rehypeRepoLinks() in
    astro.config.mjs sets the class on markdown and MDX links; .astro pages set

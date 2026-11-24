@@ -10,7 +10,6 @@
     "lint": "turbo lint",
     "test": "dotenvx run -- turbo test",
     "preview": "dotenvx run -- turbo preview",
-    "deploy": "dotenvx run -- turbo deploy:wrangler",
     "deploy:wrangler": "dotenvx run -- turbo deploy:wrangler",
     "deploy:netlify": "dotenvx run -- turbo deploy:netlify",
     "preview:wrangler": "dotenvx run -- turbo preview:wrangler",

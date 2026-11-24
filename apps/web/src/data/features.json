@@ -1,0 +1,194 @@
+[
+  {
+    "id": "DM1",
+    "group": "Your agent",
+    "title": "A model your agent sets up",
+    "description": "Your agent defines your records and fields. Semantius creates the tables, the fields and who may access them in one step.",
+    "icon": "TableProperties",
+    "href": "/docs/entities-and-fields"
+  },
+  {
+    "id": "IN11",
+    "group": "Your agent",
+    "title": "Works with your agent",
+    "description": "Your agent connects directly and works in the same records, rules and permissions as your team.",
+    "icon": "Bot",
+    "href": "/docs/mcp-connectors"
+  },
+  {
+    "id": "SE12",
+    "group": "Your agent",
+    "title": "A login for every agent",
+    "description": "Give your agent a login, not the keys to everything. Each agent works under its own login and can only do what its role allows.",
+    "icon": "IdCard",
+    "href": "/docs/users-and-agents/agents"
+  },
+  {
+    "id": "LC4",
+    "group": "Your agent",
+    "title": "Start from a template",
+    "description": "Ready-made starting points by department and industry, so your agent doesn't start from a blank page.",
+    "icon": "Library",
+    "href": "/templates"
+  },
+  {
+    "id": "DM11",
+    "group": "Your records",
+    "title": "Linked records",
+    "description": "Clients, jobs, orders and approvals are linked records, so a job can't point to a customer that doesn't exist.",
+    "icon": "Link",
+    "href": "/docs/entities-and-fields/relationships"
+  },
+  {
+    "id": "DM12",
+    "group": "Your records",
+    "title": "Records that belong together",
+    "description": "Order lines belong to their order and checklist items to their job, so neither exists on its own.",
+    "icon": "ListTree",
+    "href": "/docs/entities-and-fields/relationships"
+  },
+  {
+    "id": "DM14",
+    "group": "Your records",
+    "title": "Many-to-many links",
+    "description": "Several people on one project, and one person on many projects.",
+    "icon": "Network",
+    "href": "/docs/entities-and-fields/relationships"
+  },
+  {
+    "id": "DM9",
+    "group": "Your records",
+    "title": "Readable record numbers",
+    "description": "Orders numbered SO-1042 instead of a long code, easy to read out over the phone.",
+    "icon": "Hash",
+    "href": "/docs/entities-and-fields/entities"
+  },
+  {
+    "id": "DM2",
+    "group": "Your records",
+    "title": "Rich field types",
+    "description": "Email addresses, links, durations, ratings, colors, rich text and more, each in its own format.",
+    "icon": "TextCursorInput",
+    "href": "/docs/entities-and-fields/formats"
+  },
+  {
+    "id": "DM3",
+    "group": "Your records",
+    "title": "Statuses in color",
+    "description": "Statuses and categories with their own labels, colors and icons, readable at a glance.",
+    "icon": "Tags",
+    "href": "/docs/entities-and-fields/formats"
+  },
+  {
+    "id": "DM19",
+    "group": "Your records",
+    "title": "Full-text search",
+    "description": "Full-text search on each type of record, such as finding a job by its address or title.",
+    "icon": "Search",
+    "href": "/docs/entities-and-fields"
+  },
+  {
+    "id": "IN4",
+    "group": "Your records",
+    "title": "Bring your data with you",
+    "description": "Your agent imports what you have today, for example from CSV files. There are no built-in connectors to other tools.",
+    "icon": "FileUp",
+    "href": null
+  },
+  {
+    "id": "BL1",
+    "group": "Your rules",
+    "title": "Rules checked on every change",
+    "description": "Your rules are checked on every change, from the app, the API or any agent's own login, where you've defined them. A rule can compare the old value with the new one.",
+    "icon": "ShieldCheck",
+    "href": "/docs/business-logic/extensions"
+  },
+  {
+    "id": "DM7",
+    "group": "Your rules",
+    "title": "Required and unique values",
+    "description": "Required fields, default values and unique values, such as no two assets with the same tag, enforced by the database.",
+    "icon": "CircleCheck",
+    "href": "/docs/entities-and-fields/fields"
+  },
+  {
+    "id": "DM20",
+    "group": "Your rules",
+    "title": "Values worked out for you",
+    "description": "Values such as a line total, quantity times price, are computed by the database on every change, instead of by your agent.",
+    "icon": "Calculator",
+    "href": "/docs/business-logic/extensions"
+  },
+  {
+    "id": "DM21",
+    "group": "Your rules",
+    "title": "Totals that keep up",
+    "description": "Sums, counts, averages, minimums and maximums over related records, such as an order total, updated with every change.",
+    "icon": "Sigma",
+    "href": "/docs/business-logic/rollups"
+  },
+  {
+    "id": "SE1",
+    "group": "Who sees and changes what",
+    "title": "Roles and permissions",
+    "description": "Each person and each agent gets a role, and the role decides what they can see and change.",
+    "icon": "Users",
+    "href": "/docs/permissions-and-roles"
+  },
+  {
+    "id": "SE4+SE5",
+    "group": "Who sees and changes what",
+    "title": "Each person sees only their part",
+    "description": "A rule you define decides which records each person sees, such as a technician's own jobs or an account manager's own clients. It's checked in the database for every app, API and agent login.",
+    "icon": "EyeOff",
+    "href": "/docs/permissions-and-roles/permissions"
+  },
+  {
+    "id": "AU1",
+    "group": "Who sees and changes what",
+    "title": "Every change on record",
+    "description": "Every change is on record: who made it, person or agent, and when, with the values before and after. You switch it on per record type.",
+    "icon": "RotateCcwClock",
+    "href": "/docs/audit-logs"
+  },
+  {
+    "id": "BL7",
+    "group": "Who sees and changes what",
+    "title": "Approvals that hold",
+    "description": "Quotes, purchase requests and client sign-offs move only through the steps you set, and only the right person can move them on. Nobody approves their own request, and the record shows who approved it and when.",
+    "icon": "Stamp",
+    "href": "/docs/workflow-and-access"
+  },
+  {
+    "id": "UI1",
+    "group": "Your team",
+    "title": "A ready-made app for your team",
+    "description": "Screens come from the model, not hand-coded per table. Your team works in the browser on phones, tablets and laptops, with nothing to install.",
+    "icon": "MonitorSmartphone",
+    "href": "/docs/app"
+  },
+  {
+    "id": "SE10",
+    "group": "Your team",
+    "title": "Sign in with Google or Microsoft",
+    "description": "In the cloud, people sign in with their Google or Microsoft 365 account. Self-hosted, you connect your own Microsoft Entra ID or any identity provider that has a JWKS endpoint.",
+    "icon": "LogIn",
+    "href": "/docs/users-and-agents/users"
+  },
+  {
+    "id": "BL3",
+    "group": "Your team",
+    "title": "Forms that adapt",
+    "description": "A rule hides a field, makes it required or makes it read-only, such as a reason that's required when a job is canceled.",
+    "icon": "SlidersHorizontal",
+    "href": "/docs/business-logic/extensions"
+  },
+  {
+    "id": "AR3",
+    "group": "Your team",
+    "title": "Yours to keep",
+    "description": "You keep the whole system: the data, the rules, the permissions and the app. Export it at any time, or run all of it yourself with the Docker Compose or Dokploy template.",
+    "icon": "Github",
+    "href": "/docs/self-hosted"
+  }
+]

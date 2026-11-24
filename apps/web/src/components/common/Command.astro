@@ -13,10 +13,15 @@ interface Props {
    */
   runnable?: boolean;
   /**
-   * Name of the system the prompt builds (the template title). Copy and Run
-   * both append "Build my <title> with Semantius" after the prompt.
+   * Name of the system the prompt builds (the template's site_title). Copy and
+   * Run both append "Build my <title> module with Semantius." after the prompt,
+   * or "Build my <title> (<domain>) module with Semantius." when a domain is
+   * given. "Module" is a Semantius concept, and it also turns titles that name
+   * an activity ("Marina Management") into a thing that can be built.
    */
   title?: string;
+  /** The category's common acronym (the template's site_domain), if it has one. */
+  domain?: string;
 }
 
 // Map of slash-prefixed skill names to the docs page that documents the skill.
@@ -24,8 +29,8 @@ interface Props {
 // docs page (or as plain styled text if the skill is not in this map).
 const SKILL_DOC_MAP: Record<string, string> = {};
 
-const { command, mode = "shell", runnable = false, title } = Astro.props;
-const promptSuffix = title ? ` Build my ${title} with Semantius.` : undefined;
+const { command, mode = "shell", runnable = false, title, domain } = Astro.props;
+const promptSuffix = title ? ` Build my ${title}${domain ? ` (${domain})` : ""} module with Semantius.` : undefined;
 
 const skillMatch = !runnable && mode === "chat" ? command.match(/^(\/[\w-]+)(\s[\s\S]*)?$/) : null;
 const skill = skillMatch?.[1] ?? null;

@@ -1,19 +1,27 @@
 ---
+import { twMerge } from 'tailwind-merge';
+import Badge from '~/components/ui/Badge.astro';
+
 interface Props {
   title: string;
   description?: string;
+  /** A short label above the title, styled like the home page's eyebrow. */
+  eyebrow?: string;
+  /** Extra classes for the description, such as a wider max width so a longer lead wraps on fewer lines. */
+  descriptionClass?: string;
 }
 
-const { title, description } = Astro.props;
+const { title, description, eyebrow, descriptionClass } = Astro.props;
 // The "description" slot takes the place of the prop when the text needs markup, such as a link.
 const hasDescription = description || Astro.slots.has('description');
 ---
 
 <div class="pb-12 text-center">
   <div class="max-w-7xl mx-auto px-6">
+    {eyebrow && <Badge class="mb-6 border-foreground/10">{eyebrow}</Badge>}
     <h1 class="text-5xl md:text-7xl font-display font-bold mb-6" set:html={title} />
     {hasDescription && (
-      <p class="text-xl text-muted-foreground max-w-2xl mx-auto">
+      <p class={twMerge('text-xl text-muted-foreground max-w-2xl mx-auto', descriptionClass)}>
         <slot name="description">{description}</slot>
       </p>
     )}

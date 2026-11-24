@@ -3,82 +3,64 @@ export const prerender = true;
 import Layout from '~/layouts/Layout.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import PageTitle from '~/components/layout/PageTitle.astro';
-import {
-    Boxes, Database, Plug, Terminal, Bot,
-    LayoutDashboard, Workflow
-} from 'lucide-react';
 import Section from '~/components/layout/Section.astro';
 import Container from '~/components/ui/Container.astro';
 import Grid from '~/components/ui/Grid.astro';
+import Button from '~/components/ui/Button.astro';
+import { SIGN_UP_URL } from '~/data/pricing';
+import { SOLUTIONS } from '~/data/solutions';
+import features from '~/data/features.json';
+import type { LucideIcon } from 'lucide-react';
+import {
+    Bot, Calculator, CircleCheck, EyeOff, FileUp, Hash, IdCard, Library, Link,
+    ListTree, LogIn, MonitorSmartphone, Network, RotateCcwClock, Search,
+    ShieldCheck, Sigma, SlidersHorizontal, Stamp, TableProperties, Tags,
+    TextCursorInput, Users,
+} from 'lucide-react';
+// lucide-react 1.x has no brand icons; this is the local copy.
+import Github from '~/components/icons/github.js';
 
-const features = [
-    {
-        slug: 'semantic_models',
-        title: 'Semantic Models',
-        description: "A semantic model is a blueprint that defines a system's domain in terms of entities (the things you track), and the relationships between them:",
-        icon: Boxes,
-        color: 'text-sky-400',
-        bg: 'bg-sky-400/10'
-    },
-    {
-        slug: 'platform_core',
-        title: 'Platform Core',
-        description: 'Models and entities are stored in PostgreSQL. RBAC and audit logs are enforced directly in PostgreSQL.',
-        icon: Database,
-        color: 'text-purple-400',
-        bg: 'bg-purple-400/10'
-    },
-    {
-        slug: 'platform_connectors',
-        title: 'Platform Connectors',
-        description: 'MCP apps used by humans in ChatGPT or Claude to manage and explore data and to view analytic charts.',
-        href: '/docs/mcp-connectors',
-        icon: Plug,
-        color: 'text-amber-400',
-        bg: 'bg-amber-400/10'
-    },
-    {
-        slug: 'headless',
-        title: 'Headless',
-        description: 'The autonomous side. A CLI used by agents to automate tasks.',
-        href: '/docs/cli',
-        icon: Terminal,
-        color: 'text-emerald-400',
-        bg: 'bg-emerald-400/10'
-    },
-    {
-        slug: 'agent_skills',
-        title: 'Agent Skills',
-        description: 'Data Analyst skill providing the knowledge needed to build hyper customized models. Model Deployer skill reconciling the platform with the model.',
-        href: '/docs/agent-skills',
-        icon: Bot,
-        color: 'text-orange-400',
-        bg: 'bg-orange-400/10'
-    },
-    {
-        slug: 'ui',
-        title: 'UI',
-        description: 'Responsive UI to manage the platform and its entities with the usual dashboards, forms, grids, and charts.',
-        icon: LayoutDashboard,
-        color: 'text-rose-400',
-        bg: 'bg-rose-400/10'
-    },
-    {
-        slug: 'automation',
-        title: 'Automation',
-        description: 'Integrate with existing tools and services through incoming and outgoing webhooks. Automate tasks with message and task queues.',
-        icon: Workflow,
-        color: 'text-indigo-400',
-        bg: 'bg-indigo-400/10'
-    }
-];
+// The features page spec (v0): the cards of group a1, one per feature, with
+// their copy, group, icon and link in data/features.json, in display order.
+
+// The JSON names each icon as a string. Named imports, not `import *`, so the
+// build tree-shakes lucide down to these icons (see lib/nav-icons.ts).
+const ICONS = {
+    Bot, Calculator, CircleCheck, EyeOff, FileUp, Github, Hash, IdCard, Library, Link,
+    ListTree, LogIn, MonitorSmartphone, Network, RotateCcwClock, Search,
+    ShieldCheck, Sigma, SlidersHorizontal, Stamp, TableProperties, Tags,
+    TextCursorInput, Users,
+} as const satisfies Record<string, LucideIcon>;
+
+// One icon color per group, so the color shows which group a card belongs to.
+const GROUP_COLORS: Record<string, { color: string; bg: string }> = {
+    'Your agent': { color: 'text-purple-400', bg: 'bg-purple-400/10' },
+    'Your records': { color: 'text-sky-400', bg: 'bg-sky-400/10' },
+    'Your rules': { color: 'text-amber-400', bg: 'bg-amber-400/10' },
+    'Who sees and changes what': { color: 'text-emerald-400', bg: 'bg-emerald-400/10' },
+    'Your team': { color: 'text-rose-400', bg: 'bg-rose-400/10' },
+};
+
+// Groups appear in the order they first occur in the file.
+const groups = [...new Set(features.map((f) => f.group))].map((name) => ({
+    name,
+    cards: features.filter((f) => f.group === name),
+}));
+
+const related = [SOLUTIONS.guardrails, SOLUTIONS.backend, SOLUTIONS.businessApps];
+const link = 'font-medium text-primary underline-offset-4 hover:underline';
 ---
 
-<Layout title="Features - Semantius Agentic Data Platform" description="The capabilities that make up the Semantius Agentic Data Platform: semantic models, a PostgreSQL based core, MCP connectors, a headless CLI, agent skills, UI and automation.">
+<Layout
+    title="Features of the agent-first data platform | Semantius"
+    description="What your agent and your team get in Semantius: a model your agent sets up, rules checked on every change, a login for every agent, every change on record, and a ready-made app for your team."
+>
     <PageHeader>
         <PageTitle
-            title='The Semantius Agentic Data Platform'
-            description='A complete platform for building agent native business applications: a semantic model at the core, PostgreSQL backed APIs, MCP connectors for humans, a CLI for agents, agent skills, a generated UI and automation.'
+            eyebrow="The agent-first data platform"
+            title="Features"
+            description="Not generated code, a model. Rules, roles and steps are part of the data model, so every app, API and agent inherits them. Secure and extensible by definition."
+            descriptionClass="max-w-3xl"
         />
     </PageHeader>
 
@@ -87,29 +69,53 @@ const features = [
         <div class="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[120px] -mr-64 -mt-32"></div>
         <div class="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 rounded-full blur-[120px] -ml-64 -mb-32"></div>
 
-        <Container class="relative z-10">
-            <Grid cols={4}>
-                {features.map((feature) => {
-                    const Icon = feature.icon;
-                    const cardClass = "group block p-8 rounded-3xl bg-foreground/2 border border-foreground/10 hover:border-primary/20 hover:bg-foreground/3 transition-all duration-300";
-                    const inner = (
-                        <>
-                            <div class={`w-12 h-12 rounded-xl ${feature.bg} ${feature.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
-                                <Icon size={24} />
-                            </div>
-                            <h2 class="text-xl font-bold mb-3">{feature.title}</h2>
-                            <p class="text-foreground/60 text-sm leading-relaxed">
-                                {feature.description}
-                            </p>
-                        </>
-                    );
-                    return feature.href ? (
-                        <a href={feature.href} class={cardClass}>{inner}</a>
-                    ) : (
-                        <div class={cardClass}>{inner}</div>
-                    );
-                })}
-            </Grid>
+        <Container class="relative z-10 space-y-20">
+            {groups.map((group) => {
+                const { color, bg } = GROUP_COLORS[group.name];
+                return (
+                    <div>
+                        <h2 class="text-3xl md:text-4xl font-display font-bold mb-10">{group.name}</h2>
+                        <Grid cols={4} class="gap-y-10">
+                            {group.cards.map((feature) => {
+                                const Icon = ICONS[feature.icon as keyof typeof ICONS];
+                                // Borderless: the card has no box, border or background of its own.
+                                const cardClass = 'group block';
+                                const inner = (
+                                    <>
+                                        <div class={`w-12 h-12 rounded-xl ${bg} ${color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-500`}>
+                                            <Icon size={24} />
+                                        </div>
+                                        {/* A card without a link gets a mid-gray title, so it doesn't look like a link. */}
+                                        <h3 class={`text-xl font-bold mb-3 ${feature.href ? '' : 'text-foreground/50'}`}>{feature.title}</h3>
+                                        <p class="text-foreground/60 text-sm leading-relaxed">
+                                            {feature.description}
+                                        </p>
+                                    </>
+                                );
+                                return feature.href ? (
+                                    <a href={feature.href} class={cardClass}>{inner}</a>
+                                ) : (
+                                    <div class={cardClass}>{inner}</div>
+                                );
+                            })}
+                        </Grid>
+                    </div>
+                );
+            })}
+
+            <div class="space-y-8">
+                <div class="flex flex-col sm:flex-row gap-4">
+                    <Button href={SIGN_UP_URL} size="lg" class="rounded-full">Start free</Button>
+                    <Button href="/pricing" variant="outline" size="lg" class="rounded-full">See pricing</Button>
+                </div>
+                {/* Related pages, commented out for now:
+                <ul class="flex flex-col gap-x-8 gap-y-3 sm:flex-row sm:flex-wrap">
+                    {related.map((s) => (
+                        <li><a href={s.path} class={link}>{s.linkLabel}</a></li>
+                    ))}
+                </ul>
+                */}
+            </div>
         </Container>
     </Section>
 </Layout>

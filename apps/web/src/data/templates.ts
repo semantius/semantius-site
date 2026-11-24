@@ -14,6 +14,10 @@ export const TEMPLATES_PATH = '/templates';
 export interface Template {
 	name: string;
 	title: string;
+	/** The name used in the prompt's closing "Build my ..." sentence. */
+	siteTitle: string;
+	/** The category's common acronym, or "" when it has none. */
+	siteDomain: string;
 	prompt: string;
 }
 
@@ -31,6 +35,8 @@ export interface TemplateGroup {
 interface Entry {
 	name: string;
 	title: string;
+	site_title: string;
+	site_domain: string;
 	prompt: string;
 	department?: string[] | null;
 	industry?: string[] | null;
@@ -47,7 +53,13 @@ function group(label: string, pick: (e: Entry) => string | undefined, from: Entr
 		const name = pick(e);
 		if (!name) continue;
 		if (!byName.has(name)) byName.set(name, []);
-		byName.get(name)!.push({ name: e.name, title: e.title, prompt: e.prompt });
+		byName.get(name)!.push({
+			name: e.name,
+			title: e.title,
+			siteTitle: e.site_title,
+			siteDomain: e.site_domain,
+			prompt: e.prompt,
+		});
 	}
 	const categories = [...byName.entries()]
 		.sort(([a], [b]) => a.localeCompare(b, 'en-US'))

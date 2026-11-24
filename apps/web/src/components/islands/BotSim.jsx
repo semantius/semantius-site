@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { Mic, Monitor, Plus, Search, Send } from 'lucide-react';
-import { BOTS, PLAYLIST, USER, formatTime, replyFor } from '~/data/botsim';
+import { BOTS, DEFAULT_THEME, PLAYLIST, USER, formatTime, replyFor } from '~/data/botsim';
 
 function cloneBots() {
 	return BOTS.map((bot) => ({
@@ -71,6 +71,37 @@ function previewFor(bot) {
 		return `${live}...`;
 	}
 	return bot.preview;
+}
+
+const PALETTE_VARS = {
+	background: 'bg',
+	youBubble: 'you-bg',
+	youText: 'you-fg',
+	botBubble: 'bot-bg',
+	botText: 'bot-fg',
+};
+
+/**
+ * The agent's theme as inline custom properties (--bot-sim-light-bg and so
+ * on), with DEFAULT_THEME for a mode the theme leaves out. The .bot-sim-*
+ * rules in components.css read them and pick the light or dark set.
+ */
+function themeStyle(theme) {
+	const style = {};
+	for (const mode of ['light', 'dark']) {
+		const palette = theme?.[mode] ?? DEFAULT_THEME[mode];
+		for (const [key, name] of Object.entries(PALETTE_VARS)) {
+			if (palette[key]) style[`--bot-sim-${mode}-${name}`] = palette[key];
+		}
+	}
+	return style;
+}
+
+function messageClass(from, theme) {
+	const pill = Boolean(theme?.pillBubbles);
+	if (from === 'you') return `bot-sim-you px-4 py-2.5 ${pill ? 'rounded-3xl' : 'rounded-lg'}`;
+	const bubble = pill ? 'bot-sim-bot bot-sim-bot-bubble rounded-3xl px-4 py-2.5' : 'bot-sim-bot';
+	return theme?.serifReplies ? `${bubble} font-serif` : bubble;
 }
 
 export default function BotSim() {
@@ -213,10 +244,13 @@ export default function BotSim() {
 	};
 
 	const live = statusLabel(selected.status);
+	const pill = Boolean(selected.theme?.pillBubbles);
 
 	return (
 		<div className="bot-sim not-prose">
-			<div className="overflow-hidden rounded-[28px] border border-foreground/10 bg-background shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+			<div
+				style={themeStyle(selected.theme)}
+				className="bot-sim-window overflow-hidden rounded-[28px] border border-foreground/10 shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
 				<div className="grid min-h-[640px] lg:grid-cols-[300px_1fr]">
 					<aside className="flex flex-col border-b border-foreground/10 lg:border-b-0 lg:border-r">
 						<div className="flex items-center gap-3 px-4 py-3">
@@ -227,7 +261,7 @@ export default function BotSim() {
 							</div>
 							<button
 								type="button"
-								className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
+								className="ml-auto inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5 hover:text-foreground"
 								aria-label="Start a new agent"
 								onClick={() => holdSelection('new-agent')}
 							>
@@ -257,7 +291,7 @@ export default function BotSim() {
 										<button
 											type="button"
 											onClick={() => holdSelection(bot.id)}
-											className={`flex w-full items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors ${
+											className={`flex w-full cursor-pointer items-start gap-3 rounded-2xl px-3 py-2.5 text-left transition-colors ${
 												on ? 'bg-foreground/5' : 'hover:bg-foreground/5'
 											}`}
 										>
@@ -333,11 +367,7 @@ export default function BotSim() {
 											</p>
 										) : (
 											<div
-												className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
-													message.from === 'you'
-														? 'rounded-br-md bg-foreground text-background'
-														: 'rounded-bl-md bg-muted text-foreground'
-												}`}
+												className={`max-w-[85%] text-sm leading-relaxed ${messageClass(message.from, selected.theme)}`}
 											>
 												{message.text}
 											</div>
@@ -349,7 +379,11 @@ export default function BotSim() {
 								selected.status === 'typing' ||
 								selected.status === 'working') && (
 								<div className="flex justify-start">
-									<div className="rounded-2xl rounded-bl-md bg-muted px-4 py-2.5 text-sm text-muted-foreground">
+									<div
+										className={`text-sm text-muted-foreground ${
+											pill ? 'bot-sim-bot-bubble rounded-3xl px-4 py-2.5' : 'py-1'
+										}`}
+									>
 										<StatusDots />
 										<span className="sr-only">{live}</span>
 									</div>
@@ -361,7 +395,7 @@ export default function BotSim() {
 							<div className="flex items-center gap-2 rounded-full border border-foreground/10 bg-background px-2 py-1.5 shadow-sm">
 								<button
 									type="button"
-									className="inline-flex h-9 w-9 items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5"
+									className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5"
 									aria-label="Attachments are not in this proof of concept"
 									title="Attachments are not in this proof of concept"
 								>
@@ -380,7 +414,7 @@ export default function BotSim() {
 								{draft.trim() ? (
 									<button
 										type="submit"
-										className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background"
+										className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background"
 										aria-label={`Send message to ${selected.name}`}
 									>
 										<Send className="h-4 w-4" />
@@ -388,7 +422,7 @@ export default function BotSim() {
 								) : (
 									<button
 										type="button"
-										className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-background"
+										className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background"
 										aria-label="Voice is not in this proof of concept"
 										title="Voice is not in this proof of concept"
 									>
