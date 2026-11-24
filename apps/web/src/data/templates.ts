@@ -14,10 +14,10 @@ export const TEMPLATES_PATH = '/templates';
 export interface Template {
 	name: string;
 	title: string;
-	/** The name used in the prompt's closing "Build my ..." sentence. */
+	/** The name used in the prompt's closing "Build my ..." sentence: site_title, else title. */
 	siteTitle: string;
-	/** The category's common acronym, or "" when it has none. */
-	siteDomain: string;
+	/** The category's common acronym, when it has one. */
+	siteDomain?: string;
 	prompt: string;
 }
 
@@ -35,8 +35,10 @@ export interface TemplateGroup {
 interface Entry {
 	name: string;
 	title: string;
-	site_title: string;
-	site_domain: string;
+	/** Only present when the site uses a different name than title. */
+	site_title?: string;
+	/** Only present when the category has a common acronym. */
+	site_domain?: string;
 	prompt: string;
 	department?: string[] | null;
 	industry?: string[] | null;
@@ -56,7 +58,7 @@ function group(label: string, pick: (e: Entry) => string | undefined, from: Entr
 		byName.get(name)!.push({
 			name: e.name,
 			title: e.title,
-			siteTitle: e.site_title,
+			siteTitle: e.site_title ?? e.title,
 			siteDomain: e.site_domain,
 			prompt: e.prompt,
 		});

@@ -45,7 +45,7 @@ const path = templateCategoryPath(category);
 				<ul class="grid gap-6 md:grid-cols-2">
 					{category.templates.map((t) => (
 						<li class="flex flex-col p-6 rounded-3xl bg-foreground/2 border border-foreground/10">
-							<h3 class="text-lg font-bold mb-4">{t.title}</h3>
+							<h3 class="text-lg font-bold mb-4">{t.siteTitle}</h3>
 							<Command mode="chat" runnable title={t.siteTitle} domain={t.siteDomain} command={t.prompt} />
 						</li>
 					))}

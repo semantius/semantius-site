@@ -4,7 +4,20 @@
  * The layout follows the Grok Bot home page workspace: a sidebar of named
  * agents and a chat for the one in view. The copy is Semantius-flavored so
  * the page is not a brand clone.
+ *
+ * The sidebar (which agents exist, their order, names and looks) is defined
+ * here. Each agent's starting chat is in content/botsim/, in a file named after
+ * the agent (Grok Bot is grok-bot.json), so the copy can be edited without
+ * touching code. Renaming an agent does not rename its file: rename both.
  */
+
+import claudeDuetMessages from '~/content/botsim/claude-duet.json';
+import expenseManagerMessages from '~/content/botsim/expense-manager.json';
+import grokBotMessages from '~/content/botsim/grok-bot.json';
+import metaMuseMessages from '~/content/botsim/meta-muse.json';
+import offsiteCrewMessages from '~/content/botsim/offsite-crew.json';
+import openaiDotsMessages from '~/content/botsim/openai-dots.json';
+import talentScoutMessages from '~/content/botsim/talent-scout.json';
 
 export type BotStatus = 'idle' | 'thinking' | 'typing' | 'working';
 export type AvatarShape = 'circle' | 'triangle' | 'group';
@@ -13,6 +26,19 @@ export interface ChatMessage {
 	id: string;
 	from: 'bot' | 'you' | 'tool';
 	text: string;
+}
+
+/**
+ * Gives an agent's starting messages ids from the agent id and their position
+ * (chief-1, chief-2, ...), so the JSON files hold only `from` and `text`.
+ * The JSON is not validated: a `from` other than bot, you or tool is not caught.
+ */
+function seedMessages(botId: string, messages: ReadonlyArray<{ from: string; text: string }>): ChatMessage[] {
+	return messages.map((message, index) => ({
+		id: `${botId}-${index + 1}`,
+		from: message.from as ChatMessage['from'],
+		text: message.text,
+	}));
 }
 
 /** An agent's colors for one color mode. */
@@ -116,23 +142,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'booked the venue and sent the agenda',
 		time: '3:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'chief-1',
-				from: 'you',
-				text: 'Plan the Q4 offsite. I approve the venue and the budget.',
-			},
-			{
-				id: 'chief-2',
-				from: 'tool',
-				text: 'Opened the venue calendar',
-			},
-			{
-				id: 'chief-3',
-				from: 'bot',
-				text: 'Venue holds 40 and is free October 16 to 18. Agenda draft is in the thread. Budget is $18,400. I need your approval on the venue.',
-			},
-		],
+		messages: seedMessages('chief', grokBotMessages),
 	},
 	{
 		id: 'new-agent',
@@ -163,7 +173,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'Typing...',
 		time: '11:43 PM',
 		status: 'thinking',
-		messages: [],
+		messages: seedMessages('new-agent', metaMuseMessages),
 	},
 	{
 		id: 'inbox',
@@ -190,23 +200,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'inbox at zero, 5 drafts parked',
 		time: '8:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'inbox-1',
-				from: 'you',
-				text: 'Clear the support queue. Draft replies in my voice. Do not send them.',
-			},
-			{
-				id: 'inbox-2',
-				from: 'tool',
-				text: 'Signed in to the ticket queue',
-			},
-			{
-				id: 'inbox-3',
-				from: 'bot',
-				text: 'Queue is at zero. Five replies are drafted and waiting on you. Nothing was sent.',
-			},
-		],
+		messages: seedMessages('inbox', claudeDuetMessages),
 	},
 	{
 		id: 'account',
@@ -217,18 +211,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'invited Vicky, noted the deal',
 		time: '6:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'account-1',
-				from: 'you',
-				text: 'Follow up on the Acme renewal. Same thread as last quarter.',
-			},
-			{
-				id: 'account-2',
-				from: 'bot',
-				text: 'Acme replied on pricing. They only sign annual, and Dana is the one who approves. I invited Vicky and left the note on the deal.',
-			},
-		],
+		messages: seedMessages('account', openaiDotsMessages),
 	},
 	{
 		id: 'talent',
@@ -239,23 +222,7 @@ export const BOTS: BotSeed[] = [
 		preview: '3 intros drafted in your voice',
 		time: '3:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'talent-1',
-				from: 'you',
-				text: 'Source three backend candidates. Draft intros in my voice. Hold them for review.',
-			},
-			{
-				id: 'talent-2',
-				from: 'tool',
-				text: 'Opened the hiring pipeline',
-			},
-			{
-				id: 'talent-3',
-				from: 'bot',
-				text: 'Three intros are drafted in your voice and held for review. Scores and notes are on each candidate record.',
-			},
-		],
+		messages: seedMessages('talent', talentScoutMessages),
 	},
 	{
 		id: 'expense',
@@ -266,18 +233,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'report filed, 9 receipts, nothing out of policy',
 		time: '7:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'expense-1',
-				from: 'you',
-				text: 'File last week of receipts. Flag anything out of policy.',
-			},
-			{
-				id: 'expense-2',
-				from: 'bot',
-				text: 'Report is filed. Nine receipts, nothing out of policy. Ready for your sign-off.',
-			},
-		],
+		messages: seedMessages('expense', expenseManagerMessages),
 	},
 	{
 		id: 'offsite',
@@ -289,18 +245,7 @@ export const BOTS: BotSeed[] = [
 		preview: 'leaves the pipeline. I will spin up the next step.',
 		time: '5:43 PM',
 		status: 'idle',
-		messages: [
-			{
-				id: 'offsite-1',
-				from: 'you',
-				text: 'Grok Bot owns the venue. Talent Scout covers travel. Come back if a date slips.',
-			},
-			{
-				id: 'offsite-2',
-				from: 'bot',
-				text: 'Talent Scout leaves the pipeline once travel holds are in. I will spin up the next step if a date slips.',
-			},
-		],
+		messages: seedMessages('offsite', offsiteCrewMessages),
 	},
 ];
 

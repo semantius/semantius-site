@@ -1,0 +1,10 @@
+[
+  {
+    "from": "you",
+    "text": "Grok Bot owns the venue. Talent Scout covers travel. Come back if a date slips."
+  },
+  {
+    "from": "bot",
+    "text": "Talent Scout leaves the pipeline once travel holds are in. I will spin up the next step if a date slips."
+  }
+]
