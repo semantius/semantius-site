@@ -13,6 +13,7 @@
     "deploy:wrangler": "dotenvx run -- turbo deploy:wrangler",
     "deploy:netlify": "dotenvx run -- turbo deploy:netlify",
     "preview:wrangler": "dotenvx run -- turbo preview:wrangler",
+    "convertruns": "node scripts/convert-runs.mjs",
     "prepare": "husky"
   },
   "devDependencies": {

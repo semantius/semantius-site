@@ -4,6 +4,7 @@ import Layout from '~/layouts/Layout.astro';
 import Container from '~/components/ui/Container.astro';
 import PageHeader from '~/components/layout/PageHeader.astro';
 import BotSim from '~/components/islands/BotSim.jsx';
+import { ACTION_LINKS } from '~/site.config';
 ---
 
 <Layout
@@ -21,7 +22,7 @@ import BotSim from '~/components/islands/BotSim.jsx';
 	</PageHeader>
 	<section class="pb-24">
 		<Container>
-			<BotSim client:load />
+			<BotSim client:load signInHref={ACTION_LINKS.signIn.href} />
 		</Container>
 	</section>
 </Layout>
