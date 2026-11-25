@@ -353,7 +353,12 @@ function messageClass(from, theme) {
 	return shape ? `bot-sim-bot bot-sim-bot-bubble px-4 py-2.5 ${RADIUS[shape]}` : 'bot-sim-bot';
 }
 
-/** signInHref: where the recorded-session modal's Continue goes (the site's Sign in link). */
+/**
+ * signInHref: where the recorded-session modal's Continue goes (the site's Sign
+ * in link). Every page that renders BotSim passes it: botsim.astro and
+ * index.astro. Without it Continue is a link with no target, which shows no
+ * hand cursor and goes nowhere.
+ */
 export default function BotSim({ signInHref }) {
 	const [selectedId, setSelectedId] = useState(FIRST.id);
 	// The chat of the agent in view as played so far, and its dots.

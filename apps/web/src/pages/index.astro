@@ -205,10 +205,10 @@ const link = 'font-medium text-primary hover:underline underline-offset-4';
     */}
 
     {/* 4. Bot simulator (the /botsim proof of concept). client:visible so its
-        scripted playlist starts when the reader scrolls to it, not on page load. */}
+        recordings start playing when the reader scrolls to it, not on page load. */}
     <Section id="demo" class="py-16! md:py-24!">
         <Container class="max-w-6xl">
-            <BotSim client:visible />
+            <BotSim client:visible signInHref={ACTION_LINKS.signIn.href} />
         </Container>
     </Section>
 

@@ -9,12 +9,14 @@
   --color-foreground: var(--foreground);
 }
 
-/* Everything clicked for an action shows the hand cursor, site wide. Tailwind
- * 4's preflight dropped the `cursor: pointer` that version 3 gave buttons, so
+/* Every button and link shows the hand cursor, site wide. Tailwind 4's
+ * preflight dropped the `cursor: pointer` that version 3 gave buttons, so
  * without this a button shows the arrow unless it carries `cursor-pointer`
- * itself. Links get the hand from the browser. It sits in the base layer, so
- * a `cursor-*` utility on an element still overrides it. */
+ * itself. Links get the hand from the browser too, but only with an href: an
+ * `<a>` without one shows the arrow and goes nowhere. It sits in the base
+ * layer, so a `cursor-*` utility on an element still overrides it. */
 @layer base {
+  a[href],
   button:not(:disabled),
   [role="button"]:not([aria-disabled="true"]),
   input:is([type="button"], [type="submit"], [type="reset"]):not(:disabled),
