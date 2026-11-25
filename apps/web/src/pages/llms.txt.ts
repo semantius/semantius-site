@@ -94,9 +94,6 @@ export const GET: APIRoute = async ({ site }) => {
 			return `| ${doc ? `[${name}](${md(docsPath(doc))})` : name} | ${value} |`;
 		}),
 	]);
-	section('Agents it works with', [
-		'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grok Bot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
-	]);
 	section('What Semantius is not', [
 		"- Not an agent: it doesn't act on its own. Your agent sets it up and works in it.",
 		'- Not a code generator: there is no source code to maintain. The model, the rules (JSONLogic) and the permissions are data in Postgres that the API and the app read at runtime.',
@@ -116,9 +113,9 @@ export const GET: APIRoute = async ({ site }) => {
 	}
 	section('Documentation index', [`- [All documentation](${md(DOCS_INDEX_PATH)})`]);
 
-	// Hand-enumerated, so anything added to the site has to be added here too.
-	// Three twins (design, privacy, terms) were published and linked from
-	// nothing at all until they were listed.
+	// Hand-enumerated, so anything added to the site has to be added here too
+	// (or to Optional below). Three twins (design, privacy, terms) were
+	// published and linked from nothing at all until they were listed.
 	section('Product', [
 		`- [Features](${md('/features')}): what the platform does.`,
 		`- [Pricing](${md('/pricing')}): cloud plans paid in credits, and free self-hosting with paid support.`,
@@ -126,10 +123,6 @@ export const GET: APIRoute = async ({ site }) => {
 		`- [Contact](${md('/contact')}): how to reach the team.`,
 		`- [License](${md('/license')}): MIT.`,
 		`- [Changelog](${md(CHANGELOG_PATH)}): version history.`,
-		`- [Design system](${md('/design')}): typography, color and component reference.`,
-		`- [Privacy](${md('/privacy')}): how data is handled.`,
-		`- [Terms](${md('/terms')}): terms of service.`,
-		`- [Bot simulator](${md('/botsim')}): proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you.`,
 	]);
 
 	// The domain skills, one per skill-specs/<CODE>/catalog.yaml. There are none
@@ -146,11 +139,17 @@ export const GET: APIRoute = async ({ site }) => {
 		]);
 	}
 
-	section('Blog', [
-		`- [All articles](${md(BLOG_INDEX_PATH)})`,
+	// The llmstxt.org spec gives "## Optional" a meaning: links an agent can skip
+	// when it needs a shorter context. It has to stay the last section.
+	section('Optional', [
+		`- [Blog](${md(BLOG_INDEX_PATH)}): all articles.`,
 		...blog
 			.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf())
 			.map((p) => `- [${p.data.title}](${md(blogPath(p))}): ${p.data.description}`),
+		`- [Design system](${md('/design')}): typography, color and component reference.`,
+		`- [Bot simulator](${md('/botsim')}): proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you.`,
+		`- [Privacy](${md('/privacy')}): how data is handled.`,
+		`- [Terms](${md('/terms')}): terms of service.`,
 	]);
 
 	return new Response(`${out.join('\n').replace(/\n{3,}/g, '\n\n').trim()}\n`, {

@@ -31,7 +31,7 @@
   "/sitemap.xml": { "to": "/sitemap-index.xml", "permanent": true },
 
   // The domain skills are gone (use-semantius is the only skill), so their
-  // listing and pages were removed. The owner chose 301s to the template prompts,
+  // listing and pages were removed. The owner chose 302s to the template prompts,
   // which hold the ideas for modules. Remove these if the skill pages come back:
   // a redirect shadows a live page at the same path.
   "/skills": { "to": "/templates" },

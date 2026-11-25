@@ -46,6 +46,13 @@
   X-Content-Type-Options: nosniff
   Cache-Control: public, max-age=3600
 
+# llms.txt is pinned for the same reason: Cloudflare serves .txt as bare
+# "text/plain" with no charset, and the file carries real UTF-8 (typographic
+# apostrophes in blog descriptions). The Content-Type the llms.txt.ts endpoint
+# sets never reaches production: a static build drops endpoint headers.
+/llms.txt
+  Content-Type: text/plain; charset=utf-8
+
 # Twins point at their HTML page with rel="canonical".
 #
 # This is the "consolidate" strategy rather than "suppress", and the choice

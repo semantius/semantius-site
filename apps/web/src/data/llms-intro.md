@@ -4,14 +4,11 @@
 
 ## What you can build
 
-Anything that needs its own records, from one table
-to a full system of record such as a CRM or an
-ITSM. After Install, the user describes it in plain
-words, for example "Track our software licenses and
-when they renew", and the use-semantius skill
-builds it: it shows the list of entities and waits
-for the user's confirmation before the first write.
-For ideas, see Templates.
+Anything that needs its own records, from one table to a full system of record
+such as a CRM or an ITSM. After Install, the user describes it in plain words,
+for example "Track our software licenses and when they renew", and the
+use-semantius skill builds it: it shows the list of entities and waits for the
+user's confirmation before the first write. For ideas, see Templates.
 
 ## Machine-readable formats
 

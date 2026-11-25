@@ -8,15 +8,15 @@
  * not show it.
  */
 export const SPECIFICATION: [name: string, value: string, docsSlug?: string][] = [
-	['Database', 'PostgreSQL 18+', 'pg-semantius'],
+	['Database', 'PostgreSQL 18+', 'pg-semantius/install'],
 	['Implementation', '100% PL/pgSQL, no external dependencies', 'pg-semantius'],
 	['Business rules', 'Extended JSONLogic, stored and evaluated in Postgres; used for validation, computed fields and attribute-based access', 'business-logic'],
 	['Access control', 'RBAC and ABAC, row-level security on JWTs, enforced for every caller', 'permissions-and-roles'],
 	['Data model', 'Entities with descriptions; relationships with cardinality; subtypes and extensions', 'entities-and-fields'],
 	['Lifecycles', 'State machines with permission gates', 'workflow-and-access'],
 	['Audit', 'Every change to data and to the model', 'audit-logs'],
-	['Events', 'pgmq queues with event and rule triggers', 'pg-semantius'],
-	['Search', 'Full-text search', 'entities-and-fields/fields'],
+	['Events', 'pgmq queues with event and rule triggers', 'pg-semantius/reference'],
+	['Search', 'Full-text search', 'entities-and-fields'],
 	['Access', 'PostgREST API; the CLI and agent skill for any agent that can run commands', 'cli'],
 	['App', 'React app generated from the model, in the browser on any device', 'app'],
 	['Sign-in', 'OAuth2/OIDC with PKCE. Cloud: Google and Microsoft 365 accounts. Self-hosted: Microsoft Entra ID or any JWKS identity provider', 'users-and-agents'],

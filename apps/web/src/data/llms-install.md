@@ -13,7 +13,8 @@ https://raw.githubusercontent.com/semantius/semantius-cli/main/README.md
    The installer needs Node.js 22.20 or later and git. Meta's Muse has no
    global install, so on Muse use
    `npx -y skills add semantius/semantius-cli --all --subagent root`.
-   OpenClaw installs the same skills with its own installer.
+   On OpenClaw, use
+   `npx -y skills add semantius/semantius-cli -g --agent openclaw`.
 3. Ask the user for their instance address, and give them
    https://app.semantius.com in the same message: they sign up there, or sign
    in to find the address on the dashboard's Get Started card.
