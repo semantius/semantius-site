@@ -21,38 +21,51 @@ function nextId(prefix) {
 const PACE = {
 	you: 900, // before your message when it opens a chat
 	read: 3000, // before your message after an agent message: you read the answer first
+	key: 35, // per character as your message is typed into the message box
+	typeMax: 1600, // the longest typing one message takes: long messages type faster
+	send: 450, // the typed message waits in the box, then send is pressed
+	press: 150, // send shows pressed, then the message moves into the chat
 	dots: 300, // before the agent's first dots
 	thinking: 900, // 'thinking' dots, then what comes next
-	working: 600, // 'working' dots, then the tool pill
 	typing: 1300, // 'typing' dots, then the reply
 	next: 8000, // after the last message, before the next agent
 	afterClick: 40000, // the same, after an agent you clicked
 };
 
 /**
- * A script as timed steps: after `wait`, set `status` and add `message`, if
- * any. `before` is the message already in the chat when the steps start.
+ * A script as timed steps: after `wait`, set `status`, and `ghost` (the text
+ * in the message box), `pressed` (the send button) and `message` (added to the
+ * chat) where given. `before` is the message already in the chat when the
+ * steps start.
+ *
+ * Your messages are typed into the message box one character at a time, send
+ * is pressed, and only then does the message move into the chat.
  *
  * The agent thinks first right after your message and before every reply:
- * 'thinking' dots, then its tool section, tool pill or reply. A tool section
- * (a turn's calls, from `pnpm convertruns`) then shows whole and at once, a
- * single tool pill after the 'working' dots, a reply after the 'typing' dots.
+ * 'thinking' dots, then its tool section or reply. A tool section (a turn's
+ * calls) then shows whole and at once, a reply after the 'typing' dots.
  */
 function stepsFor(messages, before = null) {
 	const steps = [];
 	let previous = before;
 	for (const message of messages) {
 		if (message.from === 'you') {
-			const wait = previous && previous.from !== 'you' ? PACE.read : PACE.you;
-			steps.push({ wait, status: 'idle', message });
+			const think = previous && previous.from !== 'you' ? PACE.read : PACE.you;
+			const chars = [...message.text];
+			const perKey = Math.min(PACE.key, PACE.typeMax / chars.length);
+			let typed = '';
+			chars.forEach((char, index) => {
+				typed += char;
+				steps.push({ wait: index === 0 ? think : perKey, status: 'idle', ghost: typed });
+			});
+			steps.push({ wait: PACE.send, status: 'idle', pressed: true });
+			steps.push({ wait: PACE.press, status: 'idle', ghost: null, pressed: false, message });
 		} else {
 			const thinks = previous?.from === 'you' || message.from === 'bot';
 			if (thinks) steps.push({ wait: PACE.dots, status: 'thinking' });
 			const wait = thinks ? PACE.thinking : PACE.dots;
-			if (message.from === 'tool' && message.calls) {
+			if (message.from === 'tool') {
 				steps.push({ wait, status: 'idle', message });
-			} else if (message.from === 'tool') {
-				steps.push({ wait, status: 'working' }, { wait: PACE.working, status: 'working', message });
 			} else {
 				steps.push({ wait, status: 'typing' }, { wait: PACE.typing, status: 'idle', message });
 			}
@@ -71,6 +84,33 @@ const FIRST = BOTS.find((bot) => bot.messages.length > 0) ?? BOTS[0];
  * loop's move to the next agent starts from an empty chat.
  */
 const OPENING = FIRST.messages[0]?.from === 'you' ? [FIRST.messages[0]] : [];
+
+/**
+ * A first request longer than this many characters shows at once when its
+ * agent comes into view, instead of being typed into the message box.
+ */
+const TYPED_FIRST_MAX = 60;
+
+/** One plain line from markdown: its first line, without the markdown syntax. */
+function plainLine(markdown) {
+	const line = markdown.split('\n').find((candidate) => candidate.trim()) ?? '';
+	return line
+		.replace(/^\s*(?:#+|>|[-*+]|\d+\.)\s+/, '')
+		.replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+		.replace(/\*\*|__|[*`~]/g, '')
+		.trim();
+}
+
+/**
+ * The line under each name in the sidebar once that agent's recording has
+ * played to the end: the first line of its latest reply.
+ */
+const LATEST_REPLY = Object.fromEntries(
+	BOTS.map((bot) => {
+		const reply = bot.messages.filter((message) => message.from === 'bot').at(-1);
+		return [bot.id, reply ? plainLine(reply.text) : ''];
+	}),
+);
 
 /** The agent after `id` in sidebar order that has a script. Agents with an empty file are skipped. */
 function nextScripted(id) {
@@ -176,11 +216,11 @@ function RecordedSessionModal({ open, onClose, href }) {
 						<X className="h-4 w-4" />
 					</button>
 					<h2 id="bot-sim-recorded-title" className="pr-8 text-lg font-semibold">
-						This is a recorded session
+						Your turn
 					</h2>
 					<p id="bot-sim-recorded-text" className="mt-2 text-sm leading-relaxed text-muted-foreground">
-						The agents here replay a recorded run, so they can't answer you. A free Semantius platform with
-						your real data is just a click away.
+						This demo replays a recorded run. A free Semantius platform with your real data is just a click
+						away.
 					</p>
 					<div className="mt-6 flex justify-end">
 						<a
@@ -228,7 +268,7 @@ function ToolSection({ message }) {
 					{message.calls.map((call, index) => (
 						<li key={index} className="flex items-center gap-2.5 px-3 py-2">
 							<CircleCheck className="h-4 w-4 shrink-0 text-green-600 dark:text-green-500" aria-hidden="true" />
-							<span className="shrink-0 font-medium">{call.tool}</span>
+							{call.tool && <span className="shrink-0 font-medium">{call.tool}</span>}
 							<span className="min-w-0 truncate text-muted-foreground">{call.text}</span>
 						</li>
 					))}
@@ -251,16 +291,7 @@ function StatusDots() {
 function statusLabel(status) {
 	if (status === 'thinking') return 'Thinking';
 	if (status === 'typing') return 'Typing';
-	if (status === 'working') return 'Working';
 	return '';
-}
-
-function previewFor(bot) {
-	const live = statusLabel(bot.status);
-	if (live && (bot.status === 'thinking' || bot.status === 'typing')) {
-		return `${live}...`;
-	}
-	return bot.preview;
 }
 
 const PALETTE_VARS = {
@@ -304,7 +335,16 @@ export default function BotSim({ signInHref }) {
 	const [status, setStatus] = useState('idle');
 	const [query, setQuery] = useState('');
 	const [draft, setDraft] = useState('');
-	const [recordedOpen, setRecordedOpen] = useState(false);
+	// Your scripted message while it is typed into the message box (null when
+	// none is), and the simulated press of send.
+	const [ghost, setGhost] = useState(null);
+	const [pressed, setPressed] = useState(false);
+	// Why the recorded-session modal is open: 'send' (your message) or 'link'
+	// (a link in a chat message), or null when it is closed.
+	const [recordedOpen, setRecordedOpen] = useState(null);
+	// Agents whose recording has played to the end since the page opened: only
+	// those show their latest reply under their name.
+	const [played, setPlayed] = useState({});
 	const threadRef = useRef(null);
 	const composerRef = useRef(null);
 	const timerRef = useRef(0);
@@ -318,18 +358,25 @@ export default function BotSim({ signInHref }) {
 		node.scrollTo({ top: node.scrollHeight, behavior: reduce ? 'auto' : 'smooth' });
 	}, [shown, status, selectedId]);
 
-	/** Plays steps in the agent's chat, replacing whatever was playing, then moves on to the next agent. */
-	const run = (botId, steps, pause = PACE.next) => {
+	/**
+	 * Plays steps in the agent's chat, replacing whatever was playing, then
+	 * moves on to the next agent after `pause`. With `script`, the steps are
+	 * the agent's recording, and reaching their end marks it played.
+	 */
+	const run = (botId, steps, pause = PACE.next, script = false) => {
 		window.clearTimeout(timerRef.current);
 		let index = 0;
 		const tick = () => {
 			if (index === steps.length) {
+				if (script) setPlayed((current) => ({ ...current, [botId]: true }));
 				timerRef.current = window.setTimeout(() => play(nextScripted(botId)), pause);
 				return;
 			}
 			const step = steps[index++];
 			timerRef.current = window.setTimeout(() => {
 				setStatus(step.status);
+				if ('ghost' in step) setGhost(step.ghost);
+				if ('pressed' in step) setPressed(step.pressed);
 				if (step.message) {
 					setShown((current) => [...current, { ...step.message, id: nextId(botId) }]);
 				}
@@ -343,21 +390,26 @@ export default function BotSim({ signInHref }) {
 	 * Brings an agent into view and plays its script. For a click in the
 	 * sidebar the first message shows immediately, the script plays on from the
 	 * second, and the loop waits PACE.afterClick when it ends. Otherwise the
-	 * chat starts empty and the loop waits PACE.next.
+	 * chat starts empty and the loop waits PACE.next; a first request longer
+	 * than TYPED_FIRST_MAX characters still shows at once rather than typed.
 	 */
 	const play = (botId, clicked = false) => {
 		const bot = BOTS.find((candidate) => candidate.id === botId) ?? FIRST;
 		const [first, ...rest] = bot.messages;
-		const opening = clicked && first ? [{ ...first, id: nextId(bot.id) }] : [];
+		const firstAtOnce =
+			first && (clicked || (first.from === 'you' && first.text.length > TYPED_FIRST_MAX));
+		const opening = firstAtOnce ? [{ ...first, id: nextId(bot.id) }] : [];
 		setSelectedId(bot.id);
 		setShown(opening);
-		setStatus(opening.length > 0 && first.from === 'tool' ? 'working' : 'idle');
+		setGhost(null);
+		setPressed(false);
+		setStatus('idle');
 		const steps = opening.length > 0 ? stepsFor(rest, first) : stepsFor(bot.messages);
-		run(bot.id, steps, clicked ? PACE.afterClick : PACE.next);
+		run(bot.id, steps, clicked ? PACE.afterClick : PACE.next, true);
 	};
 
 	useEffect(() => {
-		run(FIRST.id, stepsFor(FIRST.messages.slice(OPENING.length), OPENING[0] ?? null));
+		run(FIRST.id, stepsFor(FIRST.messages.slice(OPENING.length), OPENING[0] ?? null), PACE.next, true);
 		return () => window.clearTimeout(timerRef.current);
 	}, []);
 
@@ -379,16 +431,32 @@ export default function BotSim({ signInHref }) {
 	const sendDraft = (event) => {
 		event.preventDefault();
 		const text = draft.trim();
-		if (!text) return;
+		// While a scripted message is being typed, the box is read-only and
+		// Enter does nothing.
+		if (!text || ghost !== null) return;
 		setDraft('');
 		window.clearTimeout(timerRef.current);
 		setStatus('idle');
 		setShown((current) => [...current, { id: nextId('you'), from: 'you', text }]);
-		setRecordedOpen(true);
+		setRecordedOpen('send');
+	};
+
+	/**
+	 * A link in a chat message (an agent reply's URL, say) leads nowhere real
+	 * either: any click on it, Ctrl+click and middle click included, opens the
+	 * recorded-session modal instead. The recording keeps playing behind it.
+	 */
+	const openLinkInChat = (event) => {
+		if (!event.target.closest('a')) return;
+		if (event.type === 'auxclick' && event.button !== 1) return;
+		event.preventDefault();
+		setRecordedOpen('link');
 	};
 
 	const closeRecorded = () => {
-		setRecordedOpen(false);
+		const reason = recordedOpen;
+		setRecordedOpen(null);
+		if (reason !== 'send') return;
 		run(selected.id, [], PACE.afterClick);
 		composerRef.current?.focus();
 	};
@@ -398,7 +466,7 @@ export default function BotSim({ signInHref }) {
 
 	return (
 		<div className="bot-sim not-prose">
-			<RecordedSessionModal open={recordedOpen} onClose={closeRecorded} href={signInHref} />
+			<RecordedSessionModal open={recordedOpen !== null} onClose={closeRecorded} href={signInHref} />
 			<div
 				style={themeStyle(selected.theme)}
 				className="bot-sim-window overflow-hidden rounded-[28px] border border-foreground/10 shadow-[0_24px_80px_rgba(15,23,42,0.12)] dark:shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
@@ -460,11 +528,17 @@ export default function BotSim({ signInHref }) {
 														{bot.time}
 													</span>
 												</span>
-												<span className="mt-0.5 flex items-center gap-1.5 truncate text-[13px] text-muted-foreground">
-													{(bot.status === 'thinking' || bot.status === 'typing') && (
-														<StatusDots />
-													)}
-													<span className="truncate">{previewFor(bot)}</span>
+												{/* Empty until the agent's recording has played to the end, so
+												    it never gives the ending away; its live dots while it plays. */}
+												<span className="mt-0.5 flex min-h-5 items-center gap-1.5 truncate text-[13px] text-muted-foreground">
+													{on && statusLabel(status) ? (
+														<>
+															<StatusDots />
+															<span>{statusLabel(status)}...</span>
+														</>
+													) : played[bot.id] ? (
+														<span className="truncate">{LATEST_REPLY[bot.id]}</span>
+													) : null}
 												</span>
 											</span>
 										</button>
@@ -512,7 +586,12 @@ export default function BotSim({ signInHref }) {
 
 						{/* relative: the dots' sr-only label is absolutely positioned, and in an
 						    unpositioned scroll box it escapes and lengthens the page. */}
-						<div ref={threadRef} className="relative min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5">
+						<div
+							ref={threadRef}
+							onClick={openLinkInChat}
+							onAuxClick={openLinkInChat}
+							className="relative min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5"
+						>
 							<AnimatePresence initial={false}>
 								{shown.map((message) => (
 									<motion.div
@@ -522,12 +601,8 @@ export default function BotSim({ signInHref }) {
 										transition={{ duration: 0.22 }}
 										className={`flex ${message.from === 'you' ? 'justify-end' : 'justify-start'}`}
 									>
-										{message.from === 'tool' && message.calls ? (
+										{message.from === 'tool' ? (
 											<ToolSection message={message} />
-										) : message.from === 'tool' ? (
-											<p className="rounded-full border border-foreground/10 bg-muted px-3 py-1 text-xs text-muted-foreground">
-												{message.text}
-											</p>
 										) : (
 											<div
 												className={`max-w-[85%] text-sm leading-relaxed ${messageClass(message.from, selected.theme)}`}
@@ -538,7 +613,7 @@ export default function BotSim({ signInHref }) {
 									</motion.div>
 								))}
 							</AnimatePresence>
-							{(status === 'thinking' || status === 'typing' || status === 'working') && (
+							{statusLabel(status) && (
 								<div className="flex justify-start">
 									<div
 										className={`text-sm text-muted-foreground ${
@@ -568,15 +643,18 @@ export default function BotSim({ signInHref }) {
 								<input
 									ref={composerRef}
 									id="bot-sim-composer"
-									value={draft}
+									value={ghost ?? draft}
+									readOnly={ghost !== null}
 									onChange={(event) => setDraft(event.target.value)}
 									placeholder={`Message ${selected.name}`}
 									className="h-9 min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
 								/>
-								{draft.trim() ? (
+								{(ghost ?? draft).trim() ? (
 									<button
 										type="submit"
-										className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background"
+										className={`inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background transition-transform ${
+											pressed ? 'scale-90' : ''
+										}`}
 										aria-label={`Send message to ${selected.name}`}
 									>
 										<Send className="h-4 w-4" />

@@ -6,7 +6,8 @@
  * the page is not a brand clone.
  *
  * The sidebar (which agents exist, their order, names and looks) is defined
- * here and does not change while the page runs. Each agent's chat is a script
+ * here and does not change while the page runs; only the line under each
+ * name does, and BotSim derives it from the chat. Each agent's chat is a script
  * in content/botsim/, in a file named after the agent (Grok Bot is
  * grok-bot.json), so the copy can be edited without touching code. BotSim
  * plays the script, one message at a time, whenever the agent comes into
@@ -26,43 +27,49 @@ import offsiteCrewMessages from '~/content/botsim/offsite-crew.json';
 import openaiDotsMessages from '~/content/botsim/openai-dots.json';
 import talentScoutMessages from '~/content/botsim/talent-scout.json';
 
-export type BotStatus = 'idle' | 'thinking' | 'typing' | 'working';
 export type AvatarShape = 'circle' | 'triangle' | 'group';
 
-/** One call in a tool section: the tool's name and what it did. */
+/** One call in a tool section: the tool's name, when known, and what it did. */
 export interface ToolCall {
-	tool: string;
+	/** Missing for a hand-written tool line, which names no tool. */
+	tool?: string;
 	text: string;
 }
 
 export interface ChatMessage {
 	id: string;
 	from: 'bot' | 'you' | 'tool';
-	/** For a tool section, the agent's latest progress line. */
+	/** For a tool section, the agent's latest progress line; may be empty. */
 	text: string;
-	/**
-	 * Turns a "tool" message into one section ("Ran 9 tool calls") that expands
-	 * to these calls. A "tool" message without it is a single pill.
-	 */
+	/** A "tool" message shows as one section ("Ran 9 tool calls") that expands to these calls. */
 	calls?: ToolCall[];
 }
 
 /**
  * Gives an agent's script messages ids from the agent id and their position
  * (chief-1, chief-2, ...), so the JSON files hold only `from`, `text` and,
- * for a tool section, `calls`. The JSON is not validated: a `from` other than
- * bot, you or tool is not caught.
+ * for a tool section, `calls`. A hand-written tool line without `calls`, such
+ * as { "from": "tool", "text": "Signed in to the ticket queue" }, becomes a
+ * one-call section whose call is that text, so every tool message looks the
+ * same. Add "calls": [{ "tool": "browser", "text": "..." }] instead to name
+ * the tool. The JSON is not validated: a `from` other than bot, you or tool
+ * is not caught.
  */
 function seedMessages(
 	botId: string,
 	messages: ReadonlyArray<{ from: string; text: string; calls?: ReadonlyArray<ToolCall> }>,
 ): ChatMessage[] {
-	return messages.map((message, index) => ({
-		id: `${botId}-${index + 1}`,
-		from: message.from as ChatMessage['from'],
-		text: message.text,
-		...(message.calls ? { calls: message.calls.map((call) => ({ tool: call.tool, text: call.text })) } : {}),
-	}));
+	return messages.map((message, index) => {
+		const id = `${botId}-${index + 1}`;
+		const from = message.from as ChatMessage['from'];
+		if (from === 'tool' && !message.calls) return { id, from, text: '', calls: [{ text: message.text }] };
+		return {
+			id,
+			from,
+			text: message.text,
+			...(message.calls ? { calls: message.calls.map((call) => ({ tool: call.tool, text: call.text })) } : {}),
+		};
+	});
 }
 
 /** An agent's colors for one color mode. */
@@ -121,9 +128,7 @@ export interface BotSeed {
 	color2?: string;
 	shape: AvatarShape;
 	theme?: BotTheme;
-	preview: string;
 	time: string;
-	status: BotStatus;
 	messages: ChatMessage[];
 }
 
@@ -155,9 +160,7 @@ export const BOTS: BotSeed[] = [
 			youShape: 'pill',
 			botShape: 'large',
 		},
-		preview: 'booked the venue and sent the agenda',
 		time: '3:43 PM',
-		status: 'idle',
 		messages: seedMessages('chief', grokBotMessages),
 	},
 	{
@@ -186,9 +189,7 @@ export const BOTS: BotSeed[] = [
 			youShape: 'pill',
 			botShape: 'pill',
 		},
-		preview: 'Typing...',
 		time: '11:43 PM',
-		status: 'thinking',
 		messages: seedMessages('new-agent', metaMuseMessages),
 	},
 	{
@@ -212,9 +213,7 @@ export const BOTS: BotSeed[] = [
 				botText: '#f0f0f0',
 			},
 		},
-		preview: 'inbox at zero, 5 drafts parked',
 		time: '8:43 PM',
-		status: 'idle',
 		messages: seedMessages('inbox', claudeDuetMessages),
 	},
 	{
@@ -223,9 +222,7 @@ export const BOTS: BotSeed[] = [
 		job: 'Renewals',
 		color: '#000',
 		shape: 'circle',
-		preview: 'invited Vicky, noted the deal',
 		time: '6:43 PM',
-		status: 'idle',
 		messages: seedMessages('account', openaiDotsMessages),
 	},
 	{
@@ -234,9 +231,7 @@ export const BOTS: BotSeed[] = [
 		job: 'Hiring',
 		color: '#2563eb',
 		shape: 'circle',
-		preview: '3 intros drafted in your voice',
 		time: '3:43 PM',
-		status: 'idle',
 		messages: seedMessages('talent', talentScoutMessages),
 	},
 	{
@@ -245,9 +240,7 @@ export const BOTS: BotSeed[] = [
 		job: 'Expenses',
 		color: '#f97316',
 		shape: 'circle',
-		preview: 'report filed, 9 receipts, nothing out of policy',
 		time: '7:43 PM',
-		status: 'idle',
 		messages: seedMessages('expense', expenseManagerMessages),
 	},
 	{
@@ -257,9 +250,7 @@ export const BOTS: BotSeed[] = [
 		color: '#14b8a6',
 		color2: '#8b5cf6',
 		shape: 'group',
-		preview: 'leaves the pipeline. I will spin up the next step.',
 		time: '5:43 PM',
-		status: 'idle',
 		messages: seedMessages('offsite', offsiteCrewMessages),
 	},
 ];
