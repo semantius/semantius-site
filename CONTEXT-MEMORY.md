@@ -15,6 +15,8 @@ The auto-memory directory at `~/.claude/projects/.../memory/` (and any equivalen
 
 Audit every file before saving. If existing content contains em/en dashes, fix them as part of the task.
 
+Exception: the /botsim chats that `pnpm convertruns` generates from `runs/` keep the agent transcript's dashes by the owner's decision. Do not fix them in a dash sweep.
+
 **American English everywhere, including settings.** Spelling and locale both:
 `optimize`, `customize`, `organization`, `behavior`, `license`, `center`, `catalog`,
 `modeling`, `analyze`, `initialized`, `labor`, `judgment`, `canceled`. Code
