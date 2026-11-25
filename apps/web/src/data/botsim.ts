@@ -8,10 +8,12 @@
  * The sidebar (which agents exist, their order, names and looks) is defined
  * here and does not change while the page runs; only the line under each
  * name does, and BotSim derives it from the chat. Each agent's chat is a script
- * in content/botsim/, in a file named after the agent (Grok Bot is
- * grok-bot.json), so the copy can be edited without touching code. BotSim
- * plays the script, one message at a time, whenever the agent comes into
- * view. Renaming an agent does not rename its file: rename both.
+ * in content/botsim/, a YAML file named after the agent (Grok Bot is
+ * grok-bot.yaml), so the copy can be edited without touching code; long texts
+ * run over several lines there. The botsim-chats plugin in astro.config.mjs
+ * parses them at build time. BotSim plays the script, one message at a time,
+ * whenever the agent comes into view. Renaming an agent does not rename its
+ * file: rename both.
  *
  * A chat can also be generated from an exported agent run with
  * `pnpm convertruns` (scripts/convert-runs.mjs). It only writes chats that
@@ -19,13 +21,13 @@
  * regenerate it from its run.
  */
 
-import claudeDuetMessages from '~/content/botsim/claude-duet.json';
-import expenseManagerMessages from '~/content/botsim/expense-manager.json';
-import grokBotMessages from '~/content/botsim/grok-bot.json';
-import metaMuseMessages from '~/content/botsim/meta-muse.json';
-import offsiteCrewMessages from '~/content/botsim/offsite-crew.json';
-import openaiDotsMessages from '~/content/botsim/openai-dots.json';
-import talentScoutMessages from '~/content/botsim/talent-scout.json';
+import claudeDuetMessages from '~/content/botsim/claude-duet.yaml';
+import expenseManagerMessages from '~/content/botsim/expense-manager.yaml';
+import grokBotMessages from '~/content/botsim/grok-bot.yaml';
+import metaMuseMessages from '~/content/botsim/meta-muse.yaml';
+import offsiteCrewMessages from '~/content/botsim/offsite-crew.yaml';
+import openaiDotsMessages from '~/content/botsim/openai-dots.yaml';
+import talentScoutMessages from '~/content/botsim/talent-scout.yaml';
 
 export type AvatarShape = 'circle' | 'triangle' | 'group';
 
@@ -47,18 +49,16 @@ export interface ChatMessage {
 
 /**
  * Gives an agent's script messages ids from the agent id and their position
- * (chief-1, chief-2, ...), so the JSON files hold only `from`, `text` and,
+ * (chief-1, chief-2, ...), so the chat files hold only `from`, `text` and,
  * for a tool section, `calls`. A hand-written tool line without `calls`, such
- * as { "from": "tool", "text": "Signed in to the ticket queue" }, becomes a
+ * as `from: tool` with `text: Signed in to the ticket queue`, becomes a
  * one-call section whose call is that text, so every tool message looks the
- * same. Add "calls": [{ "tool": "browser", "text": "..." }] instead to name
- * the tool. The JSON is not validated: a `from` other than bot, you or tool
- * is not caught.
+ * same. Give it `calls:` with `tool:` and `text:` entries instead to name the
+ * tool. The files are not validated: a `from` other than bot, you or tool is
+ * not caught.
  */
-function seedMessages(
-	botId: string,
-	messages: ReadonlyArray<{ from: string; text: string; calls?: ReadonlyArray<ToolCall> }>,
-): ChatMessage[] {
+function seedMessages(botId: string, file: unknown): ChatMessage[] {
+	const messages = file as ReadonlyArray<{ from: string; text: string; calls?: ReadonlyArray<ToolCall> }>;
 	return messages.map((message, index) => {
 		const id = `${botId}-${index + 1}`;
 		const from = message.from as ChatMessage['from'];

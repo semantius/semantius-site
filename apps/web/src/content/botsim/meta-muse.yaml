@@ -1,0 +1,156 @@
+- from: you
+  text: >-
+    Build me a system to run every team's projects, tasks, and goals in one
+    place, from first request to finished work. Build my Work Management module
+    with Semantius.
+- from: tool
+  text: >-
+    I've compared against your 22 existing entities with no conflicts — now
+    outlining the 5 work management entities.
+  calls:
+    - tool: activate_skill
+      text: use-semantius
+    - tool: read
+      text: Reading skill instructions
+    - tool: read
+      text: Reading skill tail and preflight
+    - tool: read
+      text: Reading preflight checks
+    - tool: read
+      text: Reading build module guide
+    - tool: bash
+      text: Checking workspace setup
+    - tool: bash
+      text: Probing Semantius connection
+    - tool: bash
+      text: Listing existing entities
+    - tool: bash
+      text: Reading existing entities raw
+    - tool: bash
+      text: Comparing new entities with instance
+    - tool: read
+      text: Reading data modeling guide
+- from: bot
+  text: |-
+    Modeled on Asana, Monday.com and ClickUp, from my knowledge of the category.
+    What they agree on is Teams owning Projects that break into Tasks, with
+    intake triaged into work and Goals tracking outcomes — the mechanism here is
+    the request → work → goal chain, where every Task can trace back to its
+    Request and contribute to a Goal, plus subtasks kept in the one Tasks table.
+    One deliberate difference: a single Tasks entity covers both tasks and
+    subtasks instead of separate tables.
+
+    - Teams: squads that own the work; each has a lead (Users, existing).
+    - Work Requests: intake triaged into real work; each is requested by a User
+      and routed to a Team, then converted to a Project or Task.
+    - Projects: containers of work toward an outcome; each belongs to a Team and
+      can track a Goal.
+    - Tasks: the units of work, including subtasks; each belongs to a Project,
+      is assigned to a User, and can link back to its Request and forward to a
+      Goal.
+    - Goals: objectives the work ladders up to; each is owned by a Team, with
+      Tasks contributing to it.
+    - Users: existing, in the platform; referenced as requesters, assignees,
+      leads and owners (view only).
+
+    How should I design the Work Management?
+
+    A. With all 5: Teams, Work Requests, Projects, Tasks, Goals (recommended).
+
+    B. With the core 4: Work Requests, Projects, Tasks, Goals (Teams becomes a
+    next step; assignment goes directly to users).
+
+    Reply with A or B, or tell me what to add, drop or rename.
+- from: you
+  text: a
+- from: tool
+  text: "Fields live — now writing the access rules and verifying."
+  calls:
+    - tool: bash
+      text: Finding module and entity icons
+    - tool: read
+      text: Reading RBAC guide
+    - tool: bash
+      text: Creating Work Management module
+    - tool: bash
+      text: Checking prefixes and permissions
+    - tool: read
+      text: Reading field formats section
+    - tool: read
+      text: Reading relationships and evolution
+    - tool: read
+      text: Reading RBAC gates controls continued
+    - tool: grep
+      text: Finding userFields spec
+    - tool: read
+      text: Reading access record validation
+    - tool: grep
+      text: Finding opener logic
+    - tool: read
+      text: Reading access record shape rules
+    - tool: read
+      text: Reading opener validation
+    - tool: read
+      text: Reading rollup fields guide
+    - tool: write
+      text: Writing work management builder
+    - tool: bash
+      text: Running builder to write payloads
+    - tool: bash
+      text: Creating five entities
+    - tool: bash
+      text: Creating all fields and rollups
+    - tool: bash
+      text: Writing access from record
+- from: bot
+  text: |-
+    Built the Work Management module with Teams, Work Requests, Projects, Tasks
+    and Goals, wired request → work → goal with progress rollups.
+
+    https://tests.semantius.app/work-management
+
+    **Access: advanced.** No step is restricted to a role. Role names start with
+    "Work Management".
+
+    | Role | Does | Sees |
+    |---|---|---|
+    | Viewer | reads only | everything |
+    | Manager | the everyday work | everything |
+    | Admin | the everyday work | everything |
+
+    **No restricted step** on Work Requests, Projects, Tasks or Goals: anyone
+    who can edit one can move it through every state.
+
+    Next steps: add your first team and goal, create a project with its tasks,
+    or import existing work from a CSV.
+
+    Should I add a small demo dataset so you can review the module, or leave the
+    tables empty for your real data?
+
+    A. Sample data (recommended): 45 records across 5 tables (Teams, Work
+    Requests, Projects, Tasks, Goals).
+
+    B. Empty tables: nothing is seeded.
+
+    Reply with A or B.
+- from: you
+  text: a
+- from: tool
+  text: >-
+    Building your sample dataset — 45 records to bring the workspace to life.
+  calls:
+    - tool: read
+      text: Reading seed data guide
+    - tool: bash
+      text: Describing tables for seed file
+    - tool: write
+      text: Writing seed file
+    - tool: bash
+      text: Checking, importing and reporting seed
+- from: bot
+  text: |-
+    https://tests.semantius.app/work-management
+
+    Generated 35 sample records.
+    - teams.total_projects holds 1 on every record: give the records different
+      numbers of child records

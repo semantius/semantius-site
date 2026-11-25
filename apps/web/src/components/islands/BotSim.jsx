@@ -20,7 +20,7 @@ function nextId(prefix) {
  */
 const PACE = {
 	you: 900, // before your message when it opens a chat
-	read: 3000, // before your message after an agent message: you read the answer first
+	read: 15000, // before your message after an agent message: you read the answer first
 	key: 35, // per character as your message is typed into the message box
 	typeMax: 1600, // the longest typing one message takes: long messages type faster
 	send: 450, // the typed message waits in the box, then send is pressed
@@ -28,8 +28,8 @@ const PACE = {
 	dots: 300, // before the agent's first dots
 	thinking: 900, // 'thinking' dots, then what comes next
 	typing: 1300, // 'typing' dots, then the reply
-	next: 8000, // after the last message, before the next agent
-	afterClick: 40000, // the same, after an agent you clicked
+	next: 20000, // after the last message, before the next agent
+	afterClick: 60000, // the same, after an agent you clicked
 };
 
 /**
@@ -241,12 +241,38 @@ function RecordedSessionModal({ open, onClose, href }) {
 /**
  * A turn's tool calls as one section: "Ran 9 tool calls" and the agent's
  * latest progress line, collapsed until clicked, then the list of calls.
+ *
+ * The chat has a fixed height, so a list opening near its bottom edge would
+ * open out of view: opening scrolls the chat just enough to show it, without
+ * scrolling the header away. onOpenChange tells BotSim while the section is
+ * open, and the recording waits meanwhile, so new messages cannot scroll it
+ * away again.
  */
-function ToolSection({ message }) {
+function ToolSection({ message, onOpenChange }) {
 	const [open, setOpen] = useState(false);
+	const rootRef = useRef(null);
 	const count = message.calls.length;
+
+	useEffect(() => {
+		if (!open) return;
+		onOpenChange(true);
+		const root = rootRef.current;
+		const thread = root?.closest('[data-bot-sim-thread]');
+		if (root && thread) {
+			const section = root.getBoundingClientRect();
+			const view = thread.getBoundingClientRect();
+			const hidden = section.bottom - view.bottom + 12;
+			if (hidden > 0) {
+				const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+				const top = Math.min(hidden, section.top - view.top - 12);
+				thread.scrollBy({ top, behavior: reduce ? 'auto' : 'smooth' });
+			}
+		}
+		return () => onOpenChange(false);
+	}, [open]);
+
 	return (
-		<div className="w-full min-w-0 text-sm">
+		<div ref={rootRef} className="w-full min-w-0 text-sm">
 			<button
 				type="button"
 				onClick={() => setOpen((value) => !value)}
@@ -339,8 +365,9 @@ export default function BotSim({ signInHref }) {
 	// none is), and the simulated press of send.
 	const [ghost, setGhost] = useState(null);
 	const [pressed, setPressed] = useState(false);
-	// Why the recorded-session modal is open: 'send' (your message) or 'link'
-	// (a link in a chat message), or null when it is closed.
+	// Why the recorded-session modal is open: 'send' (your message), 'link' (a
+	// link in a chat message) or 'placeholder' (the attachment or voice
+	// button), or null when it is closed.
 	const [recordedOpen, setRecordedOpen] = useState(null);
 	// Agents whose recording has played to the end since the page opened: only
 	// those show their latest reply under their name.
@@ -348,6 +375,27 @@ export default function BotSim({ signInHref }) {
 	const threadRef = useRef(null);
 	const composerRef = useRef(null);
 	const timerRef = useRef(0);
+	// How many tool sections you opened are open. While any is, the recording
+	// waits: the step or move that comes due is kept in pendingRef and runs
+	// when the last one closes.
+	const holdRef = useRef(0);
+	const pendingRef = useRef(null);
+
+	const whenFree = (fn) => () => {
+		if (holdRef.current > 0) {
+			pendingRef.current = fn;
+			return;
+		}
+		fn();
+	};
+
+	const holdWhileOpen = (open) => {
+		holdRef.current += open ? 1 : -1;
+		if (holdRef.current > 0 || !pendingRef.current) return;
+		const fn = pendingRef.current;
+		pendingRef.current = null;
+		fn();
+	};
 
 	// Each new message or set of dots scrolls the thread to the bottom, so
 	// earlier messages move up as in a real chat.
@@ -365,23 +413,30 @@ export default function BotSim({ signInHref }) {
 	 */
 	const run = (botId, steps, pause = PACE.next, script = false) => {
 		window.clearTimeout(timerRef.current);
+		pendingRef.current = null;
 		let index = 0;
 		const tick = () => {
 			if (index === steps.length) {
 				if (script) setPlayed((current) => ({ ...current, [botId]: true }));
-				timerRef.current = window.setTimeout(() => play(nextScripted(botId)), pause);
+				timerRef.current = window.setTimeout(
+					whenFree(() => play(nextScripted(botId))),
+					pause,
+				);
 				return;
 			}
 			const step = steps[index++];
-			timerRef.current = window.setTimeout(() => {
-				setStatus(step.status);
-				if ('ghost' in step) setGhost(step.ghost);
-				if ('pressed' in step) setPressed(step.pressed);
-				if (step.message) {
-					setShown((current) => [...current, { ...step.message, id: nextId(botId) }]);
-				}
-				tick();
-			}, step.wait);
+			timerRef.current = window.setTimeout(
+				whenFree(() => {
+					setStatus(step.status);
+					if ('ghost' in step) setGhost(step.ghost);
+					if ('pressed' in step) setPressed(step.pressed);
+					if (step.message) {
+						setShown((current) => [...current, { ...step.message, id: nextId(botId) }]);
+					}
+					tick();
+				}),
+				step.wait,
+			);
 		};
 		tick();
 	};
@@ -436,6 +491,7 @@ export default function BotSim({ signInHref }) {
 		if (!text || ghost !== null) return;
 		setDraft('');
 		window.clearTimeout(timerRef.current);
+		pendingRef.current = null;
 		setStatus('idle');
 		setShown((current) => [...current, { id: nextId('you'), from: 'you', text }]);
 		setRecordedOpen('send');
@@ -588,6 +644,7 @@ export default function BotSim({ signInHref }) {
 						    unpositioned scroll box it escapes and lengthens the page. */}
 						<div
 							ref={threadRef}
+							data-bot-sim-thread
 							onClick={openLinkInChat}
 							onAuxClick={openLinkInChat}
 							className="relative min-h-0 flex-1 space-y-3 overflow-y-auto px-5 py-5"
@@ -602,7 +659,7 @@ export default function BotSim({ signInHref }) {
 										className={`flex ${message.from === 'you' ? 'justify-end' : 'justify-start'}`}
 									>
 										{message.from === 'tool' ? (
-											<ToolSection message={message} />
+											<ToolSection message={message} onOpenChange={holdWhileOpen} />
 										) : (
 											<div
 												className={`max-w-[85%] text-sm leading-relaxed ${messageClass(message.from, selected.theme)}`}
@@ -629,8 +686,11 @@ export default function BotSim({ signInHref }) {
 
 						<form onSubmit={sendDraft} className="px-4 pb-4 pt-1">
 							<div className="flex items-center gap-2 rounded-full border border-foreground/10 bg-background px-2 py-1.5 shadow-sm">
+								{/* Attachments and voice are placeholders: like sending, they open
+								    the recorded-session modal. */}
 								<button
 									type="button"
+									onClick={() => setRecordedOpen('placeholder')}
 									className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-foreground/5"
 									aria-label="Attachments are not in this proof of concept"
 									title="Attachments are not in this proof of concept"
@@ -662,6 +722,7 @@ export default function BotSim({ signInHref }) {
 								) : (
 									<button
 										type="button"
+										onClick={() => setRecordedOpen('placeholder')}
 										className="inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full bg-foreground text-background"
 										aria-label="Voice is not in this proof of concept"
 										title="Voice is not in this proof of concept"

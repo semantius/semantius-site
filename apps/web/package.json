@@ -72,6 +72,7 @@
     "astro-compress": "^2.3.8",
     "cross-env": "^10.1.0",
     "pagefind": "^1.5.2",
-    "sirv": "^3.0.2"
+    "sirv": "^3.0.2",
+    "yaml": "^2.8.3"
   }
 }

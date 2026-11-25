@@ -14,6 +14,7 @@ import { fileURLToPath } from 'node:url';
 import sirv from 'sirv';
 import matter from 'gray-matter';
 import { parse as parseJsonc, printParseErrorCode } from 'jsonc-parser';
+import { parse as parseYaml } from 'yaml';
 import { markdownTwins } from './src/lib/mdtwins/integration';
 import { nonContentSelectors } from './src/lib/mdtwins/extract';
 import { withTwinRedirects } from './src/lib/mdtwins/redirects';
@@ -366,6 +367,23 @@ function devViteCacheDir() {
   };
 }
 
+/**
+ * Lets src/data/botsim.ts import the /botsim chats, src/content/botsim/*.yaml,
+ * like JSON files: each is parsed here at build time and becomes a module that
+ * exports the parsed data, so no YAML parser reaches the browser. The chats are
+ * YAML so long texts can be edited over several lines (scripts/chat-yaml.mjs
+ * writes them). Any other .yaml file is left to Vite and Astro as before.
+ */
+function botsimChats() {
+  return {
+    name: 'botsim-chats',
+    transform(code, id) {
+      if (!/\/src\/content\/botsim\/[^/?]+\.yaml$/.test(id)) return null;
+      return { code: `export default ${JSON.stringify(parseYaml(code) ?? [])};`, map: null };
+    },
+  };
+}
+
 // Helper to find noindex URLs
 function getNoIndexUrls() {
   const urls = new Set();
@@ -630,7 +648,7 @@ export default defineConfig({
     trailingSlashRedirect(),
   ],
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [tailwindcss(), botsimChats()],
     define: {
       'import.meta.env.DEFAULT_LOCALE': JSON.stringify(DEFAULT_LOCALE)
     },

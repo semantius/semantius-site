@@ -1,0 +1,8 @@
+- from: you
+  text: Clear the support queue. Draft replies in my voice. Do not send them.
+- from: tool
+  text: Signed in to the ticket queue
+- from: bot
+  text: >-
+    Queue is at zero. Five replies are drafted and waiting on you. Nothing was
+    sent.

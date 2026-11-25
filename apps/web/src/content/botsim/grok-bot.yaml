@@ -1,0 +1,135 @@
+- from: you
+  text: >-
+    We need a tool to train our whole workforce and prove it, from first
+    enrollment to audit-ready completion records. Build my Learning Management
+    System (LMS) module with Semantius.
+- from: tool
+  text: >-
+    Clean workspace confirmed — no training tables yet. I'll draft your LMS
+    structure based on how leading platforms handle enrollments and completions,
+    then verify the design.
+  calls:
+    - tool: activate_skill
+      text: use-semantius
+    - tool: read
+      text: Reading skill instructions
+    - tool: read
+      text: Read preflight checks
+    - tool: read
+      text: Read build module guide
+    - tool: read
+      text: Read data modeling guide
+    - tool: bash
+      text: Check toolchain and CLI installed
+    - tool: bash
+      text: Probe Semantius auth and org
+    - tool: bash
+      text: List existing modules and entities
+    - tool: bash
+      text: Compare LMS entities with instance
+- from: bot
+  text: |-
+    Following TalentLMS, Docebo and Moodle — from my knowledge of the LMS
+    category. They all agree on Courses, content Units, Enrollments, Assessments
+    and Certificates, and that agreement is the outline below.
+
+    The mechanism your goal turns on is enrollment-to-proof: an Enrollment
+    tracks a learner from assigned to completed, and a Certificate is issued as
+    the audit-ready completion record. I deliberately keep grades/badges out —
+    completion plus assessment pass covers proof without enterprise extras.
+
+    Confirm the entity list for your Learning Management System:
+
+    * Courses: training offerings the workforce must take; the catalog
+      everything else hangs off
+    * Lessons: content steps inside a Course; each belongs to a Course
+    * Enrollments: a learner assigned to a Course; each belongs to a Course and
+      names a learner in Users
+    * Assessments: checks that prove learning for a Course; each belongs to a
+      Course
+    * Certificates: audit-ready proof of completion; each belongs to an
+      Enrollment
+    * Users: existing, platform users; Enrollments name a learner, Courses name
+      an instructor
+
+    How should I design the Learning Management System?
+
+    A. With all 5: Courses, Lessons, Enrollments, Assessments, Certificates
+    (recommended).
+
+    B. With the core 4: Courses, Lessons, Enrollments, Certificates —
+    Assessments as a follow-up.
+
+    Reply with A or B, or tell me what to add, drop or rename.
+- from: you
+  text: a
+- from: tool
+  text: Verification needs one more clean run to confirm nothing changed.
+  calls:
+    - tool: read
+      text: Read key type and label sections
+    - tool: bash
+      text: Find icons for LMS module and entities
+    - tool: bash
+      text: Create LMS module with permissions
+    - tool: read
+      text: Read RBAC access record guide
+    - tool: read
+      text: Read relationships and evolution sections
+    - tool: read
+      text: Read rollup fields guide
+    - tool: read
+      text: Read RBAC gates and controls
+    - tool: grep
+      text: Find userFields examples
+    - tool: read
+      text: Read access rules validation
+    - tool: read
+      text: Read rest of access rules
+    - tool: read
+      text: Read jsonlogic guide
+    - tool: bash
+      text: Read users label, LMS permissions, prefixes
+    - tool: bash
+      text: Draft builder access record
+    - tool: bash
+      text: Verify no LMS tables exist yet
+    - tool: bash
+      text: Find icons for LMS enum values
+    - tool: bash
+      text: Write and run LMS builder script
+    - tool: bash
+      text: Fix builder validation errors
+    - tool: bash
+      text: Check builder ran from repo root
+    - tool: bash
+      text: List workspace deploy folders
+    - tool: read
+      text: Read current builder script
+    - tool: write
+      text: build_lms.ts
+    - tool: bash
+      text: Run LMS builder script
+    - tool: bash
+      text: Create LMS entities
+    - tool: bash
+      text: Create LMS fields
+    - tool: bash
+      text: Write LMS access from record
+    - tool: bash
+      text: Verify LMS module access
+    - tool: bash
+      text: Confirm verification clean run
+- from: bot
+  text: |-
+    Built your Learning Management System: courses, lessons, enrollments with
+    verification, assessments and certificates.
+
+    Open it here: https://lms.semantius.app/lms
+
+
+    Assign people the Learner, Instructor and Manager Approver roles (role
+    names: lms_learner, lms_instructor, lms_manager_approver).
+
+    Next steps: add your first course, import training records from CSV, assign
+    roles to your team.

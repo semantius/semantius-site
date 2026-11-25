@@ -5,7 +5,8 @@
  *
  *   { "grok-bot": "lms" }
  *
- * reads runs/lms.json and writes apps/web/src/content/botsim/grok-bot.json,
+ * reads runs/lms.json and writes apps/web/src/content/botsim/grok-bot.yaml
+ * (see chat-yaml.mjs for the format: long texts are split over several lines),
  * but only when that file does not exist yet: an existing chat is skipped and
  * left as it is, so a generated chat can be edited by hand. To regenerate a
  * chat from its run, delete the chat file first. Chats not in the map are left
@@ -32,6 +33,7 @@
  *   renders the agent's replies as markdown.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { chatToYaml } from './chat-yaml.mjs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -88,7 +90,7 @@ function agentTurn(parts) {
 const botmap = readJson(join(runsDir, 'botmap.json'));
 
 for (const [chat, run] of Object.entries(botmap)) {
-	const target = `${chatsDir}/${chat}.json`;
+	const target = `${chatsDir}/${chat}.yaml`;
 	if (existsSync(join(root, target))) {
 		console.log(`${target} exists, skipped`);
 		continue;
@@ -99,6 +101,6 @@ for (const [chat, run] of Object.entries(botmap)) {
 		if (entry.role === 'user') messages.push(userMessage(entry.parts));
 		else if (entry.role === 'assistant') messages.push(...agentTurn(entry.parts));
 	}
-	writeFileSync(join(root, target), `${JSON.stringify(messages, null, 2)}\n`);
+	writeFileSync(join(root, target), chatToYaml(messages));
 	console.log(`runs/${run}.json -> ${target}: ${messages.length} messages`);
 }
