@@ -1,9 +1,10 @@
 import type { APIRoute } from 'astro';
 import { getCollection } from 'astro:content';
 import intro from '~/data/llms-intro.md?raw';
+import install from '~/data/llms-install.md?raw';
 import {
 	blogPath, BLOG_INDEX_PATH,
-	DOCS_INDEX_PATH,
+	docsPath, docsSlug, DOCS_INDEX_PATH,
 	skillPath, SKILLS_INDEX_PATH,
 	CHANGELOG_PATH,
 } from '~/lib/routes';
@@ -13,7 +14,6 @@ import { buildDocsTree, getDocsCollectionNavs, tabPages } from '~/lib/docs-tree'
 import { SOLUTIONS } from '~/data/solutions';
 import { SAMPLE_PROMPTS, promptPath } from '~/data/sample-prompts';
 import { SPECIFICATION } from '~/data/specification';
-import { INSTALL_CLI, INSTALL_SKILL, OPENCLAW_NOTE } from '~/data/install-steps';
 
 export const prerender = true;
 
@@ -26,8 +26,9 @@ export const prerender = true;
  * Deriving every URL from the same route helpers the pages use makes that class
  * of bug impossible.
  *
- * The prose stays hand-written in src/data/llms-intro.md and is imported with
- * ?raw so it is bundled at build time. It lives in src/data rather than
+ * The prose stays hand-written in src/data/llms-intro.md and
+ * src/data/llms-install.md and is imported with ?raw so it is bundled at build
+ * time. It lives in src/data rather than
  * src/content because getNoIndexUrls() in astro.config.mjs walks all of
  * src/content looking for frontmatter.
  *
@@ -56,6 +57,23 @@ export const GET: APIRoute = async ({ site }) => {
 		out.push(`## ${title}`, '', ...lines, '');
 	};
 
+	// Right below the intro: setting Semantius up is the first thing an agent
+	// does for its user. This is the agent version of the CLI README's Quick
+	// Start; the sample-prompt pages show their own steps (data/install-steps.ts).
+	section('Install', [install.trim()]);
+
+	// Right after Install, so an agent sees early where the ideas for modules
+	// are. One page per category, each listing its template prompts by title.
+	section('Templates', [
+		`[All templates](${md(TEMPLATES_PATH)}) contains ideas for modules: template prompts to build Semantius modules, grouped by category.`,
+		'',
+		...TEMPLATE_CATEGORIES.map(
+			(c) =>
+				`- [${c.name} templates](${md(templateCategoryPath(c))}): ` +
+				c.templates.map((t) => t.title).join(', '),
+		),
+	]);
+
 	// The founder's v1 specification, §10. The solution pages carry their reader
 	// labels and summaries (change request 3, §7); the hub's and the prompt
 	// pages' summaries are not written yet (home-tbd.md, A5).
@@ -65,19 +83,24 @@ export const GET: APIRoute = async ({ site }) => {
 		...Object.values(SOLUTIONS).map((s) => `- [${s.readerLabel}](${md(s.path)}): ${s.summary}`),
 		...SAMPLE_PROMPTS.map((p) => `- [${p.heading}](${md(promptPath(p.slug))}): ${summaryTbd}`),
 	]);
+	// A row's name links to the docs page that backs it. A slug that matches no
+	// docs page leaves the name unlinked.
+	const docsBySlug = new Map(docs.map((d) => [docsSlug(d), d]));
 	section('Specification', [
 		'| | |',
 		'|---|---|',
-		...SPECIFICATION.map(([name, value]) => `| ${name} | ${value} |`),
-	]);
-	section('Install', [
-		`1. Install the CLI: \`${INSTALL_CLI}\``,
-		`2. Install the skill: \`${INSTALL_SKILL}\`. ${OPENCLAW_NOTE}`,
+		...SPECIFICATION.map(([name, value, slug]) => {
+			const doc = slug ? docsBySlug.get(slug) : undefined;
+			return `| ${doc ? `[${name}](${md(docsPath(doc))})` : name} | ${value} |`;
+		}),
 	]);
 	section('Agents it works with', [
 		'The one you already use, as long as it can run commands on its own computer: always-on agents such as Meta Muse, OpenAI Dots or Grok Bot, or Claude Code, Codex, OpenClaw and Hermes Agent.',
 	]);
-	section('What Semantius is not', ['- Not analytics.', '- Not an agent.', '- Not a code generator.']);
+	section('What Semantius is not', [
+		"- Not an agent: it doesn't act on its own. Your agent sets it up and works in it.",
+		'- Not a code generator: there is no source code to maintain. The model, the rules (JSONLogic) and the permissions are data in Postgres that the API and the app read at runtime.',
+	]);
 
 	// Docs, grouped by nav tab so the structure matches what a reader sees.
 	const navs = getDocsCollectionNavs(buildDocsTree(docs));
@@ -109,23 +132,19 @@ export const GET: APIRoute = async ({ site }) => {
 		`- [Bot simulator](${md('/botsim')}): proof of concept of a simulated agent workspace: named agents take tasks, work in parallel, and come back when they need you.`,
 	]);
 
-	section('Agent skills', [
-		`- [All skills](${md(SKILLS_INDEX_PATH)}): the full library.`,
-		...catalogs.map((c) => {
-			const desc = c.data.catalog_tagline ?? c.data.catalog_description;
-			return `- [${c.data.domain_name}](${md(skillPath(c))})${desc ? `: ${desc}` : ''}`;
-		}),
-	]);
-
-	// One page per category, each listing its sample prompts by title.
-	section('Templates', [
-		`- [All templates](${md(TEMPLATES_PATH)}): every category on one page.`,
-		...TEMPLATE_CATEGORIES.map(
-			(c) =>
-				`- [${c.name} templates](${md(templateCategoryPath(c))}): ` +
-				c.templates.map((t) => t.title).join(', '),
-		),
-	]);
+	// The domain skills, one per skill-specs/<CODE>/catalog.yaml. There are none
+	// for now (use-semantius is the only skill), so the section is left out. When
+	// catalogs return, it comes back by itself, but its links need the /skills
+	// pages restored and their redirects removed from redirects.jsonc first.
+	if (catalogs.length > 0) {
+		section('Agent skills', [
+			`- [All skills](${md(SKILLS_INDEX_PATH)}): the full library.`,
+			...catalogs.map((c) => {
+				const desc = c.data.catalog_tagline ?? c.data.catalog_description;
+				return `- [${c.data.domain_name}](${md(skillPath(c))})${desc ? `: ${desc}` : ''}`;
+			}),
+		]);
+	}
 
 	section('Blog', [
 		`- [All articles](${md(BLOG_INDEX_PATH)})`,

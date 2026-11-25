@@ -31,15 +31,15 @@ After `astro build` has written every page, `integration.ts` takes each page in 
    - The shared header and footer go around it.
 4. **Write** it next to the page, as `dist/client/<page path>.md`.
 
-It then writes `llms-full.txt`, an index of every twin with its title (except those of noindex pages), and reports in the build log (see [Build log](#build-log)).
+It then reports in the build log (see [Build log](#build-log)).
 
-In `astro dev` there is no build output, so the same integration serves `/<page>.md` on request: it fetches the page from the dev server and runs the same `twinFromHtml()`. `llms-full.txt` exists only after a build.
+In `astro dev` there is no build output, so the same integration serves `/<page>.md` on request: it fetches the page from the dev server and runs the same `twinFromHtml()`.
 
 ## What each file does
 
 | File | What it does |
 | --- | --- |
-| `integration.ts` | The Astro integration: writes every twin and `llms-full.txt` after the build, serves twins in `astro dev`, reports in the build log. Registered in `astro.config.mjs`. |
+| `integration.ts` | The Astro integration: writes every twin after the build, serves twins in `astro dev`, reports in the build log. Registered in `astro.config.mjs`. |
 | `compose.ts` | `twinFromHtml()`, the complete twin for one page, and the shared header and footer layout. |
 | `extract.ts` | The only converter: HTML to markdown, every generic rule, `pageFacts()`, and the `NON_CONTENT` list shared with site search. |
 | `paths.ts` | Every URL rule: `/foo` to `/foo.md` and back, which pages have no twin, the absolute twin URL, the URL a page advertises. |
@@ -75,7 +75,6 @@ No page carries markup for the twin's sake. The converter reads what the HTML al
 | `<meta name="description">` | description |
 | `<link rel="canonical">` | the "URL" line |
 | JSON-LD `BreadcrumbList` | "This page location", exactly as published. A page that passes no `breadcrumbs` to `Layout.astro` gets one built from URL slugs ("Hvac svc mgmt"), so give it real names on the page: that fixes search engines and the twin at once. |
-| `<meta name="robots" content="noindex">` | the twin is still written, but not listed in `llms-full.txt` |
 | `<a rel="prev">`, `<a rel="next">` | "Related" footer, labeled as the link reads ("Previous: Modules") |
 | `<pre data-language="bash">` (Shiki, every fenced block) | code block in that language |
 | `<pre class="mermaid">` | mermaid code block |

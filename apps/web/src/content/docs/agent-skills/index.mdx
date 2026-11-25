@@ -27,12 +27,12 @@ Among the agents we test against:
 
 If your agent supports Agent Skills, it works.
 
-The skills also call into your platform's [MCP connectors](/docs/mcp-connectors) under the hood, so make sure those are wired up too.
+The skills need nothing else: they work through the CLI, whose crud tools call your platform's API directly and which reaches the cube analytics server itself. The [MCP connectors](/docs/mcp-connectors) are a separate way in, for MCP clients such as ChatGPT and Claude.
 
-## Ready-to-Use Models
+## Templates
 
-Skills are also how ready-to-use models are installed and customized. You can pull a published template into your platform, fork it, and let the skills handle the migration steps so the underlying data stays consistent.
+The [templates](/templates) are ideas for modules: template prompts to build Semantius modules. Give one to your agent, and use-semantius builds the module from it.
 
 ## Next Steps
 
-- **[Installation →](/docs/agent-skills/installation)**: install the CLI, set credentials, and add the skills to your agent.
+- **[Installation →](/docs/agent-skills/installation)**: install the CLI and the skills, then sign the CLI in to your instance.

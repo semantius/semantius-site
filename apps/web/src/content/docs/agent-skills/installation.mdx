@@ -1,16 +1,14 @@
 ---
 title: 'Agent Skills Installation'
 navTitle: 'Installation'
-description: 'Install the Semantius CLI, set up credentials, and add the agent skills to your coding agent.'
+description: 'Install the Semantius CLI and the agent skills, then sign the CLI in to your Semantius instance and check the connection.'
 order: 2
 ---
 
-import { Image } from 'astro:assets';
 import Command from '~/components/common/Command.astro';
 import SkillInstall from '~/components/common/SkillInstall.astro';
-import getCliConfig from '~/assets/docs/getcliconfig.png';
 
-Getting Semantius **[Agent Skills](/docs/agent-skills)** running takes three steps: install the Semantius CLI, set up credentials, then add the skills to your agent.
+Getting Semantius **[Agent Skills](/docs/agent-skills)** running takes four steps: install the Semantius CLI, add the skills to your agent, sign the CLI in to your instance, then check the connection.
 
 ## 1. Install the Semantius CLI
 
@@ -20,63 +18,56 @@ The CLI is the bridge between your agent and your Semantius platform. Pick the i
 
 <Command command="curl -fsSL https://raw.githubusercontent.com/semantius/semantius-cli/main/install.sh | bash" />
 
+The installer puts `semantius` in `/usr/local/bin` if you can write there, otherwise in `~/.local/bin`. It does not change your PATH: if the folder it installed into is not on it, it prints the line that adds that folder to your shell's startup file.
+
 ### Windows (PowerShell)
 
 <Command command="irm https://raw.githubusercontent.com/semantius/semantius-cli/main/install.ps1 | iex" />
 
-The Windows installer places `semantius.exe` in `%LOCALAPPDATA%\Programs\Semantius` and adds it to your user PATH automatically. Open a fresh terminal afterwards so the updated PATH takes effect.
+The Windows installer places `semantius.exe` in `%LOCALAPPDATA%\Programs\Semantius` and adds it to your user PATH, which only programs started afterwards see: open a new terminal, and restart any app whose terminals or agents should find `semantius`. Use this installer from Git Bash too, since `install.sh` does not support Windows.
 
 Verify the install by running:
 
 <Command command="semantius --version" />
 
-## 2. Set Up Credentials
+## 2. Install the Skills
 
-The CLI needs two values to talk to your platform: an API key and an organization name. The easiest way to get both is to ask your Ops MCP for them. Make sure the [Ops MCP connector is installed first](/docs/mcp-connectors/installation), then send this prompt to your agent:
-
-<Command mode="chat" command="I need the cli config" />
-
-The agent calls the Ops MCP and prints back the values you need:
-
-<Image src={getCliConfig} alt="Agent response showing the Semantius CLI credentials returned by the Ops MCP" class="docs-screenshot" />
-
-Provide them to the CLI in either of two ways. The CLI looks for a `.env` file next to the executable (Windows), in the current directory, or it picks up exported shell variables.
-
-**Option 1: export in your shell**
-
-<Command command="export SEMANTIUS_API_KEY=your-api-key" />
-
-<Command command="export SEMANTIUS_ORG=your-org-name" />
-
-**Option 2: `.env` file**
-
-Drop a file named `.env` next to the executable or in the directory you run the CLI from:
-
-```bash
-SEMANTIUS_API_KEY=your-api-key
-SEMANTIUS_ORG=your-org-name
-```
-
-That is all the configuration needed. The CLI automatically connects to your Semantius MCP servers (crud and cube), no separate config file required.
-
-## 3. Install the Skills
-
-With the CLI installed and credentials in place, pull the skill bundle into your agent. Leave the **Agent** dropdown on **All** to install for every detected agent, or pick a specific agent to target just that one. Toggle **Global** to install into your home directory instead of the current project.
+Pull the skill bundle into your agent. The installer needs Node.js 22.20 or later, and git. Leave the **Agent** dropdown on **All** to install for every detected agent, or pick a specific agent to target just that one. Toggle **Global** to install into your home directory instead of the current project.
 
 <SkillInstall url="semantius/semantius-cli" includeSubagents />
 
 Supports [OpenCode, Claude Code, Codex, Cursor, and 51 more](https://github.com/vercel-labs/skills#supported-agents). See the [skills documentation](https://github.com/vercel-labs/skills) to learn how to install skills for your agent.
 
+Meta's Muse does not support a global installation, so install for its root agent instead:
+
+<Command command="npx -y skills add semantius/semantius-cli --all --subagent root" />
+
 ---
 
-The installer registers the Semantius skills (Business Analyst, Schema Editor, RBAC Configurator, Deployer, and others) with your agent. The skills call the local `semantius` binary under the hood, so the CLI you just installed is what does the actual work.
+The installer registers the Semantius skills (use-semantius, semantius-importer, semantius-transfer and others) with your agent. The skills call the local `semantius` binary, so the CLI you just installed is what does the actual work.
 
-Restart your agent after installing so it picks up the new skills.
+Start a new agent session after installing: an agent that is already running may not pick the skills up.
 
-## Verify the Setup
+## 3. Sign In
 
-Ask your agent something only the skills can do, for example:
+Sign up for a Semantius data platform, or sign in to yours, at **[app.semantius.com](https://app.semantius.com/)**. Once your instance is provisioned, the dashboard's Get Started card shows its address, `https://<your-org>.semantius.app`. Connect the CLI to it:
 
-> "Use the Schema Editor skill to list the entities in my platform."
+<Command command="semantius use https://<your-org>.semantius.app" />
 
-If the agent invokes a Semantius skill and returns your model, everything is wired up correctly. If you get a permission error, the API key belongs to a user whose role does not allow the action: adjust the role in the admin dashboard, regenerate the key if needed, then update the credentials in your shell or `.env` file.
+Unless a usable session for it is already stored, `use` opens your browser to sign in, then makes the instance your current host in every directory. From then on the CLI, and any agent using it, acts as you, with your permissions.
+
+- **Not sitting at this machine?** On a server, in a container or an SSH session, or for an always-on agent, add `--login-flow device`: it prints a URL and a code to enter on your phone or laptop instead.
+- **Self-hosted** instances work the same way: `semantius use https://semantius.example.com`.
+- **Scripts and CI** can use an API key instead of a sign-in: see [Credentials](https://github.com/semantius/semantius-cli#credentials-sources-and-evaluation-order) in the CLI's README.
+
+No config file is needed: the CLI's crud tools call your instance's API directly, and the CLI reaches the cube analytics server itself.
+
+## 4. Verify the Setup
+
+<Command command="semantius whoami" />
+
+It shows the host, your user and roles, and when the session expires. Then ask your agent something only the skills can do, for example:
+
+> "List the entities in my Semantius instance."
+
+If the agent invokes a Semantius skill and returns your model, everything is wired up correctly. If you get a permission error, your user's role does not allow the action: adjust the role in the admin dashboard.

@@ -1,6 +1,6 @@
 /**
  * The two install steps (founder's v1 spec, §4.5), shown on every sample-prompt
- * page and listed in llms.txt.
+ * page. llms.txt carries the agent version instead (data/llms-install.md).
  *
  * The skill command is the spec's, which differs from the one the docs build in
  * `lib/skill-install.ts`. That conflict is open: home-tbd.md, C12.

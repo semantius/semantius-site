@@ -425,8 +425,6 @@ export interface PageFacts {
 	description?: string;
 	/** <link rel="canonical">: the page's own URL as it publishes it. */
 	canonical?: string;
-	/** <meta name="robots" content="noindex">: the page asks not to be indexed. */
-	noindex: boolean;
 	/** The page's JSON-LD BreadcrumbList names, outermost first. Empty when it has none. */
 	trail: string[];
 	/** The page's rel="prev" and rel="next" links, for the twin's "Related" footer. */
@@ -446,17 +444,15 @@ function breadcrumbNames(json: unknown): string[] | undefined {
 }
 
 /**
- * What the header, the footer and llms-full.txt need, read from the page rather
- * than computed a second time: the same heading, title, description, canonical
- * URL, breadcrumb and robots directive the page publishes to browsers and
- * search engines.
+ * What the header and the footer need, read from the page rather than computed
+ * a second time: the same heading, title, description, canonical URL and
+ * breadcrumb the page publishes to browsers and search engines.
  */
 export function pageFacts(html: string): PageFacts {
 	const tree = unified().use(rehypeParse, { fragment: false }).parse(html);
 	const h1 = pageHeading(contentRoot(tree));
 	const facts: PageFacts = {
 		heading: h1 ? plainText(h1) || undefined : undefined,
-		noindex: false,
 		trail: [],
 		related: [],
 	};
@@ -465,9 +461,6 @@ export function pageFacts(html: string): PageFacts {
 		const rel = ([] as string[]).concat(node.properties?.rel ?? []);
 		if (node.tagName === 'link' && rel.includes('canonical') && facts.canonical === undefined) {
 			facts.canonical = String(node.properties.href ?? '') || undefined;
-		}
-		if (node.tagName === 'meta' && node.properties?.name === 'robots') {
-			facts.noindex ||= /\bnoindex\b/i.test(String(node.properties.content ?? ''));
 		}
 		if (node.tagName === 'title' && facts.title === undefined) {
 			// "Thing - Semantius Agentic Data Platform" and "Semantius | The ...":

@@ -104,8 +104,6 @@ export interface Twin {
 	markdown: string;
 	/** The twin's title, as its "# " line says it. */
 	title: string;
-	/** The page asks not to be indexed, so the twin is not listed in llms-full.txt. */
-	noindex: boolean;
 }
 
 /**
@@ -134,5 +132,5 @@ export function twinFromHtml(html: string, pagePath: string, siteUrl: string): T
 			facts.related.map((r) => ({ title: r.title, href: twinUrl(r.path, siteUrl) })),
 			indexUrl,
 		);
-	return { markdown, title, noindex: facts.noindex };
+	return { markdown, title };
 }

@@ -23,5 +23,31 @@
   // Vanity URLs linked from the home page hero diagram's two lower boxes
   // ("Team App" and "Agent API & CLI"). The targets may move, so they are 302s.
   "/app": { "to": "/docs/app" },
-  "/agents": { "to": "/docs/agent-skills" }
+  "/agents": { "to": "/docs/agent-skills" },
+
+  // @astrojs/sitemap writes sitemap-index.xml (plus numbered chunks) and never a
+  // sitemap.xml. robots.txt names the index, which is all search engines need;
+  // this catches tools and people that guess the conventional /sitemap.xml.
+  "/sitemap.xml": { "to": "/sitemap-index.xml", "permanent": true },
+
+  // The domain skills are gone (use-semantius is the only skill), so their
+  // listing and pages were removed. The owner chose 301s to the template prompts,
+  // which hold the ideas for modules. Remove these if the skill pages come back:
+  // a redirect shadows a live page at the same path.
+  "/skills": { "to": "/templates" },
+  "/skills/ats": { "to": "/templates" },
+  "/skills/clm": { "to": "/templates" },
+  "/skills/hcm": { "to": "/templates" },
+  "/skills/hrsd": { "to": "/templates" },
+  "/skills/hvac-svc-mgmt": { "to": "/templates" },
+  "/skills/intranet-gov": { "to": "/templates" },
+  "/skills/it-ops-starter": { "to": "/templates" },
+  "/skills/itsm": { "to": "/templates" },
+  "/skills/lms": { "to": "/templates" },
+  "/skills/re-brokerage": { "to": "/templates" },
+  "/skills/real-estate-agent": { "to": "/templates" },
+  "/skills/smp": { "to": "/templates" },
+  "/skills/srm": { "to": "/templates" },
+  "/skills/svcs-proc": { "to": "/templates" },
+  "/skills/work-mgmt": { "to": "/templates" }
 }

@@ -1,6 +1,6 @@
 /**
- * The Astro integration: writes every twin after the build, writes
- * llms-full.txt, and serves twins in `astro dev`.
+ * The Astro integration: writes every twin after the build, and serves twins
+ * in `astro dev`.
  *
  * Twins are written in astro:build:done because that is the first moment the
  * built HTML exists, and that hook runs in Node under every adapter. A route
@@ -13,7 +13,6 @@ import { fileURLToPath } from 'node:url';
 import { twinFromHtml } from './compose';
 import {
 	hasMarkdownTwin,
-	markdownUrl,
 	normalizePagePath,
 	pagePathOfTwin,
 	toMarkdownPath,
@@ -37,31 +36,6 @@ const DEV_ORIGIN = 'http://localhost:4321';
 function overrideFor(root: string, pagePath: string): string | undefined {
 	const file = path.join(root, OVERRIDES_DIR, toMarkdownPath(pagePath));
 	return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : undefined;
-}
-
-/**
- * llms-full.txt: every twin, one per line, with its title.
- *
- * Deliberately an INDEX, not a concatenation of the site: a full-text dump is
- * more than an agent can usefully hold in context, and every twin is one fetch
- * away. llms-full.txt is a convention, not a specification, so it can be the
- * useful artifact rather than the literal one.
- * Written here because only now is every twin known.
- */
-function llmsFull(entries: Array<{ url: string; title: string }>, siteUrl: string): string {
-	const lines = [...entries].sort((a, b) => a.url.localeCompare(b.url));
-	return [
-		'# Semantius: index of every markdown twin',
-		'',
-		'Every URL below serves markdown. The HTML page for each is the same URL',
-		'without the ".md" suffix, and /index.md is the home page. Canonical URLs',
-		'carry no trailing slash: a slashed URL redirects to the slash-less one.',
-		'',
-		`Curated, grouped index: ${new URL('/llms.txt', siteUrl).toString()}`,
-		'',
-		...lines.map((l) => `${l.url}\t${l.title}`),
-		'',
-	].join('\n');
 }
 
 export function markdownTwins() {
@@ -123,7 +97,6 @@ export function markdownTwins() {
 				const missing: string[] = [];
 				const thin: Array<[string, number]> = [];
 				const leaked: string[] = [];
-				const index: Array<{ url: string; title: string }> = [];
 
 				for (const page of pages as Array<{ pathname: string }>) {
 					const pagePath = normalizePagePath(page.pathname);
@@ -138,11 +111,9 @@ export function markdownTwins() {
 						continue;
 					}
 
-					// Made even when an override replaces it: its title and noindex come
-					// from the page, which the override does not change.
-					const twin = twinFromHtml(fs.readFileSync(htmlAbs, 'utf8'), pagePath, site);
 					const override = overrideFor(root, pagePath);
-					const markdown = override ?? twin.markdown;
+					const markdown =
+						override ?? twinFromHtml(fs.readFileSync(htmlAbs, 'utf8'), pagePath, site).markdown;
 					(override === undefined ? extracted : overridden).push(pagePath);
 
 					const mdRel = toMarkdownPath(pagePath).slice(1);
@@ -151,18 +122,8 @@ export function markdownTwins() {
 					fs.writeFileSync(mdAbs, markdown, 'utf8');
 					if (markdown.length < SIZE_FLOOR_BYTES) thin.push([mdRel, markdown.length]);
 					if (markdown.includes(DEV_ORIGIN)) leaked.push(mdRel);
-					// Same rule as advertisedTwinUrl(): a page that asks not to be
-					// indexed is not pointed at. Its twin is still written.
-					if (!twin.noindex) {
-						index.push({
-							url: markdownUrl(pagePath, site),
-							// An override's own "# " line names it; otherwise the page does.
-							title: (override && override.match(/^#\s+(.+)$/m)?.[1]?.trim()) || twin.title,
-						});
-					}
 				}
 
-				fs.writeFileSync(path.join(outDir, 'llms-full.txt'), llmsFull(index, site), 'utf8');
 				logger.info(
 					`${extracted.length + overridden.length} markdown twins ` +
 						`(${extracted.length} extracted, ${overridden.length} hand-written overrides)`,

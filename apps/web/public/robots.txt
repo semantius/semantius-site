@@ -7,7 +7,6 @@
 #   <link rel="alternate" type="text/markdown" href="...">
 #
 # Curated index for agents and LLMs: https://www.semantius.com/llms.txt
-# Index of every markdown twin: https://www.semantius.com/llms-full.txt
 #
 # Do not add "Disallow: /*.md" here. It would block the exact resource this
 # site publishes for agents.
